@@ -14,11 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { FilterSlotBuilder, ItemCardExtended, type ItemCardProps } from "@components/features/support";
+import {
+  FilterSlotBuilder,
+  ItemCardExtended,
+  ItemCardExtendedSkeleton,
+  type ItemCardProps,
+} from "@components/features/support";
 import { Stack } from "@wso2/oxygen-ui";
 import { useSearchParams } from "react-router-dom";
 import { useLayout } from "@context/layout";
-import { useLayoutEffect } from "react";
+import { Suspense, useLayoutEffect } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cases } from "@src/services/cases";
@@ -26,19 +31,38 @@ import { useProject } from "@context/project";
 
 export default function AllItemsPage({ type }: { type: ItemCardProps["type"] }) {
   const [searchParams] = useSearchParams();
-  const layout = useLayout();
-
   const filter = searchParams.get("filter") ?? "all";
   const search = (searchParams.get("search") ?? "").toLowerCase();
 
+  return (
+    <Stack gap={2}>
+      <Suspense fallback={<ItemsListContentSkeleton />}>
+        <ItemsListContent filter={filter} search={search} />
+      </Suspense>
+    </Stack>
+  );
+}
+
+export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] | "notifications" }) {
+  const { projectId } = useProject();
+  const { data: filters } = useSuspenseQuery(cases.filters(projectId!));
+
+  return (
+    <FilterSlotBuilder
+      searchPlaceholder="Search cases by ID, title, or description..."
+      tabs={filters.statuses.map((filter) => ({ label: filter.label, value: filter.id }))}
+    />
+  );
+}
+
+function ItemsListContent({ filter, search }: { filter: string; search: string }) {
+  const layout = useLayout();
   const { projectId } = useProject();
   const { data } = useSuspenseQuery(
     cases.all(projectId!, filter !== "all" ? { filters: { statusId: Number(filter) } } : {}),
   );
 
   const items = data.filter((item) => {
-    // const matchesFilter = !filter || filter === "all" ? true : item.statusId === filter;
-
     const matchesSearch =
       !search ||
       item.id.toLowerCase().includes(search) ||
@@ -57,22 +81,20 @@ export default function AllItemsPage({ type }: { type: ItemCardProps["type"] }) 
   });
 
   return (
-    <Stack gap={2}>
-      {items.map((item, index) => (
-        <ItemCardExtended key={index} type="case" to="/" {...item} />
+    <>
+      {items.map((item) => (
+        <ItemCardExtended key={item.id} type="case" to="/" {...item} />
       ))}
-    </Stack>
+    </>
   );
 }
 
-export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] | "notifications" }) {
-  const { projectId } = useProject();
-  const { data: filters } = useSuspenseQuery(cases.filters(projectId!));
-
+function ItemsListContentSkeleton() {
   return (
-    <FilterSlotBuilder
-      searchPlaceholder="Search cases by ID, title, or description..."
-      tabs={filters.statuses.map((filter) => ({ label: filter.label, value: filter.id }))}
-    />
+    <>
+      {Array.from({ length: 10 }).map((_, index) => (
+        <ItemCardExtendedSkeleton key={index} />
+      ))}
+    </>
   );
 }

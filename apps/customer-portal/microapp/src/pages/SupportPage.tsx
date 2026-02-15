@@ -14,12 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Card, Grid, pxToRem, Stack, Tab, Tabs, Typography, useTheme } from "@wso2/oxygen-ui";
 import { MessageSquareQuote } from "@wso2/oxygen-ui-icons-react";
 import { MetricWidget } from "@components/features/dashboard";
-import { ItemListView, ItemCard, type ItemCardProps } from "@components/features/support";
+import { ItemListView, ItemCard, type ItemCardProps, ItemCardSkeleton } from "@components/features/support";
 
 import { TAB_TITLES } from "@src/mocks/data/support";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -33,7 +33,6 @@ export default function SupportPage() {
 
   const { projectId } = useProject();
   const project = useSuspenseQuery(projects.all()).data.find((project) => project.id === projectId);
-  const { data } = useSuspenseQuery(cases.all(projectId!, { pagination: { limit: 3 } }));
 
   const metrics = [
     { label: "Open Cases", value: project?.metrics.cases ?? "N/A" },
@@ -41,13 +40,6 @@ export default function SupportPage() {
     { label: "Service Requests", value: "N/A" },
     { label: "Change Requests", value: "N/A" },
   ];
-
-  const items = {
-    cases: data,
-    chat: [],
-    service: [],
-    change: [],
-  };
 
   return (
     <>
@@ -98,11 +90,41 @@ export default function SupportPage() {
       </Tabs>
       <Card component={Stack} p={2} mt={2} gap={0.5}>
         <ItemListView title={TAB_TITLES[tab]} viewAllPath={`/${tab}s/all`}>
-          {items["cases"].map((item) => (
-            <ItemCard key={item.id} type="case" to="/" {...item} />
-          ))}
+          <Suspense fallback={<ItemsListContentSkeleton />}>
+            <ItemsListContent />
+          </Suspense>
         </ItemListView>
       </Card>
+    </>
+  );
+}
+
+function ItemsListContent() {
+  const { projectId } = useProject();
+  const { data } = useSuspenseQuery(cases.all(projectId!, { pagination: { limit: 3 } }));
+
+  const items = {
+    cases: data,
+    chat: [],
+    service: [],
+    change: [],
+  };
+
+  return (
+    <>
+      {items["cases"].map((item) => (
+        <ItemCard key={item.id} type="case" to="/" {...item} />
+      ))}
+    </>
+  );
+}
+
+function ItemsListContentSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <ItemCardSkeleton key={index} />
+      ))}
     </>
   );
 }
