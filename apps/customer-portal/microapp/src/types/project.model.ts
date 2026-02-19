@@ -14,3 +14,23 @@ export interface Project {
   status: ProjectStatus;
   type: ProjectType;
 }
+
+export interface Deployment {
+  id: string;
+  name: string;
+  createdOn: Date;
+  updatedOn: Date;
+  url?: string;
+  typeId: string;
+  projectId: string;
+}
+
+export interface Product {
+  id: string;
+  createdOn: Date;
+  updatedOn: Date;
+  description?: string;
+  name: string;
+  deploymentId: string;
+  versionId: string;
+}

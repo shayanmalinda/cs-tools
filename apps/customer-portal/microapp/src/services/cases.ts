@@ -1,8 +1,15 @@
 import apiClient from "@src/services/apiClient";
-import { queryOptions } from "@tanstack/react-query";
-import type { Case, CasesDTO, CasesFiltersDTO, GetCasesRequestDTO } from "@src/types";
+import { mutationOptions, queryOptions } from "@tanstack/react-query";
+import type {
+  Case,
+  CasesDTO,
+  CasesFiltersDTO,
+  CreateCaseRequestDTO,
+  CreateCaseResponseDTO,
+  GetCasesRequestDTO,
+} from "@src/types";
 
-import { PROJECT_CASES_ENDPOINT, PROJECT_CASES_FILTERS_ENDPOINT } from "@config/endpoints";
+import { CREATE_CASE_ENDPOINT, PROJECT_CASES_ENDPOINT, PROJECT_CASES_FILTERS_ENDPOINT } from "@config/endpoints";
 
 const getCases = async (id: string, body: GetCasesRequestDTO = {}): Promise<Case[]> => {
   const cases = (await apiClient.post<CasesDTO>(PROJECT_CASES_ENDPOINT(id), body)).data.cases;
@@ -11,6 +18,10 @@ const getCases = async (id: string, body: GetCasesRequestDTO = {}): Promise<Case
 
 const getFilters = async (id: string): Promise<CasesFiltersDTO> => {
   return (await apiClient.get<CasesFiltersDTO>(PROJECT_CASES_FILTERS_ENDPOINT(id))).data;
+};
+
+const createCase = async (body: CreateCaseRequestDTO): Promise<CreateCaseResponseDTO> => {
+  return (await apiClient.post<CreateCaseResponseDTO>(CREATE_CASE_ENDPOINT, body)).data;
 };
 
 /* Mappers */
@@ -42,4 +53,8 @@ export const cases = {
       queryKey: ["filters", id],
       queryFn: () => getFilters(id),
     }),
+
+  create: mutationOptions({
+    mutationFn: (body: CreateCaseRequestDTO) => createCase(body),
+  }),
 };

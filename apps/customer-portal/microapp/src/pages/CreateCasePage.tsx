@@ -19,12 +19,15 @@ import { Circle, Folder } from "@wso2/oxygen-ui-icons-react";
 import { Button, Stack, Typography, InputAdornment, pxToRem, colors } from "@wso2/oxygen-ui";
 import { SelectField, TextField, ConversationSummary } from "@components/features/create";
 import { useFormik } from "formik";
-import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useProject } from "@context/project";
+import { projects } from "@src/services/projects";
+import { cases } from "@src/services/cases";
 
 type CreateCaseFormValues = {
-  project: number;
-  product: number;
-  deployment: number;
+  project: string;
+  product: string;
+  deployment: string;
   type: number;
   severity: number;
   title: string;
@@ -35,55 +38,51 @@ export default function CreateCasePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const messages = location.state?.messages || [];
+  const { projectId } = useProject();
 
-  const projects = [
-    { value: 0, label: "Dreamworks Inc" },
-    { value: 1, label: "Newsline Enterprise" },
-    { value: 2, label: "Goods Store Mart" },
+  const issueTypeOptions = [
+    { value: 1, label: "Total Outage" },
+    { value: 2, label: "Partial Outage" },
+    { value: 3, label: "Performance Degradation" },
+    { value: 4, label: "Question" },
+    { value: 5, label: "Security or Compliance" },
+    { value: 6, label: "Error" },
   ];
 
-  const products = [
-    { value: 0, label: "WSO2 API Manager v4.2.0" },
-    { value: 1, label: "WSO2 Identity Access Manager v4.2.0" },
-  ];
-
-  const deploymentTypes = [
-    { value: 0, label: "Production" },
-    { value: 1, label: "Staging" },
-    { value: 2, label: "Development" },
-  ];
-
-  const issueTypes = [
-    { value: 0, label: "Configuration Issue" },
-    { value: 1, label: "Query" },
-    { value: 2, label: "Security Vulnerability" },
-  ];
-
-  const severityLevels = [
+  const severityLevelOptions = [
     {
-      value: 0,
+      value: 10,
       label: (
         <Stack direction="row" alignItems="center" gap={1}>
           <Circle fill={colors.red[500]} color={colors.red[500]} size={pxToRem(12)} />
-          S1 Critical
+          Critical (P1)
         </Stack>
       ),
     },
     {
-      value: 1,
+      value: 11,
       label: (
         <Stack direction="row" alignItems="center" gap={1}>
           <Circle fill={colors.orange[500]} color={colors.orange[500]} size={pxToRem(12)} />
-          S2 Medium
+          High (P2)
         </Stack>
       ),
     },
     {
-      value: 2,
+      value: 12,
       label: (
         <Stack direction="row" alignItems="center" gap={1}>
-          <Circle fill={colors.blue[500]} color={colors.blue[500]} size={pxToRem(12)} />
-          S3 Low
+          <Circle fill={colors.yellow[600]} color={colors.orange[500]} size={pxToRem(12)} />
+          Medium (P3)
+        </Stack>
+      ),
+    },
+    {
+      value: 14,
+      label: (
+        <Stack direction="row" alignItems="center" gap={1}>
+          <Circle fill={colors.blue[500]} color={colors.orange[500]} size={pxToRem(12)} />
+          Catastrophic (P0)
         </Stack>
       ),
     },
@@ -91,28 +90,60 @@ export default function CreateCasePage() {
 
   const formik = useFormik<CreateCaseFormValues>({
     initialValues: {
-      project: 0,
-      product: 0,
-      deployment: 0,
+      project: projectId!,
+      product: "",
+      deployment: "",
       title: "",
       description: "",
-      type: 0,
-      severity: 0,
+      type: issueTypeOptions[0].value,
+      severity: severityLevelOptions[0].value,
     },
-    onSubmit: () => {
+    onSubmit: (values) => {
+      mutation.mutate({
+        projectId: values.project,
+        deploymentId: values.deployment,
+        productId: values.product,
+        title: values.title,
+        description: values.description,
+        issueTypeKey: values.type,
+        severityKey: values.severity,
+      });
       navigate("/support");
     },
   });
 
-  // TODO: Remove this temporary auto-fill once backend integration is completed.
-  useEffect(() => {
-    formik.setFieldValue("title", "API Gateway timeout issues in production");
-    formik.setFieldValue(
-      "description",
-      "Novera: Hi! I'm Novera, your AI-powered support assistant. How can I help you today? Please describe the issue you're experiencing. Customer: fadfad Novera: Thanks for those details. Based on what you've shared, here are a few things to check:",
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const queryClient = useQueryClient();
+
+  const deploymentQuery = useQuery({
+    ...projects.deployments(projectId!),
+    enabled: !!formik.values.project,
+  });
+
+  const productQuery = useQuery({
+    ...projects.products(formik.values.deployment),
+    enabled: !!formik.values.deployment,
+  });
+
+  const projectsOptions = useSuspenseQuery(projects.all()).data.map((project) => ({
+    value: project.id,
+    label: project.name,
+  }));
+
+  const deploymentOptions =
+    deploymentQuery.data?.map((deployment) => ({ value: deployment.id, label: deployment.name })) ?? [];
+
+  const productOptions =
+    productQuery.data?.map((product) => ({
+      value: product.id,
+      label: product.name,
+    })) ?? [];
+
+  const mutation = useMutation({
+    ...cases.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
+    },
+  });
 
   return (
     <form onSubmit={formik.handleSubmit}>
@@ -121,8 +152,7 @@ export default function CreateCasePage() {
           <SelectField
             name="project"
             label="Project"
-            aiLabel="Auto Detected"
-            options={projects}
+            options={projectsOptions}
             value={formik.values.project}
             onChange={formik.handleChange}
             startAdornment={
@@ -133,21 +163,21 @@ export default function CreateCasePage() {
             required
           />
           <SelectField
-            name="product"
-            label="Product & Version"
-            aiLabel="Auto Detected"
-            options={products}
-            value={formik.values.product}
-            onChange={formik.handleChange}
-            required
-          />
-          <SelectField
             name="deployment"
             label="Deployment Type"
             aiLabel="Auto Detected"
-            options={deploymentTypes}
+            options={deploymentOptions}
             value={formik.values.deployment}
             onChange={formik.handleChange}
+            disabled={!formik.values.project || deploymentQuery.isLoading}
+          />
+          <SelectField
+            name="product"
+            label="Product & Version"
+            options={productOptions}
+            value={formik.values.product}
+            onChange={formik.handleChange}
+            disabled={!formik.values.deployment || productQuery.isLoading}
             required
           />
         </Stack>
@@ -176,7 +206,7 @@ export default function CreateCasePage() {
             name="type"
             label="Issue Type"
             aiLabel="AI Classified"
-            options={issueTypes}
+            options={issueTypeOptions}
             value={formik.values.type}
             onChange={formik.handleChange}
             required
@@ -185,7 +215,7 @@ export default function CreateCasePage() {
             name="severity"
             label="Severity Levels"
             aiLabel="AI Accessed"
-            options={severityLevels}
+            options={severityLevelOptions}
             value={formik.values.severity}
             onChange={formik.handleChange}
             required

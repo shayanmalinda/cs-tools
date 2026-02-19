@@ -1,4 +1,5 @@
 import type { Pagination } from "@src/types";
+
 export interface CasesDTO extends Pagination {
   cases: CaseDTO[];
 }
@@ -38,7 +39,7 @@ export interface CasesFiltersDTO {
   };
 }
 
-interface EntityReference {
+export interface EntityReference {
   id: string;
   label: string;
 }
@@ -60,4 +61,24 @@ export interface GetCasesRequestDTO {
     field?: string;
     order?: "asc" | "desc";
   };
+}
+
+export interface CreateCaseRequestDTO {
+  projectId: string;
+  deploymentId: string;
+  productId: string;
+  title: string;
+  description: string;
+  issueTypeKey: number;
+  severityKey: number;
+}
+
+export interface CreateCaseResponseDTO {
+  id: string;
+  internalId: string;
+  number: number;
+  createdBy: string;
+  createdOn: string;
+  state: EntityReference;
+  type: EntityReference;
 }

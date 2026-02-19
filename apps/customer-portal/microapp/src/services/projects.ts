@@ -14,10 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import type {
+  Deployment,
+  DeploymentProductDTO,
+  DeploymentProductsDTO,
+  Product,
+  Project,
+  ProjectDeploymentDTO,
+  ProjectDeploymentsDTO,
+  ProjectsDTO,
+  ProjectStatsDTO,
+  ProjectStatus,
+} from "@src/types";
+import {
+  PROJECT_DEPLOYMENTS_ENDPOINT,
+  PROJECT_STATS_ENDPOINT,
+  PROJECTS_ENDPOINT,
+  PROJECT_DEPLOYMENT_PRODUCTS_ENDPOINT,
+} from "@config/endpoints";
 import apiClient from "@src/services/apiClient";
-import type { Project, ProjectsDTO, ProjectStatsDTO, ProjectStatus } from "@src/types";
-
-import { PROJECT_STATS_ENDPOINT, PROJECTS_ENDPOINT } from "@config/endpoints";
 import { queryOptions } from "@tanstack/react-query";
 
 const getAllProjects = async (): Promise<Project[]> => {
@@ -30,6 +45,19 @@ const getAllProjects = async (): Promise<Project[]> => {
   );
 
   return projectsWithStats;
+};
+
+const getDeploymentsByProject = async (id: string): Promise<Deployment[]> => {
+  const deployments = (await apiClient.get<ProjectDeploymentsDTO>(PROJECT_DEPLOYMENTS_ENDPOINT(id))).data;
+
+  return deployments.map(toDeployment);
+};
+
+const getProductsByDeployment = async (deploymentId: string): Promise<Product[]> => {
+  const products = (await apiClient.get<DeploymentProductsDTO>(PROJECT_DEPLOYMENT_PRODUCTS_ENDPOINT(deploymentId)))
+    .data;
+
+  return products.map(toProduct);
 };
 
 /* Mappers */
@@ -49,11 +77,47 @@ function mapProjectAndStatsDTOToProject(project: ProjectsDTO["projects"][number]
   };
 }
 
+function toDeployment(deployment: ProjectDeploymentDTO): Deployment {
+  return {
+    id: deployment.id,
+    name: deployment.name,
+    createdOn: new Date(deployment.createdOn.replace(" ", "T")),
+    updatedOn: new Date(deployment.updatedOn.replace(" ", "T")),
+    url: deployment.url ?? undefined,
+    typeId: deployment.type.id,
+    projectId: deployment.project.id,
+  };
+}
+
+function toProduct(product: DeploymentProductDTO): Product {
+  return {
+    id: product.id,
+    createdOn: new Date(product.createdOn.replace(" ", "T")),
+    updatedOn: new Date(product.updatedOn.replace(" ", "T")),
+    description: product.description ?? undefined,
+    name: product.product.label,
+    deploymentId: product.deployment.id,
+    versionId: product.version.id,
+  };
+}
+
 /* Query Options */
 export const projects = {
   all: () =>
     queryOptions({
       queryKey: ["projects"],
       queryFn: getAllProjects,
+    }),
+
+  deployments: (id: string) =>
+    queryOptions({
+      queryKey: ["deployments", id],
+      queryFn: () => getDeploymentsByProject(id),
+    }),
+
+  products: (deploymentId: string) =>
+    queryOptions({
+      queryKey: ["products", deploymentId],
+      queryFn: () => getProductsByDeployment(deploymentId),
     }),
 };

@@ -1,4 +1,4 @@
-import type { Pagination } from "@src/types";
+import type { EntityReference, Pagination } from "@src/types";
 
 export interface ProjectsDTO extends Pagination {
   projects: ProjectDTO[];
@@ -25,4 +25,34 @@ export interface ProjectStatsDTO {
     lastDeploymentOn: string;
     systemHealth: string;
   };
+}
+
+export type ProjectDeploymentsDTO = ProjectDeploymentDTO[];
+
+export interface ProjectDeploymentDTO {
+  id: string;
+  name: string;
+  createdOn: string;
+  updatedOn: string;
+  description: string | null;
+  url: string | null;
+  project: EntityReference;
+  type: EntityReference;
+}
+
+export type DeploymentProductsDTO = DeploymentProductDTO[];
+
+export interface DeploymentProductDTO {
+  id: string;
+  createdOn: string;
+  updatedOn: string;
+  description: string | null;
+  product: EntityReference;
+  deployment: EntityReference;
+  version: EntityReference;
+  cores: number;
+  tps: number;
+  releasedOn: string | null;
+  endOfLifeOn: string | null;
+  updateLevel: string;
 }
