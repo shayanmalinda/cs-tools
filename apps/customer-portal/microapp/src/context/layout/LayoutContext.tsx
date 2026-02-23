@@ -29,7 +29,7 @@ export type LayoutContextType = {
   startSlot?: ReactNode;
   endSlot?: ReactNode;
   appBarSlots?: ReactNode;
-  setTitleOverride: (title: string | undefined) => void;
+  setTitleOverride: (title: string | ReactNode | undefined) => void;
   setOverlineSlotOverride: (slot: ReactNode | string | undefined) => void;
   setSubtitleSlotOverride: (slot: ReactNode | string | undefined) => void;
   setStartSlotOverride: (slot: ReactNode | undefined) => void;

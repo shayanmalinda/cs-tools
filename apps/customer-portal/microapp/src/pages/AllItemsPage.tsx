@@ -86,7 +86,7 @@ function ItemsListContent({ filter, search }: { filter: string; search: string }
   return (
     <>
       {items.map((item) => (
-        <ItemCardExtended key={item.id} type="case" to="/" {...item} />
+        <ItemCardExtended key={item.id} type="case" to={`/cases/${item.id}`} {...item} />
       ))}
     </>
   );

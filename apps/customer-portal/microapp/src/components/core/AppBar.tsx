@@ -83,10 +83,10 @@ export function AppBar() {
         )}
 
         <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
-          <Stack direction="row" alignItems="center" gap={1.5}>
+          <Stack direction="row" alignItems="center" gap={1.5} flex={1}>
             {hasBackAction && <BackButton onClick={navigateBack} />}
             {startSlot}
-            <Stack>
+            <Stack flex={1}>
               <Typography component="div" variant="body2" fontWeight="regular" color="text.secondary">
                 {overlineSlot}
               </Typography>

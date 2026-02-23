@@ -1,7 +1,7 @@
 import apiClient from "@src/services/apiClient";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
 import type {
-  Case,
+  CaseSummary,
   CaseClassificationRequestDTO,
   CaseClassificationResponseDTO,
   CasesDTO,
@@ -10,19 +10,32 @@ import type {
   CreateCaseRequestDTO,
   CreateCaseResponseDTO,
   GetCasesRequestDTO,
+  Case,
+  CaseDTO,
+  CommentsDTO,
+  CommentDTO,
+  Comment,
+  CreateCommentRequestDTO,
 } from "@src/types";
 
 import {
   CASE_CLASSIFICATION_ENDPOINT,
+  CASE_COMMENTS_ENDPOINT,
+  CASE_DETAILS_ENDPOINT,
   CASE_STATS_ENDPOINT,
   CREATE_CASE_ENDPOINT,
   PROJECT_CASES_ENDPOINT,
   PROJECT_CASES_FILTERS_ENDPOINT,
 } from "@config/endpoints";
 
-const getCases = async (id: string, body: GetCasesRequestDTO = {}): Promise<Case[]> => {
+const getAllCases = async (id: string, body: GetCasesRequestDTO = {}): Promise<CaseSummary[]> => {
   const cases = (await apiClient.post<CasesDTO>(PROJECT_CASES_ENDPOINT(id), body)).data.cases;
-  return cases.map(toCase);
+  return cases.map(toCaseSummary);
+};
+
+const getCase = async (id: string): Promise<Case> => {
+  const response = (await apiClient.get<CaseDTO>(CASE_DETAILS_ENDPOINT(id))).data;
+  return toCase(response);
 };
 
 const getFilters = async (id: string): Promise<CasesFiltersDTO> => {
@@ -36,12 +49,11 @@ const createCase = async (body: CreateCaseRequestDTO): Promise<CreateCaseRespons
 const classify = async (
   props: Omit<CaseClassificationRequestDTO, "region" | "tier">,
 ): Promise<CaseClassificationResponseDTO> => {
-  // TODO: Remove any hardcoded values
   return (
     await apiClient.post<CaseClassificationResponseDTO>(CASE_CLASSIFICATION_ENDPOINT, {
       ...props,
-      region: "EU",
-      tier: "Tier 1",
+      region: "EU", // TODO: Remove hardcoded
+      tier: "Tier 1", // TODO: Remove hardcoded
     })
   ).data;
 };
@@ -50,15 +62,25 @@ const getCasesStats = async (id: string): Promise<CasesStatsDTO> => {
   return (await apiClient.get<CasesStatsDTO>(CASE_STATS_ENDPOINT(id))).data;
 };
 
+const getComments = async (id: string): Promise<Comment[]> => {
+  const response = (await apiClient.get<CommentsDTO>(CASE_COMMENTS_ENDPOINT(id))).data;
+  return response.comments.map(toComment);
+};
+
+const createComment = async (id: string, body: CreateCommentRequestDTO): Promise<Comment> => {
+  const response = (await apiClient.post<CommentDTO>(CASE_COMMENTS_ENDPOINT(id), body)).data;
+  return toComment(response);
+};
+
 /* Mappers */
-function toCase(dto: CasesDTO["cases"][number]): Case {
+function toCaseSummary(dto: CasesDTO["cases"][number]): CaseSummary {
   return {
     id: dto.id,
     internalId: dto.internalId,
     number: dto.number,
     createdOn: new Date(dto.createdOn.replace(" ", "T")),
     title: dto.title,
-    description: dto.description,
+    description: dto.description ?? "",
     assigned: dto.assignedEngineer?.label,
     statusId: dto.status?.id,
     severityId: dto.severity?.id,
@@ -66,12 +88,51 @@ function toCase(dto: CasesDTO["cases"][number]): Case {
   };
 }
 
+function toCase(dto: CaseDTO): Case {
+  return {
+    id: dto.id,
+    internalId: dto.internalId,
+    number: dto.number,
+    createdOn: new Date(dto.createdOn.replace(" ", "T")),
+    updatedOn: new Date(dto.updatedOn.replace(" ", "T")),
+    title: dto.title,
+    description: dto.description ?? "",
+    assigned: dto.assignedEngineer?.label,
+    statusId: dto.status?.id,
+    severityId: dto.severity?.id,
+    issueTypeId: dto.issueType?.id,
+    product: dto.product?.label,
+    reporter: dto.csManager?.label,
+    account: dto.account?.label,
+    parentCaseId: dto.parentCase?.id,
+    conversationId: dto.parentCase?.id,
+  };
+}
+
+function toComment(dto: CommentDTO): Comment {
+  return {
+    id: dto.id,
+    content: dto.content,
+    createdOn: new Date(dto.createdOn.replace(" ", "T")),
+    createdBy: dto.createdBy,
+    attachments: dto.inlineAttachments.map((attachment) => ({
+      id: attachment.id,
+      fileName: attachment.fileName,
+      downloadUrl: attachment.downloadUrl,
+      createdOn: new Date(attachment.createdOn.replace(" ", "T")),
+      createdBy: attachment.createdBy,
+    })),
+  };
+}
+
 /* Query Options */
 export const cases = {
+  get: (id: string) => queryOptions({ queryKey: ["case", id], queryFn: () => getCase(id) }),
+
   all: (id: string, body: GetCasesRequestDTO = {}) =>
     queryOptions({
       queryKey: ["cases", id, body],
-      queryFn: () => getCases(id, body),
+      queryFn: () => getAllCases(id, body),
     }),
 
   filters: (id: string) =>
@@ -94,5 +155,11 @@ export const cases = {
       queryFn: () => getCasesStats(id),
       staleTime: 0,
       gcTime: 0,
+    }),
+
+  comments: (id: string) => queryOptions({ queryKey: ["comments", id], queryFn: () => getComments(id) }),
+  createComment: (id: string) =>
+    mutationOptions({
+      mutationFn: (body: CreateCommentRequestDTO) => createComment(id, body),
     }),
 };

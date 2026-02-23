@@ -1,22 +1,7 @@
-// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
-//
-// WSO2 LLC. licenses this file to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
-import { Box, Card, Stack, Typography, useTheme, pxToRem, colors, Divider } from "@wso2/oxygen-ui";
+import { Box, Card, Stack, Typography, useTheme, pxToRem, colors, Divider, Skeleton } from "@wso2/oxygen-ui";
 import { ArrowUpRight, Circle, CircleCheck, CircleDot, Clock4, Paperclip } from "@wso2/oxygen-ui-icons-react";
 import { TimelineConnector, TimelineContent, TimelineItem, TimelineSeparator } from "@mui/lab";
+import type { Attachment } from "@root/src/types";
 
 interface TimelineEntryBaseProps {
   timestamp?: string;
@@ -28,7 +13,7 @@ export interface ActivityTimelineEntryProps extends TimelineEntryBaseProps {
   title?: string;
   description?: string;
   comment?: string;
-  attachment?: string;
+  attachments?: Attachment[];
 }
 
 export interface ProgressTimelineEntryProps extends TimelineEntryBaseProps {
@@ -116,10 +101,14 @@ export function TimelineEntry({ timestamp, last = false, ...props }: TimelineEnt
         )}
       </TimelineSeparator>
       <TimelineContent sx={{ p: 0, pb: last ? 0 : 3 }} ml={1.5}>
-        <Stack gap={1.5}>
-          <Stack direction={progress ? "column" : "row"} justifyContent="space-between" gap={1}>
+        <Stack gap={1.5} alignItems="flex-start" sx={{ width: "100%" }}>
+          <Stack direction={progress ? "column" : "row"} justifyContent="space-between" gap={5}>
             <Stack direction="row" gap={0.5}>
-              <Typography variant="body2" fontWeight={step || progress || !props.author ? "medium" : undefined}>
+              <Typography
+                variant="body2"
+                fontWeight={step || progress || !props.author ? "medium" : undefined}
+                sx={{ wordBreak: "break-word" }}
+              >
                 {activity && (
                   <Box component="span" fontWeight="bold" mr={0.5}>
                     {props.author}
@@ -135,7 +124,7 @@ export function TimelineEntry({ timestamp, last = false, ...props }: TimelineEnt
               </Typography>
               <Typography variant="body2" color="text.secondary"></Typography>
             </Stack>
-            <Stack direction="row" alignItems="center" gap={1}>
+            <Stack direction="row" alignItems="center" justifyContent="flex-end" gap={1}>
               {progress && timestamp && (
                 <Box color="text.secondary">
                   <Clock4 size={pxToRem(14)} />
@@ -146,18 +135,18 @@ export function TimelineEntry({ timestamp, last = false, ...props }: TimelineEnt
               </Typography>
             </Stack>
           </Stack>
-          {activity && props.comment && <Comment attachment={props.attachment}>{props.comment}</Comment>}
+          {activity && props.comment && <Comment attachments={props.attachments}>{props.comment}</Comment>}
         </Stack>
       </TimelineContent>
     </TimelineItem>
   );
 }
 
-function Comment({ children, attachment }: { children: string; attachment?: string }) {
+function Comment({ children, attachments = [] }: { children: string; attachments?: Attachment[] }) {
   return (
     <Card sx={{ p: 1.5, bgcolor: "action.hover" }}>
       <Typography variant="body2">{children}</Typography>
-      {attachment && (
+      {attachments.map((attachment) => (
         <>
           <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
             <Stack direction="row" alignItems="center" pt={1} gap={1}>
@@ -165,14 +154,38 @@ function Comment({ children, attachment }: { children: string; attachment?: stri
                 <Paperclip size={pxToRem(14)} />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {attachment}
+                {attachment.fileName}
               </Typography>
             </Stack>
             <ArrowUpRight size={pxToRem(17)} color={colors.grey[500]} />
           </Stack>
           <Divider />
         </>
-      )}
+      ))}
     </Card>
+  );
+}
+
+export function ActivityTimelineEntrySkeleton({ last = false }: { last?: boolean }) {
+  return (
+    <TimelineItem sx={{ minHeight: "auto" }}>
+      <TimelineSeparator>
+        <Box color="text.disabled">
+          <Skeleton variant="circular" width={pxToRem(18)} height={pxToRem(18)} />
+        </Box>
+      </TimelineSeparator>
+
+      <TimelineContent sx={{ p: 0, pb: last ? 0 : 3 }} ml={1.5}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
+          <Typography variant="body2" sx={{ width: "60%" }}>
+            <Skeleton variant="text" width="100%" height={25} />
+          </Typography>
+
+          <Typography variant="subtitle2" sx={{ minWidth: pxToRem(60) }}>
+            <Skeleton variant="text" width="100%" height={20} />
+          </Typography>
+        </Stack>
+      </TimelineContent>
+    </TimelineItem>
   );
 }

@@ -3,10 +3,37 @@ export interface Case {
   internalId: string;
   number: string;
   createdOn: Date;
+  updatedOn: Date;
   title: string;
-  description?: string;
+  description: string;
   assigned?: string;
   statusId?: string;
   severityId?: string;
   issueTypeId?: string;
+  product?: string;
+  reporter?: string;
+  account?: string;
+  parentCaseId?: string;
+  conversationId?: string;
+}
+
+export type CaseSummary = Omit<
+  Case,
+  "updatedOn" | "productId" | "reporter" | "account" | "parentCaseId" | "conversationId"
+>;
+
+export interface Comment {
+  id: string;
+  content: string;
+  createdOn: Date;
+  createdBy: string;
+  attachments: Attachment[];
+}
+
+export interface Attachment {
+  id: string;
+  fileName: string;
+  downloadUrl: string;
+  createdOn: Date;
+  createdBy: string;
 }

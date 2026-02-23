@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import type { Priority, ServiceCategory, Status } from "./ItemCard";
 import { PriorityChip, StatusChip } from "./Chip";
 import { TYPE_CONFIG } from "./config";
-import type { Case } from "@src/types";
+import type { CaseSummary } from "@src/types";
 
 dayjs.extend(relativeTime);
 
@@ -14,7 +14,7 @@ interface BaseItemCardExtendedProps {
   to: string;
 }
 
-interface CaseItemCardExtendedProps extends BaseItemCardExtendedProps, Case {
+interface CaseItemCardExtendedProps extends BaseItemCardExtendedProps, CaseSummary {
   type: "case";
 }
 

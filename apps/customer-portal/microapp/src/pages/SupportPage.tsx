@@ -116,7 +116,7 @@ function ItemsListContent() {
   return (
     <>
       {items["cases"].map((item) => (
-        <ItemCard key={item.id} type="case" to="/" {...item} />
+        <ItemCard key={item.id} type="case" to={`/cases/${item.id}`} {...item} />
       ))}
     </>
   );

@@ -23,7 +23,7 @@ import { PriorityChip, StatusChip } from "@components/features/support";
 import { Link } from "react-router-dom";
 
 import { TYPE_CONFIG } from "./config";
-import type { Case } from "@src/types";
+import type { CaseSummary } from "@root/src/types";
 
 dayjs.extend(relativeTime);
 
@@ -50,7 +50,7 @@ interface BaseItemCardProps {
   to: string;
 }
 
-interface CaseItemCardProps extends BaseItemCardProps, Case {
+interface CaseItemCardProps extends BaseItemCardProps, CaseSummary {
   type: "case";
 }
 

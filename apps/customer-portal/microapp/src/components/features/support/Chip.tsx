@@ -7,12 +7,12 @@ import { cases } from "@src/services/cases";
 
 interface PriorityChipProps extends Omit<ChipProps, "label"> {
   prefix?: string;
-  id: string;
+  id?: string;
 }
 
 export function PriorityChip({ prefix, id, ...props }: PriorityChipProps) {
   const { projectId } = useProject();
-  const color = PRIORITY_CHIP_COLOR_CONFIG[id];
+  const color = id ? PRIORITY_CHIP_COLOR_CONFIG[id] : "default";
   const label =
     useSuspenseQuery(cases.filters(projectId!)).data.severities.find((severity) => severity.id === id)?.label ?? "N/A";
 
@@ -20,12 +20,12 @@ export function PriorityChip({ prefix, id, ...props }: PriorityChipProps) {
 }
 
 interface StatusChipProps extends Omit<ChipProps, "label"> {
-  id: string;
+  id?: string;
 }
 
 export function StatusChip({ id, ...props }: StatusChipProps) {
   const { projectId } = useProject();
-  const color = STATUS_CHIP_COLOR_CONFIG[id];
+  const color = id ? STATUS_CHIP_COLOR_CONFIG[id] : "default";
   const label =
     useSuspenseQuery(cases.filters(projectId!)).data.caseStates.find((status) => status.id === id)?.label ?? "N/A";
 

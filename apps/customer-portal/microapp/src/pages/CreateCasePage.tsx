@@ -15,17 +15,8 @@
 // under the License.
 
 import { useLocation, useNavigate } from "react-router-dom";
-import { Circle, Folder } from "@wso2/oxygen-ui-icons-react";
-import {
-  Button,
-  Stack,
-  Typography,
-  InputAdornment,
-  pxToRem,
-  Backdrop,
-  CircularProgress,
-  colors,
-} from "@wso2/oxygen-ui";
+import { Folder } from "@wso2/oxygen-ui-icons-react";
+import { Button, Stack, Typography, InputAdornment, pxToRem, Backdrop, CircularProgress } from "@wso2/oxygen-ui";
 import { SelectField, TextField, ConversationSummary } from "@components/features/create";
 import { useFormik } from "formik";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";

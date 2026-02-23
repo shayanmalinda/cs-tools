@@ -1,10 +1,10 @@
 import type { Pagination } from "@src/types";
 
 export interface CasesDTO extends Pagination {
-  cases: CaseDTO[];
+  cases: CaseSummaryDTO[];
 }
 
-interface CaseDTO {
+interface CaseSummaryDTO {
   id: string;
   internalId: string;
   number: string;
@@ -13,11 +13,42 @@ interface CaseDTO {
   description?: string;
   assignedEngineer?: EntityReference;
   project: EntityReference;
+  type?: EntityReference;
   deployedProduct?: EntityReference;
+  parentCase?: EntityReference;
+  chat?: EntityReference;
   issueType?: EntityReference;
   deployment?: EntityReference;
   severity?: EntityReference;
   status?: EntityReference;
+}
+
+export interface CaseDTO {
+  updatedOn: string;
+  slaResponseTime: string;
+  product: (EntityReference & { version: string | null }) | null;
+  account: (EntityReference & { type: string | null; count: number | null }) | null;
+  csManager: (EntityReference & { email: string | null }) | null;
+  closedOn: string | null;
+  closedBy: (EntityReference & { count: number | null }) | null;
+  closeNotes: string | null;
+  hasAutoClosed: boolean | null;
+  id: string;
+  internalId: string;
+  number: string;
+  createdOn: string;
+  title: string;
+  description: string;
+  assignedEngineer: EntityReference | null;
+  project: EntityReference | null;
+  type: EntityReference | null;
+  deployedProduct: EntityReference | null;
+  parentCase: EntityReference | null;
+  conversation: EntityReference | null;
+  issueType: EntityReference | null;
+  deployment: EntityReference | null;
+  severity: EntityReference | null;
+  status: EntityReference | null;
 }
 
 export interface CasesFiltersDTO {
@@ -116,4 +147,31 @@ export interface CasesStatsDTO {
   outstandingSeverityCount: { id: string; label: string; count: number }[];
   caseTypeCount: { id: string; label: string; count: number }[];
   casesTrend: { period: string; severities: { id: string; label: string; count: number }[] }[];
+}
+
+export interface CommentsDTO extends Pagination {
+  comments: CommentDTO[];
+}
+
+export interface CommentDTO {
+  id: string;
+  content: string;
+  type: string;
+  createdOn: string;
+  createdBy: string;
+  isEscalated: string;
+  hasInlineAttachments: boolean;
+  inlineAttachments: {
+    id: string;
+    fileName: string;
+    contentType: string;
+    downloadUrl: string;
+    createdOn: string;
+    createdBy: string;
+  }[];
+}
+
+export interface CreateCommentRequestDTO {
+  content: string;
+  type: "work_note" | "comments";
 }
