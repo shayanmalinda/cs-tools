@@ -38,10 +38,8 @@ import { ArrowLeft } from "@wso2/oxygen-ui-icons-react";
 import { useGetProjectCasesStats } from "@api/useGetProjectCasesStats";
 import useGetCasesFilters from "@api/useGetCasesFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
-import {
-  getIncidentAndQueryCaseTypeIds,
-  getIncidentAndQueryIds,
-} from "@utils/support";
+import { getIncidentAndQueryIds } from "@utils/support";
+import { CaseType } from "@constants/supportConstants";
 import type { AllCasesFilterValues } from "@models/responses";
 import AllCasesStatCards from "@components/support/all-cases/AllCasesStatCards";
 import AllCasesSearchBar from "@components/support/all-cases/AllCasesSearchBar";
@@ -71,11 +69,6 @@ export default function AllCasesPage(): JSX.Element {
     [filterMetadata?.caseTypes],
   );
 
-  const defaultCaseTypeIds = useMemo(
-    () => getIncidentAndQueryCaseTypeIds(filterMetadata?.caseTypes),
-    [filterMetadata?.caseTypes],
-  );
-
   const {
     data: stats,
     isLoading: isStatsQueryLoading,
@@ -89,11 +82,9 @@ export default function AllCasesPage(): JSX.Element {
   const caseSearchRequest = useMemo(
     () => ({
       filters: {
-        caseTypeIds: filters.caseTypeId
+        caseTypes: filters.caseTypeId
           ? [filters.caseTypeId]
-          : defaultCaseTypeIds.length > 0
-            ? defaultCaseTypeIds
-            : undefined,
+          : [CaseType.DEFAULT_CASE],
         statusIds: filters.statusId ? [Number(filters.statusId)] : undefined,
         severityId: filters.severityId ? Number(filters.severityId) : undefined,
         issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
@@ -105,7 +96,7 @@ export default function AllCasesPage(): JSX.Element {
         order: sortOrder,
       },
     }),
-    [filters, searchTerm, sortOrder, defaultCaseTypeIds],
+    [filters, searchTerm, sortOrder],
   );
 
   // Fetch all cases using infinite query (runs in parallel with stats when projectId and auth are ready)
