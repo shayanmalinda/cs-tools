@@ -1892,8 +1892,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 });
         if searchResponse is error {
             if getStatusCode(searchResponse) == http:STATUS_FORBIDDEN {
-                log:printWarn(string `User: ${userInfo.userId} is forbidden to search catalogs for deployed product with ID: ${
-                        id}!`);
+                log:printWarn(string `User: ${
+                    userInfo.userId} is forbidden to search catalogs for deployed product with ID: ${id}!`);
                 return <http:Forbidden>{
                     body: {
                         message: "You're not authorized to search catalogs for the deployed product. " +
@@ -1920,7 +1920,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         return <http:Ok>{body: mapCatalogSearchResponse(searchResponse)};
     }
 
-    # Get catalog item details by catalog ID and item ID.
+    # Get catalog item variables by catalog ID and item ID.
     # 
     # + catalogId - ID of the catalog
     # + itemId - ID of the catalog item
