@@ -419,8 +419,8 @@ export default function ChatMessageBubble({
           {!isUser &&
             (message.showCreateCaseAction || message.isError) &&
             onCreateCase &&
-            ((message.slotState?.slotOptions?.filter(isRenderableSlotOption)
-              .length ?? 0) === 0) &&
+            (message.slotState?.slotOptions?.filter(isRenderableSlotOption)
+              .length ?? 0) === 0 &&
             (isCreateCaseLoading ? (
               <Box
                 sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1 }}

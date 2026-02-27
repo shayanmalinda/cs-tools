@@ -572,13 +572,14 @@ export default function CreateCasePage(): JSX.Element {
       severityKey = parsedSeverity;
     }
 
-    let encodedAttachments: string[] = [];
+    const encodedAttachments: string[] = [];
     if (attachments.length > 0) {
       setIsPreparingAttachments(true);
       try {
-        encodedAttachments = await Promise.all(
-          attachments.map((item) => fileToBase64Content(item.file)),
-        );
+        for (const item of attachments) {
+          const encodedAttachment = await fileToBase64Content(item.file);
+          encodedAttachments.push(encodedAttachment);
+        }
       } catch (error) {
         const message =
           error instanceof Error && error.message

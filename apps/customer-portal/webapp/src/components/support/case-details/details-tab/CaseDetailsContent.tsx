@@ -67,9 +67,8 @@ export default function CaseDetailsContent({
   const [activeTab, setActiveTab] = useState(0);
   const [focusMode, setFocusMode] = useState(false);
 
-  const isSecurityReportAnalysisUrl = /(^|\/)security-report-analysis(\/|$)/.test(
-    location.pathname,
-  );
+  const isSecurityReportAnalysisUrl =
+    /(^|\/)security-report-analysis(\/|$)/.test(location.pathname);
 
   const statusLabel = data?.status?.label;
   const severityLabel = data?.severity?.label;
