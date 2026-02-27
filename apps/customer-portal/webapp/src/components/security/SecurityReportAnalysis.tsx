@@ -56,7 +56,8 @@ import { useNavigate, useParams } from "react-router";
 import { CaseType } from "@constants/supportConstants";
 import useGetProjectCases from "@api/useGetProjectCases";
 import useGetCasesFilters from "@api/useGetCasesFilters";
-import type { CaseListItem } from "@models/responses";
+import useGetUserDetails from "@api/useGetUserDetails";
+import type { AllCasesFilterValues, CaseListItem } from "@models/responses";
 import SecurityReportAnalysisSkeleton from "@components/security/SecurityReportAnalysisSkeleton";
 import TabBar from "@components/common/tab-bar/TabBar";
 import {
@@ -69,14 +70,6 @@ import {
   getAssignedEngineerLabel,
   stripHtml,
 } from "@utils/support";
-
-interface AllCasesFilterValues {
-  caseTypeId?: string;
-  statusId?: string;
-  severityId?: string;
-  issueTypes?: string;
-  deploymentId?: string;
-}
 
 /**
  * SecurityReportAnalysis displays security vulnerability reports uploaded for analysis.
@@ -94,6 +87,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const { data: currentUser } = useGetUserDetails();
 
   // Fetch filter metadata
   const { data: filterMetadata } = useGetCasesFilters(projectId || "");
@@ -139,15 +133,68 @@ const SecurityReportAnalysis = (): JSX.Element => {
     [data],
   );
 
-  // TODO: Filter by current user for "My Reports" view
-  // For now, showing all cases in both views
-  const totalItems = allCases.length;
+  const ownerScopedCases = useMemo(() => {
+    if (viewMode !== "my") {
+      return allCases;
+    }
+
+    const userId = currentUser?.id?.trim();
+    const userEmail = currentUser?.email?.trim().toLowerCase();
+
+    if (!userId && !userEmail) {
+      return [];
+    }
+
+    return allCases.filter((caseItem) => {
+      const caseWithOwner = caseItem as CaseListItem & {
+        ownerId?: string;
+        createdBy?: string;
+      };
+      const assignedEngineer = caseItem.assignedEngineer;
+      const assignedEngineerId =
+        assignedEngineer && typeof assignedEngineer !== "string"
+          ? assignedEngineer.id
+          : undefined;
+      const assignedEngineerLabel =
+        assignedEngineer && typeof assignedEngineer !== "string"
+          ? (assignedEngineer.label ?? assignedEngineer.name ?? "")
+          : (assignedEngineer ?? "");
+
+      return (
+        (userId != null && caseWithOwner.ownerId === userId) ||
+        (userId != null && assignedEngineerId === userId) ||
+        (userEmail != null &&
+          caseWithOwner.createdBy?.toLowerCase() === userEmail) ||
+        (userEmail != null && assignedEngineerLabel.toLowerCase() === userEmail)
+      );
+    });
+  }, [allCases, currentUser?.email, currentUser?.id, viewMode]);
+
+  const displayedCases = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return ownerScopedCases;
+    }
+
+    return ownerScopedCases.filter((caseItem) => {
+      const number = caseItem.number?.toLowerCase() ?? "";
+      const title = caseItem.title?.toLowerCase() ?? "";
+      const description = stripHtml(caseItem.description)?.toLowerCase() ?? "";
+      return (
+        number.includes(query) ||
+        title.includes(query) ||
+        description.includes(query)
+      );
+    });
+  }, [ownerScopedCases, searchTerm]);
+
+  const totalItems = displayedCases.length;
 
   // Pagination logic
   const paginatedCases = useMemo(() => {
     const startIndex = (page - 1) * pageSize;
-    return allCases.slice(startIndex, startIndex + pageSize);
-  }, [allCases, page]);
+    return displayedCases.slice(startIndex, startIndex + pageSize);
+  }, [displayedCases, page]);
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -169,6 +216,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
+    setPage(1);
   };
 
   const handleFilterChange = (field: string, value: string) => {
@@ -176,10 +224,12 @@ const SecurityReportAnalysis = (): JSX.Element => {
       ...prev,
       [field]: value || undefined,
     }));
+    setPage(1);
   };
 
   const handleClearFilters = () => {
     setFilters({});
+    setPage(1);
   };
 
   const handleSortChange = (value: "desc" | "asc") => {
@@ -249,7 +299,10 @@ const SecurityReportAnalysis = (): JSX.Element => {
             <TabBar
               tabs={reportViewTabs}
               activeTab={viewMode}
-              onTabChange={(tabId) => setViewMode(tabId as "my" | "all")}
+              onTabChange={(tabId) => {
+                setViewMode(tabId as "my" | "all");
+                setPage(1);
+              }}
               sx={{ mb: 0, height: 32 }}
             />
 

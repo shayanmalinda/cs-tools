@@ -37,12 +37,18 @@ export { MAX_ATTACHMENT_SIZE_BYTES } from "@constants/supportConstants";
 
 function getFileExtension(fileName: string): string {
   const dotIndex = fileName.lastIndexOf(".");
-  return dotIndex > 0 ? fileName.slice(dotIndex) : "";
+  if (dotIndex < 0 || dotIndex === fileName.length - 1) {
+    return "";
+  }
+  return fileName.slice(dotIndex);
 }
 
 function getBaseFileName(fileName: string): string {
   const dotIndex = fileName.lastIndexOf(".");
-  return dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+  if (dotIndex < 0 || dotIndex === fileName.length - 1) {
+    return fileName;
+  }
+  return fileName.slice(0, dotIndex);
 }
 
 function ensureExtension(fileName: string, extension: string): string {

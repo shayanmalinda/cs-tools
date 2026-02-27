@@ -36,11 +36,19 @@ export default function SecurityReportAnalysisHeader({
   const findingsResolved = data?.findingsResolved ?? null;
   const findingsTotal = data?.findingsTotal ?? null;
 
+  const hasProgressData =
+    typeof findingsTotal === "number" && findingsResolved !== null;
+
   // Calculate progress percentage
-  const progressPercentage =
-    findingsTotal && findingsResolved !== null
-      ? Math.round((findingsResolved / findingsTotal) * 100)
-      : 0;
+  const progressPercentage = hasProgressData
+    ? Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round((findingsResolved / (findingsTotal || 1)) * 100),
+        ),
+      )
+    : 0;
 
   return (
     <Paper
@@ -71,7 +79,7 @@ export default function SecurityReportAnalysisHeader({
           >
             Findings Resolution Progress
           </Typography>
-          {findingsResolved !== null && findingsTotal ? (
+          {hasProgressData ? (
             <Typography
               sx={{
                 fontSize: "0.875rem",
@@ -93,7 +101,7 @@ export default function SecurityReportAnalysisHeader({
             overflow: "hidden",
           }}
         >
-          {findingsResolved !== null && findingsTotal ? (
+          {hasProgressData ? (
             <LinearProgress
               variant="determinate"
               value={progressPercentage}

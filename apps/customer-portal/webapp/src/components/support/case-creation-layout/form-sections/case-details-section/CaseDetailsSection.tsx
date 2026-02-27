@@ -303,10 +303,15 @@ export function CaseDetailsSection({
             </Box>
 
             <Paper
-              role="button"
+              role={effectiveEditing ? "button" : undefined}
               tabIndex={0}
-              onClick={() => onAttachmentClick?.()}
+              aria-disabled={!effectiveEditing}
+              onClick={() => {
+                if (!effectiveEditing) return;
+                onAttachmentClick?.();
+              }}
               onKeyDown={(e) => {
+                if (!effectiveEditing) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   onAttachmentClick?.();
@@ -314,17 +319,23 @@ export function CaseDetailsSection({
               }}
               sx={{
                 border: 1,
-                borderColor: "divider",
+                borderColor: effectiveEditing ? "divider" : "action.disabled",
                 p: 2,
-                bgcolor: "action.hover",
-                cursor: "pointer",
+                bgcolor: effectiveEditing
+                  ? "action.hover"
+                  : "action.disabledBackground",
+                cursor: effectiveEditing ? "pointer" : "not-allowed",
                 transition: "border-color 0.2s ease",
                 "&:hover": {
-                  borderColor: "warning.main",
+                  borderColor: effectiveEditing
+                    ? "warning.main"
+                    : "action.disabled",
                 },
                 "&:focus-visible": {
                   outline: "2px solid",
-                  outlineColor: "warning.main",
+                  outlineColor: effectiveEditing
+                    ? "warning.main"
+                    : "action.disabled",
                 },
               }}
             >
@@ -347,7 +358,9 @@ export function CaseDetailsSection({
                 <Box sx={{ minWidth: 0, flex: 1 }}>
                   <Typography
                     sx={{
-                      color: "warning.main",
+                      color: effectiveEditing
+                        ? "warning.main"
+                        : "text.disabled",
                       fontSize: "0.875rem",
                       fontWeight: 500,
                     }}

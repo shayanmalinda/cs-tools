@@ -378,10 +378,21 @@ export default function NoveraChatPage(): JSX.Element {
       inputValueRef.current = formattedMessage;
       setInputValue(formattedMessage);
 
-      // Trigger send after a brief delay to ensure state updates
-      setTimeout(() => {
-        handleSendMessage();
-      }, 100);
+      setMessages((prev) =>
+        prev.map((currentMessage) =>
+          currentMessage.id === messageId && currentMessage.slotState
+            ? {
+                ...currentMessage,
+                slotState: {
+                  ...currentMessage.slotState,
+                  filledSlots: {},
+                },
+              }
+            : currentMessage,
+        ),
+      );
+
+      handleSendMessage();
     },
     [messages, handleSendMessage],
   );

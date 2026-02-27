@@ -343,9 +343,9 @@ export interface CaseDetails {
   closedBy: CaseDetailsClosedBy | null;
   closeNotes: string | null;
   hasAutoClosed: boolean | null;
-  engineerEmail?: string | null;
-  findingsResolved?: number | null;
-  findingsTotal?: number | null;
+  engineerEmail: string | null;
+  findingsResolved: number | null;
+  findingsTotal: number | null;
 }
 
 // Inline attachment for comment images (API shape).
@@ -746,13 +746,24 @@ export interface CaseClassificationResponse {
   };
 }
 
-/** Slot option definition for user input collection. */
-export interface SlotOption {
+/** Slot option definition for select-type user input collection. */
+export interface SelectSlotOption {
   slot: string;
   label: string;
-  options?: string[];
-  type: "select" | "text";
+  options: string[];
+  type: "select";
 }
+
+/** Slot option definition for free-text user input collection. */
+export interface TextSlotOption {
+  slot: string;
+  label: string;
+  type: "text";
+  freeText?: true;
+}
+
+/** Slot option union for user input collection. */
+export type SlotOption = SelectSlotOption | TextSlotOption;
 
 /** Slot state containing filled/missing slots and available options. */
 export interface SlotState {

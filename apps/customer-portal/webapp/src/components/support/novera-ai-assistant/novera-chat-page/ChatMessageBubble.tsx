@@ -147,6 +147,16 @@ export default function ChatMessageBubble({
 }: ChatMessageBubbleProps): JSX.Element {
   const isUser = message.sender === "user";
 
+  const isRenderableSlotOption = (slotOption: {
+    options?: string[];
+    type?: string;
+    freeText?: boolean;
+  }): boolean =>
+    (slotOption.options?.length ?? 0) > 0 ||
+    slotOption.type === "text" ||
+    slotOption.type === "free-text" ||
+    slotOption.freeText === true;
+
   const displayText = message.isError ? "Something went wrong" : message.text;
 
   // Safely format timestamp with fallback for invalid dates
@@ -236,16 +246,12 @@ export default function ChatMessageBubble({
           {!isUser &&
             message.slotState?.slotOptions &&
             message.slotState.slotOptions.length > 0 &&
-            message.slotState.slotOptions.some(
-              (slotOption) =>
-                slotOption.options && slotOption.options.length > 0,
+            message.slotState.slotOptions.some((slotOption) =>
+              isRenderableSlotOption(slotOption),
             ) && (
               <Box sx={{ mt: 2 }}>
                 {message.slotState.slotOptions
-                  .filter(
-                    (slotOption) =>
-                      slotOption.options && slotOption.options.length > 0,
-                  )
+                  .filter((slotOption) => isRenderableSlotOption(slotOption))
                   .map((slotOption) => {
                     const currentValue =
                       message.slotState?.filledSlots?.[slotOption.slot] || "";
@@ -269,8 +275,23 @@ export default function ChatMessageBubble({
                                 key={option}
                                 component="li"
                                 variant="body2"
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => {
                                   if (onSlotSelection) {
+                                    onSlotSelection(
+                                      message.id,
+                                      slotOption.slot,
+                                      option,
+                                    );
+                                  }
+                                }}
+                                onKeyDown={(event) => {
+                                  if (
+                                    onSlotSelection &&
+                                    (event.key === "Enter" || event.key === " ")
+                                  ) {
+                                    event.preventDefault();
                                     onSlotSelection(
                                       message.id,
                                       slotOption.slot,
@@ -320,9 +341,8 @@ export default function ChatMessageBubble({
                 {(() => {
                   // Only check slots that are actually displayed (not empty)
                   const displayedSlotOptions =
-                    message.slotState.slotOptions.filter(
-                      (slotOption) =>
-                        slotOption.options && slotOption.options.length > 0,
+                    message.slotState.slotOptions.filter((slotOption) =>
+                      isRenderableSlotOption(slotOption),
                     );
 
                   const allSlotsFilled = displayedSlotOptions.every(

@@ -55,9 +55,9 @@ export default function ChatInput({
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {filledSlots.length > 0 && (
             <Box sx={{ mb: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {filledSlots.map((slot, index) => (
+              {filledSlots.map((slot) => (
                 <Chip
-                  key={index}
+                  key={`${slot.label}:${slot.value}`}
                   label={`${slot.label}: ${slot.value}`}
                   size="small"
                   color="primary"
@@ -85,6 +85,7 @@ export default function ChatInput({
               onClick={() => setShowToolbar(!showToolbar)}
               color="default"
               sx={{ flexShrink: 0 }}
+              aria-label={showToolbar ? "Hide formatting" : "Show formatting"}
             >
               <Bold size={18} />
             </IconButton>
@@ -94,6 +95,7 @@ export default function ChatInput({
             onClick={onSend}
             color="warning"
             sx={{ flexShrink: 0 }}
+            aria-label="Send message"
           >
             <Send size={18} />
           </IconButton>

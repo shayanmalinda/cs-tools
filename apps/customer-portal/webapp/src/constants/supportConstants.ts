@@ -557,3 +557,12 @@ export type CommentType = (typeof CommentType)[keyof typeof CommentType];
 
 // Line count threshold for showing expand button in support activity section.
 export const COLLAPSE_LINE_THRESHOLD = 4;
+
+// Case type object interface.
+export interface CaseTypeObject {
+  id: string;
+  label: string;
+}
+
+// Case type input.
+export type CaseTypeInput = CaseTypeObject | string | null | undefined;

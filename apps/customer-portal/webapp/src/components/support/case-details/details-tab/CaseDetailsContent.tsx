@@ -20,13 +20,13 @@ import { useLocation } from "react-router";
 import type { CaseDetails } from "@models/responses";
 import useGetCaseAttachments from "@api/useGetCaseAttachments";
 import { useGetCallRequests } from "@api/useGetCallRequests";
-import { CaseType } from "@constants/supportConstants";
 import {
   getStatusColor,
   resolveColorFromTheme,
   getStatusIconElement,
   getInitials,
   mapSeverityToDisplay,
+  isSecurityReportAnalysisType,
 } from "@utils/support";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import CaseDetailsBackButton from "@case-details/CaseDetailsBackButton";
@@ -109,9 +109,7 @@ export default function CaseDetailsContent({
   const assignedEngineer = data?.assignedEngineer;
   const engineerInitials = getInitials(assignedEngineer);
 
-  const isSecurityReportAnalysis =
-    data?.type?.label?.toLowerCase() ===
-    CaseType.SECURITY_REPORT_ANALYSIS.toLowerCase().replace(/_/g, " ");
+  const isSecurityReportAnalysis = isSecurityReportAnalysisType(data?.type);
 
   if (isLoading) {
     return (

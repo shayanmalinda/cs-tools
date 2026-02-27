@@ -2,7 +2,8 @@
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License. You may obtain a copy of the License at
+// in compliance with the License.
+// You may obtain a copy of the License at
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -13,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useState, useCallback, type JSX } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Box } from "@wso2/oxygen-ui";
 import { Siren, Package } from "@wso2/oxygen-ui-icons-react";
@@ -21,16 +22,24 @@ import { Siren, Package } from "@wso2/oxygen-ui-icons-react";
 import TabBar from "@components/common/tab-bar/TabBar";
 import ProductVulnerabilitiesTable from "@components/security/ProductVulnerabilitiesTable";
 import SecurityReportAnalysis from "@/components/security/SecurityReportAnalysis";
+import { SecurityTab } from "@constants/securityConstants";
 
 const SecurityPage = (): JSX.Element => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState(() => {
-    const tabParam = searchParams.get("tab");
-    return tabParam === "vulnerabilities" ? "vulnerabilities" : "components";
-  });
+  const activeTab =
+    (searchParams.get("tab") as SecurityTab) || SecurityTab.COMPONENTS;
+
+  const handleTabChange = useCallback(
+    (tabId: string) => {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("tab", tabId);
+      setSearchParams(nextParams, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   const handleVulnerabilityClick = useCallback(
     (vulnerability: { id: string }) => {
@@ -39,33 +48,58 @@ const SecurityPage = (): JSX.Element => {
     [navigate, projectId],
   );
 
-  const tabs = [
-    {
-      id: "components",
-      label: "Component Analysis",
-      icon: Package,
-    },
-    {
-      id: "vulnerabilities",
-      label: "Security Report Analysis",
-      icon: Siren,
-    },
-  ];
+  // 3. Define tabs using Enum values
+  const tabs = useMemo(
+    () => [
+      {
+        id: SecurityTab.COMPONENTS,
+        label: "Component Analysis",
+        icon: Package,
+      },
+      {
+        id: SecurityTab.VULNERABILITIES,
+        label: "Security Report Analysis",
+        icon: Siren,
+      },
+    ],
+    [],
+  );
+
+  // 4. Content Switcher function
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case SecurityTab.COMPONENTS:
+        return (
+          <ProductVulnerabilitiesTable
+            onVulnerabilityClick={handleVulnerabilityClick}
+          />
+        );
+      case SecurityTab.VULNERABILITIES:
+        return <SecurityReportAnalysis />;
+      default:
+        // Optional: Default to first tab if URL is messy
+        return (
+          <ProductVulnerabilitiesTable
+            onVulnerabilityClick={handleVulnerabilityClick}
+          />
+        );
+    }
+  };
 
   return (
     <Box>
       {/* <SecurityStats /> */}
 
       <Box>
-        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+        <TabBar
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
 
         <Box>
-          {activeTab === "components" && (
-            <ProductVulnerabilitiesTable
-              onVulnerabilityClick={handleVulnerabilityClick}
-            />
-          )}
-          {activeTab === "vulnerabilities" && <SecurityReportAnalysis />}
+          {/* Using the switch case result here */}
+          {renderTabContent()}
         </Box>
       </Box>
     </Box>

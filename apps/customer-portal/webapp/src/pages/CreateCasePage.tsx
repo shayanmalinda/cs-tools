@@ -60,11 +60,13 @@ import {
   resolveProductId,
   shouldAddClassificationProductToOptions,
 } from "@utils/caseCreation";
+import { isCreatedCaseSecurityReport } from "@utils/support";
 import {
   CaseSeverity,
   CaseSeverityLevel,
   CaseType,
 } from "@constants/supportConstants";
+import { SecurityTab } from "@constants/securityConstants";
 import { escapeHtml, htmlToPlainText } from "@utils/richTextEditor";
 import UploadAttachmentModal from "@components/support/case-details/attachments-tab/UploadAttachmentModal";
 
@@ -118,12 +120,12 @@ export default function CreateCasePage(): JSX.Element {
     skipChat?: boolean;
   } | null;
   const relatedCase = locationStateRaw?.relatedCase;
-  const skipChat = !!locationStateRaw?.skipChat;
 
   // Check if creating a security report analysis case
   const searchParams = new URLSearchParams(location.search);
   const caseType = searchParams.get("type");
-  const isSecurityReport = caseType === "security_report_analysis";
+  const isSecurityReport = caseType === CaseType.SECURITY_REPORT_ANALYSIS;
+  const skipChat = !!locationStateRaw?.skipChat || isSecurityReport;
   const { showLoader, hideLoader } = useLoader();
   const { data: projectDetails, isLoading: isProjectLoading } =
     useGetProjectDetails(projectId || "");
@@ -609,9 +611,25 @@ export default function CreateCasePage(): JSX.Element {
     postCase(payload, {
       onSuccess: async (data) => {
         const caseId = data.id;
+        const createdCase = data as {
+          isSecurityReport?: boolean;
+          reportType?: string;
+          type?: string | { id?: string | null; label?: string | null } | null;
+        };
+        const isCreatedSecurityReport = isCreatedCaseSecurityReport(
+          createdCase,
+          isSecurityReport,
+        );
+
         showSuccess("Case created successfully");
         sessionStorage.removeItem(STORAGE_KEY);
-        navigate(`/${projectId}/support/cases/${caseId}`);
+        if (isCreatedSecurityReport) {
+          navigate(
+            `/${projectId}/security-center/security-report-analysis/${caseId}?tab=${SecurityTab.VULNERABILITIES}`,
+          );
+        } else {
+          navigate(`/${projectId}/support/cases/${caseId}`);
+        }
       },
       onError: (error) => {
         const msg =

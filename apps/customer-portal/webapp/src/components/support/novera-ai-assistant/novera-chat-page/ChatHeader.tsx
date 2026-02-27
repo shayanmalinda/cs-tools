@@ -41,7 +41,12 @@ export default function ChatHeader({ onBack }: ChatHeaderProps): JSX.Element {
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Button onClick={onBack} sx={{ minWidth: "auto", p: 1 }} variant="text">
+        <Button
+          onClick={onBack}
+          sx={{ minWidth: "auto", p: 1 }}
+          variant="text"
+          aria-label="Back"
+        >
           <ArrowLeft size={18} />
         </Button>
 

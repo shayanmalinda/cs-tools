@@ -27,11 +27,9 @@ import {
 } from "@wso2/oxygen-ui-icons-react";
 import { type ReactElement, type JSX } from "react";
 import type { CaseDetails } from "@models/responses";
-import { CaseType } from "@constants/supportConstants";
 import AssignedEngineerDisplay from "@case-details-details/AssignedEngineerDisplay";
 import CaseDetailsCard from "@case-details-details/CaseDetailsCard";
 import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
-import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import {
   formatValue,
   formatSlaResponseTime,
@@ -43,6 +41,7 @@ import {
   getStatusIconElement,
   mapSeverityToDisplay,
   resolveColorFromTheme,
+  isSecurityReportAnalysisType,
 } from "@utils/support";
 
 export interface CaseDetailsDetailsPanelProps {
@@ -63,9 +62,7 @@ export default function CaseDetailsDetailsPanel({
 }: CaseDetailsDetailsPanelProps): JSX.Element {
   const theme = useTheme();
 
-  const isSecurityReportAnalysis =
-    data?.type?.label?.toLowerCase() ===
-    CaseType.SECURITY_REPORT_ANALYSIS.toLowerCase().replace(/_/g, " ");
+  const isSecurityReportAnalysis = isSecurityReportAnalysisType(data?.type);
 
   if (isError) {
     return (
@@ -216,7 +213,7 @@ export default function CaseDetailsDetailsPanel({
                     assignedEngineer={assignedEngineer}
                   />
                 ) : (
-                  <ErrorIndicator entityName="assigned engineer" />
+                  <Typography {...valueSx}>Not available</Typography>
                 )}
               </Box>
               <Box>
@@ -231,7 +228,7 @@ export default function CaseDetailsDetailsPanel({
                     <Typography {...valueSx}>{data.engineerEmail}</Typography>
                   </Stack>
                 ) : (
-                  <ErrorIndicator entityName="engineer email" />
+                  <Typography {...valueSx}>Not available</Typography>
                 )}
               </Box>
             </>
@@ -258,7 +255,7 @@ export default function CaseDetailsDetailsPanel({
               {data?.type?.label ? (
                 <Typography {...valueSx}>{data.type.label}</Typography>
               ) : (
-                <ErrorIndicator entityName="report type" />
+                <Typography {...valueSx}>Not available</Typography>
               )}
             </Box>
           )}
