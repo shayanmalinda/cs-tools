@@ -199,13 +199,13 @@ public isolated function validateCaseCreatePayload(CaseCreatePayload payload) re
         }
     } else if caseType == SECURITY_REPORT_ANALYSIS {
         if title is () {
-            return "Title is required for security analysis case type.";
+            return "Title is required for security report analysis case type.";
         }
         if title.trim().length() == 0 || title.length() > 500 {
-            return "Title must be between 1 and 500 characters long for security analysis case.";
+            return "Title must be between 1 and 500 characters long for security report analysis case.";
         }
         if description is () || description.trim().length() == 0 {
-            return "Description is required for security analysis case.";
+            return "Description is required for security report analysis case.";
         }
         var attachments = payload.attachments;
         if attachments is () || attachments.length() == 0 {
