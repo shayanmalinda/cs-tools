@@ -209,62 +209,6 @@ export default function NoveraChatPage(): JSX.Element {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSlotSelection = useCallback(
-    (messageId: string, slot: string, value: string) => {
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id === messageId && m.slotState) {
-            const updatedFilledSlots = {
-              ...(m.slotState.filledSlots || {}),
-              [slot]: value,
-            };
-            return {
-              ...m,
-              slotState: {
-                ...m.slotState,
-                filledSlots: updatedFilledSlots,
-              },
-            };
-          }
-          return m;
-        }),
-      );
-    },
-    [],
-  );
-
-  const filledSlotsForDisplay = useMemo(() => {
-    // Get the latest bot message with slotState
-    const latestBotWithSlots = [...messages]
-      .reverse()
-      .find(
-        (m) =>
-          m.sender === "bot" &&
-          m.slotState?.slotOptions &&
-          m.slotState.slotOptions.length > 0,
-      );
-
-    if (
-      !latestBotWithSlots?.slotState?.filledSlots ||
-      !latestBotWithSlots.slotState.slotOptions
-    ) {
-      return [];
-    }
-
-    // Map filled slots to label-value pairs
-    return latestBotWithSlots.slotState.slotOptions
-      .map((option) => {
-        const value = latestBotWithSlots.slotState?.filledSlots?.[option.slot];
-        if (value) {
-          return { label: option.label, value };
-        }
-        return null;
-      })
-      .filter(
-        (item): item is { label: string; value: string } => item !== null,
-      );
-  }, [messages]);
-
   const sendToApi = useCallback(
     async (userText: string) => {
       if (!projectId) return null;
@@ -356,52 +300,6 @@ export default function NoveraChatPage(): JSX.Element {
     }
   }, [isSending, projectId, sendToApi, setInputValueAndRef]);
 
-  const handleChooseSlots = useCallback(
-    (messageId: string) => {
-      const message = messages.find((m) => m.id === messageId);
-      if (!message?.slotState?.filledSlots || !message.slotState.slotOptions) {
-        return;
-      }
-
-      // Format the message as "Environment is {value} and Product is {value}"
-      const parts = message.slotState.slotOptions
-        .map((option) => {
-          const value = message.slotState?.filledSlots?.[option.slot];
-          if (value) {
-            return `${option.label} is ${value}`;
-          }
-          return null;
-        })
-        .filter((part): part is string => part !== null);
-
-      const formattedMessage = parts.join(" and ");
-
-      // Set the formatted message as plain text and trigger send
-      inputValueRef.current = formattedMessage;
-      setInputValue(formattedMessage);
-
-      void handleSendMessage().then((didSend) => {
-        if (!didSend) {
-          return;
-        }
-        setMessages((prev) =>
-          prev.map((currentMessage) =>
-            currentMessage.id === messageId && currentMessage.slotState
-              ? {
-                  ...currentMessage,
-                  slotState: {
-                    ...currentMessage.slotState,
-                    filledSlots: {},
-                  },
-                }
-              : currentMessage,
-          ),
-        );
-      });
-    },
-    [messages, handleSendMessage],
-  );
-
   return (
     <Box
       sx={{
@@ -415,10 +313,12 @@ export default function NoveraChatPage(): JSX.Element {
           display: "flex",
           flexDirection: "column",
           width: "100%",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
-        <ChatHeader onBack={handleBack} />
+        <Box sx={{ mt: -3, mx: -3 }}>
+          <ChatHeader onBack={handleBack} />
+        </Box>
 
         {/* Chat window */}
         <Paper
@@ -434,8 +334,6 @@ export default function NoveraChatPage(): JSX.Element {
             messagesEndRef={messagesEndRef}
             onCreateCase={handleCreateCase}
             isCreateCaseLoading={isCreateCaseLoading}
-            onSlotSelection={handleSlotSelection}
-            onChooseSlots={handleChooseSlots}
           />
 
           <Divider />
@@ -446,7 +344,6 @@ export default function NoveraChatPage(): JSX.Element {
             setInputValue={setInputValueAndRef}
             isSending={isSending}
             resetTrigger={resetTrigger}
-            filledSlots={filledSlotsForDisplay}
           />
         </Paper>
       </Box>

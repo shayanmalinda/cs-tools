@@ -145,7 +145,7 @@ export default function SupportPage(): JSX.Element {
             footerButtons={[
               {
                 label: "View my cases",
-                onClick: undefined,
+                onClick: () => navigate("cases?createdByMe=true"),
               },
               {
                 label: "View all cases",
@@ -174,7 +174,7 @@ export default function SupportPage(): JSX.Element {
             footerButtons={[
               {
                 label: "View my chat history",
-                onClick: undefined,
+                onClick: () => navigate("conversations?createdByMe=true"),
               },
               {
                 label: "View all chat history",

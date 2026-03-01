@@ -119,7 +119,11 @@ export default function ProjectDetails(): JSX.Element {
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <ContactInfoCard />
+                <ContactInfoCard
+                  project={project}
+                  isLoading={(isDetailsLoading || !project) && !projectError}
+                  isError={!!projectError}
+                />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <RecentActivityCard
