@@ -372,7 +372,6 @@ export default function ServiceRequestDetailContent({
             {data?.title ?? "--"}
           </Typography>
 
-          {/* Top SR meta row: Environment, Product, Requested By, Created */}
           <Box
             sx={{
               mt: 1.5,

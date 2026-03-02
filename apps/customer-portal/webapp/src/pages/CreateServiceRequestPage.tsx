@@ -301,9 +301,6 @@ export default function CreateServiceRequestPage(): JSX.Element {
       ...(encodedAttachments.length > 0 && { attachments: encodedAttachments }),
     };
 
-    // Debug: log actual payload for comparison with Postman
-    console.log("[CreateServiceRequest] Actual POST /cases payload:", JSON.stringify(payload, null, 2));
-
     postCase(payload, {
       onSuccess: (data) => {
         const srNumber = (data as { number?: string }).number;
