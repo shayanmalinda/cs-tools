@@ -1035,7 +1035,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
           {!isLoadingComments &&
             !isErrorComments &&
             commentsData &&
-            commentsData.totalRecords > commentsToShow.length && (
+            commentsData.totalRecords > commentsData.comments.length && (
               <Box sx={{ textAlign: "center", pt: 2 }}>
                 <Button
                   variant="text"
