@@ -29,6 +29,7 @@ import {
 import { Upload, X } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, type JSX } from "react";
 import type { CatalogItemVariable } from "@models/responses";
+import { isAttachmentField } from "@utils/serviceRequestValidation";
 import Editor from "@components/common/rich-text-editor/Editor";
 
 export interface VariableFormFieldsProps {
@@ -67,30 +68,15 @@ function isDescriptionField(questionText: string): boolean {
   return normalized === "description";
 }
 
-/** Attachment/File type variants from API (case-insensitive). */
-function isAttachmentType(type: string): boolean {
-  const t = (type ?? "").trim().toLowerCase();
-  return (
-    t === "attachment" ||
-    t === "file" ||
-    t === "file upload" ||
-    t.includes("attachment") ||
-    t.includes("file upload") ||
-    (t.includes("file") && !t.includes("configuration")) ||
-    t.includes("attach")
-  );
+/** Parse display label (strip leading asterisk). Hot fix: all typable fields are mandatory. */
+function parseRequiredLabel(questionText: string): { label: string } {
+  const raw = (questionText ?? "").trim();
+  const label = raw.replace(/^\s*\*?\s*/, "").trim() || raw;
+  return { label };
 }
 
-/** Required if questionText starts with asterisk. Returns [displayLabel, isRequired]. */
-function parseRequiredLabel(questionText: string): {
-  label: string;
-  isRequired: boolean;
-} {
-  const raw = (questionText ?? "").trim();
-  const isRequired = /^\s*\*/.test(raw);
-  const label = raw.replace(/^\s*\*?\s*/, "").trim() || raw;
-  return { label, isRequired };
-}
+/** Hot fix: all typable (user-editable) fields are mandatory due to API hasMandatory inconsistency. */
+const TYPABLE_FIELDS_ALL_REQUIRED = true;
 
 const CONTEXT_FIELD_PATTERNS: Array<{
   pattern: RegExp;
@@ -154,10 +140,10 @@ function isHiddenField(questionText: string): boolean {
 /** Label with optional red asterisk for required fields. */
 function FieldLabel({
   questionText,
-  isRequired,
+  isRequired = TYPABLE_FIELDS_ALL_REQUIRED,
 }: {
   questionText: string;
-  isRequired: boolean;
+  isRequired?: boolean;
 }): JSX.Element {
   const { label } = parseRequiredLabel(questionText);
   return (
@@ -281,10 +267,7 @@ export default function VariableFormFields({
       return (
         <Grid key={variable.id} size={{ xs: 12 }}>
           <Box sx={{ mb: 1 }}>
-            <FieldLabel
-              questionText={variable.questionText ?? ""}
-              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
-            />
+            <FieldLabel questionText={variable.questionText ?? ""} />
           </Box>
           <FormControl fullWidth size="small">
             <Select
@@ -312,10 +295,7 @@ export default function VariableFormFields({
       return (
         <Grid key={variable.id} size={{ xs: 12 }}>
           <Box sx={{ mb: 1 }}>
-            <FieldLabel
-              questionText={variable.questionText}
-              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
-            />
+            <FieldLabel questionText={variable.questionText ?? ""} />
           </Box>
           <Editor
             value={value}
@@ -342,10 +322,7 @@ export default function VariableFormFields({
       return (
         <Grid key={variable.id} size={{ xs: 12 }}>
           <Box sx={{ mb: 1 }}>
-            <FieldLabel
-              questionText={variable.questionText}
-              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
-            />
+            <FieldLabel questionText={variable.questionText ?? ""} />
           </Box>
           <TextField
             fullWidth
@@ -363,14 +340,11 @@ export default function VariableFormFields({
       );
     }
 
-    if (isAttachmentType(type)) {
+    if (isAttachmentField(variable)) {
       return (
         <Grid key={variable.id} size={{ xs: 12 }}>
           <Box sx={{ mb: 1 }}>
-            <FieldLabel
-              questionText={variable.questionText ?? ""}
-              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
-            />
+            <FieldLabel questionText={variable.questionText ?? ""} isRequired={false} />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {onAttachmentAdd ? (
@@ -451,7 +425,6 @@ export default function VariableFormFields({
         <Box sx={{ mb: 1 }}>
           <FieldLabel
             questionText={variable.questionText ?? ""}
-            isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
           />
         </Box>
         <TextField

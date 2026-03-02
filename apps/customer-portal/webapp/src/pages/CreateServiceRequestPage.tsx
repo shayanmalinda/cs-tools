@@ -46,11 +46,16 @@ import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
 import {
+  getFirstEmptyRequiredField,
+  isContextField,
+} from "@utils/serviceRequestValidation";
+import {
   getBaseDeploymentOptions,
   getBaseProductOptions,
   resolveDeploymentMatch,
   resolveProductId,
 } from "@utils/caseCreation";
+import { htmlToPlainText } from "@utils/richTextEditor";
 import type { CreateServiceRequestPayload } from "@models/requests";
 import CatalogSelector from "@components/support/service-requests/CatalogSelector";
 import VariableFormFields from "@components/support/service-requests/VariableFormFields";
@@ -240,10 +245,30 @@ export default function CreateServiceRequestPage(): JSX.Element {
     }
 
     const variables = variablesData?.variables ?? [];
-    const variablePayload = variables.map((v) => ({
-      id: v.id,
-      value: variableValues[v.id] ?? "",
-    }));
+    const contextValues = {
+      projectDisplay: projectDetails?.name ?? "",
+      deploymentDisplay: deployment,
+      productDisplay:
+        sortedProductOptions.find((p) => p.id === product)?.label ?? "",
+    };
+    const firstEmpty = getFirstEmptyRequiredField(
+      variables,
+      contextValues,
+      variableValues,
+    );
+    if (firstEmpty) {
+      showError(`Please fill in the required field: ${firstEmpty}`);
+      return;
+    }
+
+    const variablePayload = variables
+      .filter((v) => !isContextField(v.questionText ?? ""))
+      .map((v) => {
+        const raw = variableValues[v.id] ?? "";
+        const value = htmlToPlainText(raw).trim();
+        return { id: v.id, value };
+      })
+      .filter((v) => v.value !== "");
 
     if (variablePayload.length === 0) {
       showError("At least one variable is required. Please fill in the request details.");
@@ -275,6 +300,9 @@ export default function CreateServiceRequestPage(): JSX.Element {
       variables: variablePayload,
       ...(encodedAttachments.length > 0 && { attachments: encodedAttachments }),
     };
+
+    // Debug: log actual payload for comparison with Postman
+    console.log("[CreateServiceRequest] Actual POST /cases payload:", JSON.stringify(payload, null, 2));
 
     postCase(payload, {
       onSuccess: (data) => {
