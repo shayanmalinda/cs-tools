@@ -33,9 +33,44 @@ import {
 import { ArrowLeft, Plus } from "@wso2/oxygen-ui-icons-react";
 import useGetProjectCases from "@api/useGetProjectCases";
 import { CaseType } from "@constants/supportConstants";
+import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import ServiceRequestsList from "@components/support/service-requests/ServiceRequestsList";
 import ServiceRequestsSearchBar from "@components/support/service-requests/ServiceRequestsSearchBar";
 import ServiceRequestsStatCards from "@components/support/service-requests/ServiceRequestsStatCards";
+
+export type ServiceRequestStatusBucket =
+  | "pending"
+  | "inProgress"
+  | "completed"
+  | "rejected";
+
+function classifyServiceRequestStatus(
+  statusLabel: string,
+): ServiceRequestStatusBucket {
+  const s = statusLabel.toLowerCase();
+  if (
+    s.includes("open") ||
+    s.includes("awaiting") ||
+    s.includes("waiting") ||
+    s.includes("pending")
+  ) {
+    return "pending";
+  }
+  if (s.includes("progress")) {
+    return "inProgress";
+  }
+  if (s.includes("rejected") || s.includes("cancelled")) {
+    return "rejected";
+  }
+  if (
+    s.includes("closed") ||
+    s.includes("resolved") ||
+    s.includes("completed")
+  ) {
+    return "completed";
+  }
+  return "pending";
+}
 
 export type ServiceRequestStatusFilter =
   | "all"
@@ -78,6 +113,7 @@ export default function ServiceRequestsPage(): JSX.Element {
   const {
     data,
     isLoading: isCasesQueryLoading,
+    isError: isCasesQueryError,
     hasNextPage,
     fetchNextPage,
   } = useGetProjectCases(projectId || "", caseSearchRequest);
@@ -86,7 +122,8 @@ export default function ServiceRequestsPage(): JSX.Element {
 
   const hasCasesResponse = data !== undefined;
   const isCasesAreaLoading =
-    isCasesQueryLoading || (!!projectId && !hasCasesResponse);
+    !isCasesQueryError &&
+    (isCasesQueryLoading || (!!projectId && !hasCasesResponse));
 
   useEffect(() => {
     if (isCasesAreaLoading) {
@@ -111,27 +148,8 @@ export default function ServiceRequestsPage(): JSX.Element {
   const srStats = useMemo(() => {
     const counts = { pending: 0, inProgress: 0, completed: 0, rejected: 0 };
     for (const sr of allServiceRequests) {
-      const statusLabel = sr.status?.label?.toLowerCase() ?? "";
-      if (
-        statusLabel.includes("open") ||
-        statusLabel.includes("awaiting") ||
-        statusLabel.includes("waiting") ||
-        statusLabel.includes("pending")
-      ) {
-        counts.pending += 1;
-      } else if (statusLabel.includes("progress")) {
-        counts.inProgress += 1;
-      } else if (statusLabel.includes("rejected") || statusLabel.includes("cancelled")) {
-        counts.rejected += 1;
-      } else if (
-        statusLabel.includes("closed") ||
-        statusLabel.includes("resolved") ||
-        statusLabel.includes("completed")
-      ) {
-        counts.completed += 1;
-      } else {
-        counts.pending += 1;
-      }
+      const bucket = classifyServiceRequestStatus(sr.status?.label ?? "");
+      counts[bucket] += 1;
     }
     return counts;
   }, [allServiceRequests]);
@@ -150,26 +168,19 @@ export default function ServiceRequestsPage(): JSX.Element {
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter((sr) => {
-        const statusLabel = sr.status?.label?.toLowerCase() ?? "";
-        switch (statusFilter) {
-          case "pending":
-            return (
-              statusLabel.includes("open") ||
-              statusLabel.includes("awaiting") ||
-              statusLabel.includes("waiting")
-            );
-          case "in_progress":
-            return statusLabel.includes("progress");
-          case "completed":
-            return (
-              statusLabel.includes("closed") ||
-              statusLabel.includes("resolved")
-            );
-          default:
-            return true;
-        }
-      });
+      const filterToBucket: Record<
+        Exclude<ServiceRequestStatusFilter, "all">,
+        ServiceRequestStatusBucket
+      > = {
+        pending: "pending",
+        in_progress: "inProgress",
+        completed: "completed",
+      };
+      const targetBucket = filterToBucket[statusFilter];
+      filtered = filtered.filter(
+        (sr) =>
+          classifyServiceRequestStatus(sr.status?.label ?? "") === targetBucket,
+      );
     }
 
     filtered.sort((a, b) => {
@@ -207,6 +218,27 @@ export default function ServiceRequestsPage(): JSX.Element {
   const handleNewServiceRequest = () => {
     navigate(`/${projectId}/support/service-requests/create`);
   };
+
+  if (isCasesQueryError) {
+    return (
+      <Stack spacing={3}>
+        <Box>
+          <Button
+            startIcon={<ArrowLeft size={16} />}
+            onClick={() => navigate("..")}
+            sx={{ mb: 2 }}
+            variant="text"
+          >
+            Back to Support Center
+          </Button>
+          <ErrorIndicator
+            entityName="service requests"
+            size="medium"
+          />
+        </Box>
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={3}>
@@ -248,7 +280,7 @@ export default function ServiceRequestsPage(): JSX.Element {
 
       <ServiceRequestsStatCards
         isLoading={isCasesAreaLoading}
-        isError={false}
+        isError={isCasesQueryError}
         stats={srStats}
       />
 
