@@ -27,6 +27,7 @@ import {
   alpha,
   colors,
   Skeleton,
+  CircularProgress,
 } from "@wso2/oxygen-ui";
 import {
   ArrowLeft,
@@ -44,6 +45,7 @@ import {
   Download,
   ExternalLink,
 } from "@wso2/oxygen-ui-icons-react";
+import { useIsMutating } from "@tanstack/react-query";
 import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import useGetChangeRequestDetails from "@api/useGetChangeRequestDetails";
@@ -113,6 +115,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
     offset: 0,
     limit: 50,
   });
+
+  // Check if any comment mutation is pending
+  const isPostingComment = useIsMutating() > 0;
 
   const commentsSorted = useMemo(() => {
     const list = commentsData?.comments ?? [];
@@ -755,7 +760,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       <Paper variant="outlined">
         <Box sx={{ px: 3, pt: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <TriangleAlert size={20} color={colors.red[600]} />
+            <TriangleAlert size={20} color={colors.grey[600]} />
             <Typography variant="h6">Impact Analysis</Typography>
           </Box>
         </Box>
@@ -1034,7 +1039,13 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       <Box sx={{ display: "flex", gap: 2 }}>
         <Button
           variant="contained"
-          startIcon={<Download size={18} />}
+          startIcon={
+            isLoadingComments || isPostingComment ? (
+              <CircularProgress size={18} sx={{ color: "inherit" }} />
+            ) : (
+              <Download size={18} />
+            )
+          }
           sx={{ flex: 1 }}
           onClick={() =>
             generateChangeRequestDetailsPdf(
@@ -1042,8 +1053,11 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
               commentsData?.comments,
             )
           }
+          disabled={isLoadingComments || isPostingComment}
         >
-          Download Change Request PDF
+          {isLoadingComments || isPostingComment
+            ? "Downloading..."
+            : "Download Change Request PDF"}
         </Button>
         <Button
           variant="contained"
