@@ -1440,7 +1440,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + offset - Offset for pagination
     # + return - Comments response or error
     resource function get cases/[entity:IdString id]/comments(http:RequestContext ctx, int? 'limit, int? offset)
-        returns types:CommentsResponse|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+        returns types:CommentsResponse|http:BadRequest|http:Unauthorized|http:Forbidden|http:NotFound|
+        http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1470,6 +1471,24 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     }
                 };
             }
+            if getStatusCode(commentsResponse) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is forbidden to access comments for case with ID: ${id}!`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You're not authorized to access the comments for the requested case. " +
+                        "Please check your access permissions or contact support."
+                    }
+                };
+            }
+            if getStatusCode(commentsResponse) == http:STATUS_NOT_FOUND {
+                return <http:NotFound>{
+                    body: {
+                        message: "The case for which you're trying to retrieve comments does not exist. " +
+                        "Please check and try again."
+                    }
+                };
+            }
+
             string customError = "Failed to retrieve comments.";
             log:printError(customError, commentsResponse);
             return <http:InternalServerError>{
@@ -3156,7 +3175,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        entity:ProjectChangeRequestStatsResponse|error response = entity:getProjectChangeRequestStats(userInfo.idToken, id);
+        entity:ProjectChangeRequestStatsResponse|error response = entity:getProjectChangeRequestStats(userInfo.idToken,
+                id);
         if response is error {
             if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
                 log:printWarn(string `User: ${
@@ -3222,7 +3242,6 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     }
                 };
             }
-
             if getStatusCode(createdCommentResponse) == http:STATUS_FORBIDDEN {
                 log:printWarn(string `User: ${
                         userInfo.userId} is forbidden to comment on change request with ID: ${id}!`);
@@ -3230,6 +3249,13 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     body: {
                         message: "You're not authorized to comment on the requested change request. " +
                         "Please check your access permissions or contact support."
+                    }
+                };
+            }
+            if getStatusCode(createdCommentResponse) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for creating a comment on change request."
                     }
                 };
             }
