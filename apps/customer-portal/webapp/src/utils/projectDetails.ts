@@ -169,8 +169,8 @@ export const formatProjectDateTime = (dateString: string): string => {
       hour12: true,
     });
     return `${dateStr} at ${timeStr}`;
-  } catch {
-    console.error("[projectDetails] Failed to format date string:", error);
+  } catch (error) {
+    console.error(`Error formatting date string: ${dateString}`, error);
     return "";
   }
 };

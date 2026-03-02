@@ -21,7 +21,6 @@ import {
   TextField,
   InputAdornment,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
 } from "@wso2/oxygen-ui";

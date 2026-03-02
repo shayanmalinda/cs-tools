@@ -14,9 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import userEvent from "@testing-library/user-event";
 import TimeCardsDateFilter from "@time-tracking/TimeCardsDateFilter";
 
 describe("TimeCardsDateFilter", () => {
@@ -48,7 +47,6 @@ describe("TimeCardsDateFilter", () => {
   });
 
   it("should show state dropdown with all options and allow selection", async () => {
-    const user = userEvent.setup();
     const onStateChange = vi.fn();
     
     render(
@@ -69,17 +67,22 @@ describe("TimeCardsDateFilter", () => {
     const stateSelect = screen.getByRole("combobox", { name: /filter by state/i });
     expect(stateSelect).toBeInTheDocument();
     
-    // Click to open the dropdown
-    await user.click(stateSelect);
+    // Open the dropdown by clicking the select
+    fireEvent.mouseDown(stateSelect);
     
-    // Check that all state options are present
-    expect(screen.getByRole("option", { name: "All States" })).toBeInTheDocument();
+    // Wait for options to appear and check that all state options are present
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "All States" })).toBeInTheDocument();
+    });
+    
     expect(screen.getByRole("option", { name: "Pending" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Submitted" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Approved" })).toBeInTheDocument();
     
-    // Select a state
-    await user.click(screen.getByRole("option", { name: "Pending" }));
+    // Select a state by clicking the option
+    const pendingOption = screen.getByRole("option", { name: "Pending" });
+    fireEvent.click(pendingOption);
+    
     expect(onStateChange).toHaveBeenCalledWith("Pending");
   });
 });
