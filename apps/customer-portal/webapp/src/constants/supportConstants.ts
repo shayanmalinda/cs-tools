@@ -554,8 +554,7 @@ export const ANNOUNCEMENT_FILTER_DEFINITIONS: Array<{
  * Constants for comment types when posting a comment to a case.
  */
 export const CommentType = {
-  DEFAULT_CASE: "default_case",
-  SECURITY_REPORT_ANALYSIS: "security_report_analysis",
+  CASE: "case",
   CHANGE_REQUEST: "change_request",
 } as const;
 export type CommentType = (typeof CommentType)[keyof typeof CommentType];

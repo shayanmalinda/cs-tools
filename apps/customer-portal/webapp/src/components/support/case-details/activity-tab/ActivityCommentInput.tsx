@@ -21,18 +21,16 @@ import { usePostComment } from "@api/usePostComment";
 import { usePostAttachments } from "@api/usePostAttachments";
 import { useAsgardeo } from "@asgardeo/react";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
-import { stripHtml, isSecurityReportAnalysisType } from "@utils/support";
+import { stripHtml } from "@utils/support";
 import Editor from "@components/common/rich-text-editor/Editor";
 import UploadAttachmentModal from "@case-details-attachments/UploadAttachmentModal";
 import type { JSX } from "react";
 import { CommentType } from "@/constants/supportConstants";
-import type { IdLabelRef } from "@models/responses";
 
 export interface ActivityCommentInputProps {
   caseId: string;
   focusMode?: boolean;
   caseStatus?: string | null;
-  caseType?: IdLabelRef | null;
 }
 
 /**
@@ -46,7 +44,6 @@ export default function ActivityCommentInput({
   caseId,
   focusMode = false,
   caseStatus,
-  caseType,
 }: ActivityCommentInputProps): JSX.Element {
   const [value, setValue] = useState("");
   const [resetTrigger, setResetTrigger] = useState(0);
@@ -160,13 +157,8 @@ export default function ActivityCommentInput({
     const attachmentsSnapshot = [...attachments];
     const attachmentNamesSnapshot = new Map(attachmentNamesRef.current);
 
-    // Determine comment type based on case type
-    const commentType = isSecurityReportAnalysisType(caseType)
-      ? CommentType.SECURITY_REPORT_ANALYSIS
-      : CommentType.DEFAULT_CASE;
-
     postComment.mutate(
-      { caseId, body: { content: value.trim(), type: commentType } },
+      { caseId, body: { content: value.trim(), type: CommentType.CASE } },
       {
         onSuccess: async () => {
           // Clear UI immediately to prevent duplicate posts

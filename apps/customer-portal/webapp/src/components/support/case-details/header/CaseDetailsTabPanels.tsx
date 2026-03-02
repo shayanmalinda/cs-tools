@@ -71,7 +71,6 @@ export default function CaseDetailsTabPanels({
             caseCreatedOn={data?.createdOn}
             focusMode={focusMode}
             caseStatus={data?.status?.label}
-            caseType={data?.type}
           />
         </Box>
       );
