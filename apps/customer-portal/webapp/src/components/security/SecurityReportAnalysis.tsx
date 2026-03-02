@@ -170,23 +170,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
     });
   }, [allCases, currentUser?.email, currentUser?.id, viewMode]);
 
-  const displayedCases = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    if (!query) {
-      return ownerScopedCases;
-    }
-
-    return ownerScopedCases.filter((caseItem) => {
-      const number = caseItem.number?.toLowerCase() ?? "";
-      const title = caseItem.title?.toLowerCase() ?? "";
-      const description = stripHtml(caseItem.description)?.toLowerCase() ?? "";
-      return (
-        number.includes(query) ||
-        title.includes(query) ||
-        description.includes(query)
-      );
-    });
-  }, [ownerScopedCases, searchTerm]);
+  const displayedCases = ownerScopedCases;
 
   const totalItems = displayedCases.length;
 
@@ -375,12 +359,11 @@ const SecurityReportAnalysis = (): JSX.Element => {
                     onChange={(e) =>
                       handleFilterChange("statusId", e.target.value)
                     }
-                    disabled
                   >
                     <MenuItem value="">
                       <Typography variant="body2">All Statuses</Typography>
                     </MenuItem>
-                    {filterMetadata?.statuses?.map((status) => (
+                    {filterMetadata?.caseStates?.map((status) => (
                       <MenuItem key={status.id} value={status.id}>
                         <Typography variant="body2">{status.label}</Typography>
                       </MenuItem>
@@ -398,7 +381,6 @@ const SecurityReportAnalysis = (): JSX.Element => {
                     onChange={(e) =>
                       handleFilterChange("deploymentId", e.target.value)
                     }
-                    disabled
                   >
                     <MenuItem value="">
                       <Typography variant="body2">All Deployments</Typography>
