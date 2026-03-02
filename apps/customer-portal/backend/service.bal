@@ -2921,7 +2921,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     filters: {
                         projectIds: [id],
                         startDate: payload.filters?.startDate,
-                        endDate: payload.filters?.endDate
+                        endDate: payload.filters?.endDate,
+                        state: payload.filters?.state
                     },
                     pagination: payload.pagination
                 });

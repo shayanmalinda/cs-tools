@@ -889,6 +889,8 @@ public type TimeCardSearchPayload record {|
         entity:Date startDate?;
         # End date for filtering time cards (ISO 8601 format)
         entity:Date endDate?;
+        # State of the time cards to filter (e.g., "Approved", "Submitted", etc.)
+        entity:TimeCardState state?;
     } filters?;
     # Pagination details
     entity:Pagination pagination?;
