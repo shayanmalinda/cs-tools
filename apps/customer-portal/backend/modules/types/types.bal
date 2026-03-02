@@ -45,6 +45,8 @@ public type CaseSearchFilters record {|
     int severityId?;
     # Deployment ID
     string deploymentId?;
+    # Case created by the logged in user
+    boolean createdByMe?;
 |};
 
 # Payload for case search.

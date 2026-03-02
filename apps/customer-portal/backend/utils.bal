@@ -39,7 +39,8 @@ public isolated function searchCases(string idToken, string projectId, types:Cas
             severityKey: payload.filters?.severityId,
             caseTypes: payload.filters?.caseTypes,
             stateKeys: payload.filters?.statusIds,
-            deploymentId: payload.filters?.deploymentId
+            deploymentId: payload.filters?.deploymentId,
+            createdByMe: payload.filters?.createdByMe
         },
         pagination: payload.pagination,
         sortBy: payload.sortBy

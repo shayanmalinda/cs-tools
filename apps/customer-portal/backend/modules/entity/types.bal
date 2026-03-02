@@ -266,7 +266,7 @@ public type Case record {|
 # Choice list item information.
 public type ChoiceListItem record {|
     # Choice list item value
-    int id;
+    int|string id;
     # Choice list item label
     string label;
     # Count

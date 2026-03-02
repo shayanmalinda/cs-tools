@@ -1824,6 +1824,15 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
+        string? validateDeployedProductUpdatePayload = entity:validateDeployedProductUpdatePayload(payload);
+        if validateDeployedProductUpdatePayload is string {
+            return <http:BadRequest>{
+                body: {
+                    message: validateDeployedProductUpdatePayload
+                }
+            };
+        }
+
         entity:DeployedProductUpdateResponse|error response =
             entity:updateDeployedProduct(userInfo.idToken, productId, payload);
         if response is error {

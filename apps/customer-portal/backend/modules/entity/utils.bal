@@ -230,7 +230,7 @@ public isolated function validateCaseCreatePayload(CaseCreatePayload payload) re
 #
 # + payload - Deployed product update payload
 # + return - Error message if validation fails, () otherwise
-isolated function validateDeployedProductUpdatePayload(DeployedProductUpdatePayload payload) returns string? {
+public isolated function validateDeployedProductUpdatePayload(DeployedProductUpdatePayload payload) returns string? {
     boolean? active = payload.active;
     int? cores = payload?.cores;
     decimal? tps = payload?.tps;
