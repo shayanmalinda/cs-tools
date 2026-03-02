@@ -27,6 +27,7 @@ import {
   alpha,
   colors,
   Skeleton,
+  Tooltip,
 } from "@wso2/oxygen-ui";
 import {
   ArrowLeft,
@@ -825,13 +826,18 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       </Paper>
       {/* Action Buttons */}
       <Box sx={{ display: "flex", gap: 2 }}>
-        <Button
-          variant="outlined"
-          startIcon={<Download size={18} />}
-          sx={{ flex: 1 }}
-        >
-          Download Change Request PDF
-        </Button>
+        <Tooltip title="Coming soon">
+          <span style={{ flex: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<Download size={18} />}
+              sx={{ width: "100%" }}
+              disabled
+            >
+              Download Change Request PDF
+            </Button>
+          </span>
+        </Tooltip>
         <Button
           variant="outlined"
           startIcon={<ExternalLink size={18} />}
