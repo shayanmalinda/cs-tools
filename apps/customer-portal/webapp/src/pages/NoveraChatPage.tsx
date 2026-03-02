@@ -44,6 +44,12 @@ import ChatHeader from "@components/support/novera-ai-assistant/novera-chat-page
 import ChatInput from "@components/support/novera-ai-assistant/novera-chat-page/ChatInput";
 import ChatMessageList from "@components/support/novera-ai-assistant/novera-chat-page/ChatMessageList";
 
+export interface Recommendation {
+  title: string;
+  articleId: string;
+  score: number;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -53,6 +59,7 @@ export interface Message {
   isLoading?: boolean;
   isError?: boolean;
   slotState?: SlotState;
+  recommendations?: Recommendation[];
 }
 
 /**
@@ -113,6 +120,8 @@ export default function NoveraChatPage(): JSX.Element {
           timestamp: new Date(),
           showCreateCaseAction: conversationResponse.actions != null,
           slotState: conversationResponse.slotState,
+          recommendations:
+            conversationResponse.recommendations?.recommendations,
         },
       ];
       if (userMsg) {
@@ -276,6 +285,7 @@ export default function NoveraChatPage(): JSX.Element {
                 isError: false,
                 showCreateCaseAction: response?.actions != null,
                 slotState: response?.slotState,
+                recommendations: response?.recommendations?.recommendations,
               }
             : m,
         ),
