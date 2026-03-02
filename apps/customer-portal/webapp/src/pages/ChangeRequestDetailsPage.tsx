@@ -53,7 +53,7 @@ import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import useGetChangeRequestDetails from "@api/useGetChangeRequestDetails";
 import { useInfiniteChangeRequestComments } from "@api/useInfiniteChangeRequestComments";
 import ChangeRequestCommentInput from "@components/support/change-requests/ChangeRequestCommentInput";
-import { formatCommentDate, hasDisplayableContent, stripHtml, stripCustomTags } from "@utils/support";
+import { formatCommentDate, hasDisplayableContent, stripAllTags } from "@utils/support";
 import { generateChangeRequestDetailsPdf } from "@utils/changeRequestDetailsPdf";
 import {
   formatImpactLabel,
@@ -1004,9 +1004,8 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
           ) : (
             <Stack spacing={2}>
               {commentsToShow.map((comment) => {
-                // Strip HTML tags and custom tags like [code]...[/code] from content
-                let cleanContent = stripHtml(comment.content) || "";
-                cleanContent = stripCustomTags(cleanContent) || "No content";
+                // Strip both HTML tags and custom tags like [code]...[/code] from content
+                const cleanContent = stripAllTags(comment.content) || "No content";
 
                 return (
                   <Paper
