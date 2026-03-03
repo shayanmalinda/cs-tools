@@ -35,6 +35,7 @@ import { usePostCase } from "@api/usePostCase";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
+import { useLogger } from "@hooks/useLogger";
 import type { CreateCaseRequest } from "@models/requests";
 import { BasicInformationSection } from "@components/support/case-creation-layout/form-sections/basic-information-section/BasicInformationSection";
 import { CaseCreationHeader } from "@components/support/case-creation-layout/header/CaseCreationHeader";
@@ -177,6 +178,7 @@ export default function CreateCasePage(): JSX.Element {
   const { showError } = useErrorBanner();
   const { showSuccess } = useSuccessBanner();
   const { mutate: postCase, isPending: isCreatePending } = usePostCase();
+  const logger = useLogger();
 
   useEffect(() => {
     if (deploymentProductsError) {
@@ -266,7 +268,7 @@ export default function CreateCasePage(): JSX.Element {
         const stored = sessionStorage.getItem(CONVERSATION_ID_STORAGE_KEY);
         return stored || undefined;
       } catch (e) {
-        console.error("Failed to retrieve conversationId from sessionStorage", e);
+        logger.error("Failed to retrieve conversationId from sessionStorage", e);
         return undefined;
       }
     },
@@ -280,14 +282,14 @@ export default function CreateCasePage(): JSX.Element {
           locationState.conversationId,
         );
       } catch (e) {
-        console.error(
+        logger.error(
           "Failed to store conversationId in sessionStorage",
           e,
         );
       }
       setConversationId(locationState.conversationId);
     }
-  }, [locationState?.conversationId, CONVERSATION_ID_STORAGE_KEY]);
+  }, [locationState?.conversationId, CONVERSATION_ID_STORAGE_KEY, logger]);
 
   // Persist conversationId whenever it changes
   useEffect(() => {
@@ -295,13 +297,13 @@ export default function CreateCasePage(): JSX.Element {
       try {
         sessionStorage.setItem(CONVERSATION_ID_STORAGE_KEY, conversationId);
       } catch (e) {
-        console.error(
+        logger.error(
           "Failed to persist conversationId to sessionStorage",
           e,
         );
       }
     }
-  }, [conversationId, CONVERSATION_ID_STORAGE_KEY]);
+  }, [conversationId, CONVERSATION_ID_STORAGE_KEY, logger]);
 
   const projectDisplay = projectDetails?.name ?? "";
 
