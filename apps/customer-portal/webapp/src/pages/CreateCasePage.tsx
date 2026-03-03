@@ -210,6 +210,7 @@ export default function CreateCasePage(): JSX.Element {
   } | null;
 
   const STORAGE_KEY = `case_classification_data_${projectId}`;
+  const CONVERSATION_ID_STORAGE_KEY = `case_conversation_id_${projectId}`;
 
   const [classificationResponse, setClassificationResponse] = useState<
     | {
@@ -254,6 +255,54 @@ export default function CreateCasePage(): JSX.Element {
       setClassificationResponse(locationState.classificationResponse);
     }
   }, [locationState?.classificationResponse, STORAGE_KEY]);
+
+  // Persist conversationId to survive page refresh
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    () => {
+      if (locationState?.conversationId) {
+        return locationState.conversationId;
+      }
+      try {
+        const stored = sessionStorage.getItem(CONVERSATION_ID_STORAGE_KEY);
+        return stored || undefined;
+      } catch (e) {
+        console.error("Failed to retrieve conversationId from sessionStorage", e);
+        return undefined;
+      }
+    },
+  );
+
+  useEffect(() => {
+    if (locationState?.conversationId) {
+      try {
+        sessionStorage.setItem(
+          CONVERSATION_ID_STORAGE_KEY,
+          locationState.conversationId,
+        );
+      } catch (e) {
+        console.error(
+          "Failed to store conversationId in sessionStorage",
+          e,
+        );
+      }
+      setConversationId(locationState.conversationId);
+    }
+  }, [locationState?.conversationId, CONVERSATION_ID_STORAGE_KEY]);
+
+  // Persist conversationId whenever it changes
+  useEffect(() => {
+    if (conversationId) {
+      try {
+        sessionStorage.setItem(CONVERSATION_ID_STORAGE_KEY, conversationId);
+      } catch (e) {
+        console.error(
+          "Failed to persist conversationId to sessionStorage",
+          e,
+        );
+      }
+    }
+  }, [conversationId, CONVERSATION_ID_STORAGE_KEY]);
+
   const projectDisplay = projectDetails?.name ?? "";
 
   const issueTypesList = (filters?.issueTypes || []) as {
@@ -654,8 +703,8 @@ export default function CreateCasePage(): JSX.Element {
       ...(relatedCase?.parentCaseId && {
         parentCaseId: relatedCase.parentCaseId,
       }),
-      ...(locationState?.conversationId && {
-        conversationId: locationState.conversationId,
+      ...(conversationId && {
+        conversationId,
       }),
     };
 
@@ -674,6 +723,7 @@ export default function CreateCasePage(): JSX.Element {
 
         showSuccess("Case created successfully");
         sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(CONVERSATION_ID_STORAGE_KEY);
 
         // Refetch security vulnerabilities if this was a security report
         if (isCreatedSecurityReport) {
