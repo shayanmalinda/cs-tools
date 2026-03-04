@@ -16,8 +16,8 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { addApiHeaders } from "@utils/apiUtils";
 import type { ValidateContactRequest } from "@models/requests";
 import type { ValidateContactResponse } from "@models/responses";
 
@@ -34,7 +34,8 @@ export function useValidateProjectContact(
   projectId: string,
 ): UseMutationResult<ValidateContactResponse, Error, ValidateContactRequest> {
   const logger = useLogger();
-  const { isSignedIn, isLoading: isAuthLoading, getIdToken } = useAsgardeo();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useMutation<ValidateContactResponse, Error, ValidateContactRequest>({
     mutationFn: async (body): Promise<ValidateContactResponse> => {
@@ -51,10 +52,9 @@ export function useValidateProjectContact(
         }
 
         const requestUrl = `${baseUrl}/projects/${projectId}/contacts/validate`;
-        const token = await getIdToken();
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "POST",
-          headers: addApiHeaders(token),
+
           body: JSON.stringify(body),
         });
 

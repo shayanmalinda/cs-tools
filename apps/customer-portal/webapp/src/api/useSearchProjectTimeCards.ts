@@ -20,9 +20,9 @@ import {
   type InfiniteData,
 } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
 import type { TimeCardSearchResponse } from "@models/responses";
 import type { TimeCardSearchRequest } from "@models/requests";
 
@@ -49,7 +49,8 @@ export default function useSearchProjectTimeCards({
   Error
 > {
   const logger = useLogger();
-  const { isSignedIn, isLoading: isAuthLoading, getIdToken } = useAsgardeo();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useInfiniteQuery<TimeCardSearchResponse, Error>({
     queryKey: [
@@ -84,10 +85,9 @@ export default function useSearchProjectTimeCards({
           pagination: { limit: 10, offset: pageParam as number },
         };
 
-        const token = await getIdToken();
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "POST",
-          headers: addApiHeaders(token),
+
           body: JSON.stringify(body),
           signal,
         });
