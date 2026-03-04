@@ -16,9 +16,9 @@
 
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
-import { useAuthApiClient } from "@context/AuthApiContext";
 import type { CaseCommentsResponse } from "@models/responses";
 
 const PAGE_SIZE = 10;
@@ -33,7 +33,7 @@ const PAGE_SIZE = 10;
 export function useInfiniteChangeRequestComments(changeRequestId: string) {
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const fetchFn = useAuthApiClient();
+  const authFetch = useAuthApiClient();
 
   return useInfiniteQuery<
     CaseCommentsResponse,
@@ -64,7 +64,10 @@ export function useInfiniteChangeRequestComments(changeRequestId: string) {
         });
         const encodedChangeRequestId = encodeURIComponent(changeRequestId);
         const requestUrl = `${baseUrl}/change-requests/${encodedChangeRequestId}/comments?${params}`;
-        const response = await fetchFn(requestUrl, { method: "GET", signal });
+        const response = await authFetch(requestUrl, {
+          method: "GET",
+          signal,
+        });
 
         logger.debug(
           `[useInfiniteChangeRequestComments] Response status: ${response.status}`,
