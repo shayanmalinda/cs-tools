@@ -3,10 +3,10 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { Box, Card, Divider, Skeleton, Stack, Typography, pxToRem } from "@wso2/oxygen-ui";
 import { ChevronRight } from "@wso2/oxygen-ui-icons-react";
 import { Link } from "react-router-dom";
-import type { Priority, ServiceCategory, Status } from "./ItemCard";
 import { PriorityChip, StatusChip } from "./Chip";
 import { TYPE_CONFIG } from "./config";
 import type { CaseSummary } from "@src/types";
+import type { Chat } from "@root/src/types/chat.model";
 
 dayjs.extend(relativeTime);
 
@@ -18,31 +18,27 @@ interface CaseItemCardExtendedProps extends BaseItemCardExtendedProps, CaseSumma
   type: "case";
 }
 
-interface ChatItemCardExtendedProps extends BaseItemCardExtendedProps {
+interface ChatItemCardExtendedProps extends BaseItemCardExtendedProps, Chat {
   type: "chat";
-  category: string;
-  status: Status;
-  count: number;
-  started: string;
 }
 
 interface ServiceItemCardExtendedProps extends BaseItemCardExtendedProps {
   type: "service";
-  priority: Priority;
-  status: Status;
-  category: ServiceCategory;
-  requestedBy: string;
-  assignee: string;
+  // priority: Priority;
+  // status: Status;
+  // category: ServiceCategory;
+  // requestedBy: string;
+  // assignee: string;
 }
 
 interface ChangeItemCardExtendedProps extends BaseItemCardExtendedProps {
   type: "change";
-  impact: Priority;
-  priority: Priority;
-  status: Status;
-  category: ServiceCategory;
-  scheduled: string;
-  owner: string;
+  // impact: Priority;
+  // priority: Priority;
+  // status: Status;
+  // category: ServiceCategory;
+  // scheduled: string;
+  // owner: string;
 }
 
 export type ItemCardExtendedProps =
@@ -51,7 +47,7 @@ export type ItemCardExtendedProps =
   | ServiceItemCardExtendedProps
   | ChangeItemCardExtendedProps;
 
-export function ItemCardExtended(props: CaseItemCardExtendedProps) {
+export function ItemCardExtended(props: ItemCardExtendedProps) {
   const { type, to } = props;
   const { icon: Icon, color } = TYPE_CONFIG[type];
 
@@ -63,12 +59,12 @@ export function ItemCardExtended(props: CaseItemCardExtendedProps) {
             <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
               <Icon size={pxToRem(19)} color={color} />
               <Typography variant="subtitle2" color="text.secondary">
-                {props.number}
+                {(type === "case" || type === "chat") && props.number}
               </Typography>
-              <PriorityChip size="small" id={props.severityId ?? "N/A"} />
+              {type === "case" && <PriorityChip size="small" id={props.severityId ?? "N/A"} />}
             </Stack>
             <Stack direction="row" gap={2}>
-              <StatusChip size="small" id={props.statusId ?? "N/A"} />
+              {(type === "case" || type === "chat") && <StatusChip size="small" id={props.statusId ?? "N/A"} />}
               <Box color="text.secondary">
                 <ChevronRight size={pxToRem(18)} />
               </Box>
@@ -77,11 +73,14 @@ export function ItemCardExtended(props: CaseItemCardExtendedProps) {
 
           <Stack gap={0.2}>
             <Typography variant="body1" color="text.primary">
-              {props.title}
+              {type === "case" && props.title}
+              {type === "chat" && props.description}
             </Typography>
-            <Typography variant="subtitle2" color="text.secondary">
-              {props.description}
-            </Typography>
+            {type === "case" && (
+              <Typography variant="subtitle2" color="text.secondary">
+                {props.description}
+              </Typography>
+            )}
           </Stack>
         </Stack>
 
@@ -95,6 +94,8 @@ export function ItemCardExtended(props: CaseItemCardExtendedProps) {
                   switch (type) {
                     case "case":
                       return "Assigned";
+                    case "chat":
+                      return "Messages";
                   }
                 })()}
               </Typography>
@@ -103,6 +104,8 @@ export function ItemCardExtended(props: CaseItemCardExtendedProps) {
                   switch (type) {
                     case "case":
                       return props.assigned ?? "N/A";
+                    case "chat":
+                      return props.count;
                   }
                 })()}
               </Typography>
@@ -113,6 +116,8 @@ export function ItemCardExtended(props: CaseItemCardExtendedProps) {
                   switch (type) {
                     case "case":
                       return "Created";
+                    case "chat":
+                      return "Started";
                   }
                 })()}
               </Typography>
@@ -121,14 +126,18 @@ export function ItemCardExtended(props: CaseItemCardExtendedProps) {
                   switch (type) {
                     case "case":
                       return dayjs(props.createdOn).fromNow();
+                    case "chat":
+                      return dayjs(props.createdOn).fromNow();
                   }
                 })()}
               </Typography>
             </Stack>
           </Stack>
-          <Typography variant="subtitle2" color="text.secondary">
-            Updated {dayjs(props.createdOn).fromNow()}
-          </Typography>
+          {(type === "case" || type === "chat") && (
+            <Typography variant="caption" color="text.secondary">
+              Updated {dayjs(props.createdOn).fromNow()}
+            </Typography>
+          )}
         </Stack>
       </Stack>
     </Card>

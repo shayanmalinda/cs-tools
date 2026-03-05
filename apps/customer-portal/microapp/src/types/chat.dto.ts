@@ -31,6 +31,9 @@ export interface ChatDTO extends Pagination {
 }
 
 export interface GetChatsRequestDTO {
+  filters?: {
+    stateKeys?: number[];
+  };
   pagination?: {
     limit?: number;
     offset?: number;
