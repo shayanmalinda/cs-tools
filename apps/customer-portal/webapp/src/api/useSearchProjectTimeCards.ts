@@ -31,6 +31,7 @@ export interface UseSearchProjectTimeCardsParams {
   startDate?: string;
   endDate?: string;
   states?: string[];
+  enabled?: boolean;
 }
 
 /**
@@ -44,6 +45,7 @@ export default function useSearchProjectTimeCards({
   startDate,
   endDate,
   states,
+  enabled,
 }: UseSearchProjectTimeCardsParams): UseInfiniteQueryResult<
   InfiniteData<TimeCardSearchResponse>,
   Error
@@ -114,7 +116,12 @@ export default function useSearchProjectTimeCards({
       return nextOffset < lastPage.totalRecords ? nextOffset : undefined;
     },
     enabled:
-      !!projectId && !!startDate && !!endDate && isSignedIn && !isAuthLoading,
+      enabled !== false &&
+      !!projectId &&
+      !!startDate &&
+      !!endDate &&
+      isSignedIn &&
+      !isAuthLoading,
     staleTime: 5 * 60 * 1000,
   });
 }
