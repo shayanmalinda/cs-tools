@@ -21,7 +21,6 @@ import {
   Paper,
   Skeleton,
   Typography,
-  useTheme,
 } from "@wso2/oxygen-ui";
 import {
   ChevronDown,
@@ -46,8 +45,8 @@ export interface CatalogSelectorProps {
 
 interface CatalogIconConfig {
   Icon: ComponentType<{ size?: number; color?: string }>;
-  /** Oxygen UI theme palette key for icon color (e.g. "info", "success"). */
-  paletteKey: "primary" | "secondary" | "info" | "success" | "warning" | "error";
+  iconColor: string;
+  bgColor: string;
 }
 
 const CATALOG_ICON_MAP: Array<{
@@ -56,31 +55,59 @@ const CATALOG_ICON_MAP: Array<{
 }> = [
   {
     pattern: /operational\s*request/i,
-    config: { Icon: RefreshCw, paletteKey: "info" },
+    config: {
+      Icon: RefreshCw,
+      iconColor: "#3B82F6",
+      bgColor: "#DBEAFE",
+    },
   },
   {
     pattern: /certificate/i,
-    config: { Icon: Shield, paletteKey: "success" },
+    config: {
+      Icon: Shield,
+      iconColor: "#22C55E",
+      bgColor: "#DCFCE7",
+    },
   },
   {
     pattern: /information\s*request/i,
-    config: { Icon: FileText, paletteKey: "secondary" },
+    config: {
+      Icon: FileText,
+      iconColor: "#8B5CF6",
+      bgColor: "#EDE9FE",
+    },
   },
   {
     pattern: /artifact\s*deployment/i,
-    config: { Icon: Package, paletteKey: "warning" },
+    config: {
+      Icon: Package,
+      iconColor: "#F97316",
+      bgColor: "#FFEDD5",
+    },
   },
   {
     pattern: /security|vulnerability|patching/i,
-    config: { Icon: ShieldAlert, paletteKey: "error" },
+    config: {
+      Icon: ShieldAlert,
+      iconColor: "#EC4899",
+      bgColor: "#FCE7F3",
+    },
   },
   {
     pattern: /product\s*change/i,
-    config: { Icon: Settings, paletteKey: "primary" },
+    config: {
+      Icon: Settings,
+      iconColor: "#6366F1",
+      bgColor: "#EEF2FF",
+    },
   },
   {
     pattern: /infrastructure/i,
-    config: { Icon: Network, paletteKey: "info" },
+    config: {
+      Icon: Network,
+      iconColor: "#06B6D4",
+      bgColor: "#CFFAFE",
+    },
   },
 ];
 
@@ -91,7 +118,8 @@ function getCatalogIconConfig(catalogName: string): CatalogIconConfig {
   return (
     match?.config ?? {
       Icon: FileText,
-      paletteKey: "secondary",
+      iconColor: "#6B7280",
+      bgColor: "#F3F4F6",
     }
   );
 }
@@ -110,8 +138,6 @@ export default function CatalogSelector({
   selectedCatalogItemId,
   onSelectCatalogItem,
 }: CatalogSelectorProps): JSX.Element {
-  const theme = useTheme();
-
   if (isLoading) {
     return (
       <Paper variant="outlined" sx={{ p: 3, borderRadius: 0 }}>
@@ -152,7 +178,7 @@ export default function CatalogSelector({
       sx={{
         p: 3,
         borderRadius: 0,
-        boxShadow: 1,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
       }}
     >
       <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
@@ -167,11 +193,9 @@ export default function CatalogSelector({
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {catalogs.map((catalog) => {
-          const { Icon, paletteKey } = getCatalogIconConfig(catalog.name);
-          const iconColor =
-            theme.palette[paletteKey]?.main ?? theme.palette.text.secondary;
-          const bgColor =
-            theme.palette[paletteKey]?.light ?? theme.palette.grey?.[100];
+          const { Icon, iconColor, bgColor } = getCatalogIconConfig(
+            catalog.name,
+          );
           const itemCount = catalog.catalogItems?.length ?? 0;
           const optionsLabel =
             itemCount === 1 ? "1 option" : `${itemCount} options`;
@@ -182,7 +206,7 @@ export default function CatalogSelector({
               disableGutters
               sx={{
                 "&:before": { display: "none" },
-                boxShadow: 1,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                 borderRadius: 0,
                 "&.Mui-expanded": { margin: 0 },
                 overflow: "hidden",

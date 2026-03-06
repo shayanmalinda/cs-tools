@@ -58,10 +58,6 @@ import {
   mapSeverityToDisplay,
   resolveColorFromTheme,
   stripHtml,
-  stripCodeWrapper,
-  convertCodeTagsToHtml,
-  stripCustomerCommentAddedLabel,
-  replaceInlineImageSources,
   hasDisplayableContent,
   ACTION_TO_CASE_STATE_LABEL,
   getAvailableCaseActions,
@@ -70,8 +66,6 @@ import {
 } from "@utils/support";
 import { CASE_STATUS_ACTIONS, CommentType } from "@constants/supportConstants";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
-import CaseDetailsAttachmentsPanel from "@case-details-attachments/CaseDetailsAttachmentsPanel";
-import DOMPurify from "dompurify";
 
 export interface ServiceRequestDetailContentProps {
   data: CaseDetails | undefined;
@@ -485,38 +479,25 @@ export default function ServiceRequestDetailContent({
             <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
               Request Details
             </Typography>
-            {(() => {
-              const apiVariables = data?.variables ?? [];
-              const filteredVariables = apiVariables.filter(
-                (v) => !/^wso2\s*product$/i.test((v.name ?? "").trim()),
-              );
-              if (filteredVariables.length > 0) {
-                return filteredVariables.map((v, index) => (
-                  <Box key={`${v.name}-${index}`} sx={{ mb: 1.5 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      {v.name}
-                    </Typography>
+            {requestDetailSections.length > 0 ? (
+              (() => {
+                const filtered = requestDetailSections.filter(
+                  (s) => !/^wso2\s*product$/i.test(s.label.trim()),
+                );
+                if (filtered.length === 0) {
+                  const fallbackText = stripWso2ProductFromText(
+                    stripHtml(data?.description ?? ""),
+                  );
+                  return (
                     <Typography
                       variant="body2"
                       color="text.primary"
                       sx={{ whiteSpace: "pre-wrap" }}
                     >
-                      {stripHtml(v.value ?? "").trim() || "--"}
+                      {fallbackText || "--"}
                     </Typography>
-                    {index < filteredVariables.length - 1 && (
-                      <Divider sx={{ mt: 1.5 }} />
-                    )}
-                  </Box>
-                ));
-              }
-              const filtered = requestDetailSections.filter(
-                (s) => !/^wso2\s*product$/i.test(s.label.trim()),
-              );
-              if (filtered.length > 0) {
+                  );
+                }
                 return filtered.map((section, index) => (
                   <Box key={`${section.label}-${index}`} sx={{ mb: 1.5 }}>
                     <Typography
@@ -538,31 +519,18 @@ export default function ServiceRequestDetailContent({
                     )}
                   </Box>
                 ));
-              }
-              const fallbackText = stripWso2ProductFromText(
-                stripHtml(data?.description ?? ""),
-              );
-              return (
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  sx={{ whiteSpace: "pre-wrap" }}
-                >
-                  {fallbackText || "--"}
-                </Typography>
-              );
-            })()}
-          </Paper>
-
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.primary"
-              sx={{ mb: 1.5 }}
-            >
-              Attachments
-            </Typography>
-            <CaseDetailsAttachmentsPanel caseId={caseId} />
+              })()
+            ) : (
+              <Typography
+                variant="body2"
+                color="text.primary"
+                sx={{ whiteSpace: "pre-wrap" }}
+              >
+                {stripWso2ProductFromText(
+                  stripHtml(data?.description ?? ""),
+                ) || "--"}
+              </Typography>
+            )}
           </Paper>
 
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
@@ -592,11 +560,11 @@ export default function ServiceRequestDetailContent({
                   const isCurrentUser =
                     (comment.createdBy?.toLowerCase() ?? "") === currentUserEmail;
                   const avatarBg = isCurrentUser
-                    ? alpha(theme.palette.info?.light ?? theme.palette.info?.main, 0.2)
-                    : alpha(theme.palette.primary?.light ?? theme.palette.primary?.main, 0.2);
+                    ? alpha(theme.palette.info?.light ?? "#0288d1", 0.2)
+                    : alpha(theme.palette.primary?.light ?? "#fa7b3f", 0.2);
                   const avatarColor = isCurrentUser
-                    ? (theme.palette.info?.main ?? theme.palette.info?.light)
-                    : (theme.palette.primary?.main ?? theme.palette.primary?.light);
+                    ? (theme.palette.info?.main ?? "#0288d1")
+                    : (theme.palette.primary?.main ?? "#fa7b3f");
                   return (
                     <Stack
                       key={comment.id}
@@ -624,41 +592,13 @@ export default function ServiceRequestDetailContent({
                         >
                           {comment.createdBy} • {formatRelativeTime(comment.createdOn)}
                         </Typography>
-                        <Box
-                          component="div"
-                          sx={{
-                            mt: 0.5,
-                            "& p": { mb: 0.5 },
-                            "& p:last-child": { mb: 0 },
-                            "& code": {
-                              display: "block",
-                              p: 1,
-                              bgcolor: "action.hover",
-                              fontSize: "0.875rem",
-                              whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                            },
-                          }}
-                          dangerouslySetInnerHTML={{
-                            __html: (() => {
-                              const raw = comment.content ?? "";
-                              const trimmed = raw.trim();
-                              const isFullCodeWrap =
-                                trimmed.startsWith("[code]") &&
-                                trimmed.endsWith("[/code]");
-                              const afterCode = isFullCodeWrap
-                                ? stripCodeWrapper(raw)
-                                : convertCodeTagsToHtml(raw);
-                              const withoutLabel =
-                                stripCustomerCommentAddedLabel(afterCode);
-                              const withImages = replaceInlineImageSources(
-                                withoutLabel,
-                                comment.inlineAttachments,
-                              );
-                              return DOMPurify.sanitize(withImages);
-                            })(),
-                          }}
-                        />
+                        <Typography
+                          variant="body2"
+                          color="text.primary"
+                          sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}
+                        >
+                          {stripHtml(comment.content)}
+                        </Typography>
                       </Box>
                     </Stack>
                   );
@@ -708,7 +648,7 @@ export default function ServiceRequestDetailContent({
                     justifyContent: "center",
                     flexShrink: 0,
                     bgcolor: alpha(
-                      theme.palette.primary?.main,
+                      theme.palette.primary?.main ?? "#fa7b3f",
                       0.12,
                     ),
                     borderRadius: "50%",
@@ -716,7 +656,7 @@ export default function ServiceRequestDetailContent({
                 >
                   <User
                     size={20}
-                    color={theme.palette.primary?.main}
+                    color={theme.palette.primary?.main ?? "#fa7b3f"}
                   />
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
@@ -742,7 +682,7 @@ export default function ServiceRequestDetailContent({
                     justifyContent: "center",
                     flexShrink: 0,
                     bgcolor: alpha(
-                      theme.palette.info?.main,
+                      theme.palette.info?.main ?? "#0288d1",
                       0.12,
                     ),
                     borderRadius: "50%",
@@ -750,7 +690,7 @@ export default function ServiceRequestDetailContent({
                 >
                   <Folder
                     size={20}
-                    color={theme.palette.info?.main}
+                    color={theme.palette.info?.main ?? "#0288d1"}
                   />
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
@@ -891,7 +831,7 @@ export default function ServiceRequestDetailContent({
                       width: 24,
                       height: 24,
                       borderRadius: "50%",
-                      boxShadow: `0 0 0 2px ${theme.palette.primary?.main}`,
+                      boxShadow: `0 0 0 2px ${theme.palette.primary?.main ?? "#fa7b3f"}`,
                       bgcolor: "background.paper",
                       flexShrink: 0,
                       zIndex: 1,
