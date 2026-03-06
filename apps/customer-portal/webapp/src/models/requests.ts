@@ -235,3 +235,14 @@ export interface TimeCardSearchRequest {
 export interface ValidateContactRequest {
   contactEmail: string;
 }
+
+// Request body for PATCH /change-requests/:id (update planned start).
+export interface PatchChangeRequestRequest {
+  plannedStartOn: string;
+}
+
+// Request body for PATCH /users/me (update user profile).
+export interface PatchUserMeRequest {
+  phoneNumber?: string;
+  timeZone?: string;
+}
