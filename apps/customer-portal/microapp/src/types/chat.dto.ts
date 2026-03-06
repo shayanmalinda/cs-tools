@@ -16,11 +16,11 @@ export interface MessageResponseDTO {
   // TODO: Add recommendations: { query: string; recommendations: { title: string; articleId: string; score: number }[] } | null;
 }
 
-export interface ChatsDTO {
+export interface ChatsDTO extends Pagination {
   conversations: ChatDTO[];
 }
 
-export interface ChatDTO extends Pagination {
+export interface ChatDTO {
   id: string;
   number: string;
   initialMessage: string;

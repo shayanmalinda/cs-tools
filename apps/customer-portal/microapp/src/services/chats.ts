@@ -12,6 +12,7 @@ import type { Chat, Message } from "@src/types/chat.model";
 import {
   CHAT_ADD_MESSAGE_ENDPOINT,
   CHAT_COMMENTS_ENDPOINT,
+  CHAT_DETAILS_ENDPOINT,
   CHAT_INITIATE_ENDPOINT,
   PROJECT_CHATS_ENDPOINT,
 } from "@config/endpoints";
@@ -44,6 +45,11 @@ const send = async (
   ).data;
 
   return toMessage(response, "incoming");
+};
+
+const getChat = async (id: string): Promise<Chat> => {
+  const response = (await apiClient.get<ChatDTO>(CHAT_DETAILS_ENDPOINT(id))).data;
+  return toChat(response);
 };
 
 const getAllChats = async (id: string, body: GetChatsRequestDTO = {}): Promise<Chat[]> => {
@@ -88,6 +94,12 @@ export const chats = {
   send: (id: string, conversationId: string) =>
     mutationOptions({
       mutationFn: (body: Omit<MessageDispatchDTO, "region" | "tier">) => send(id, conversationId, body),
+    }),
+
+  get: (id: string) =>
+    queryOptions({
+      queryKey: ["chat", id],
+      queryFn: () => getChat(id),
     }),
 
   all: (id: string, body: GetChatsRequestDTO = {}) =>

@@ -107,6 +107,14 @@ export function ItemCard(props: ItemCardProps) {
             {type === "case" && (props.assigned ?? "N/A")}
             {type === "chat" && `${props.count} messages`}
           </Typography>
+          {type === "chat" && (
+            <>
+              <Circle sx={(theme) => ({ color: "text.tertiary", fontSize: theme.typography.pxToRem(4) })} />
+              <Typography variant="subtitle2" fontWeight="regular" color="text.secondary">
+                0 KB
+              </Typography>
+            </>
+          )}
         </Stack>
 
         <Stack gap={0.5} mt={1}>

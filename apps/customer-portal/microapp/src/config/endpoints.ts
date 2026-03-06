@@ -39,3 +39,4 @@ export const CHAT_INITIATE_ENDPOINT = (id: string) => `/projects/${id}/conversat
 export const CHAT_ADD_MESSAGE_ENDPOINT = (id: string, conversationId: string) =>
   `/projects/${id}/conversations/${conversationId}/messages`;
 export const CHAT_COMMENTS_ENDPOINT = (id: string) => `/conversations/${id}/messages`;
+export const CHAT_DETAILS_ENDPOINT = (id: string) => `/conversations/${id}`;
