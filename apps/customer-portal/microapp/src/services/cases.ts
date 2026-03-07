@@ -1,5 +1,6 @@
 import apiClient from "@src/services/apiClient";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
+import { stripHtmlTags } from "@utils/others";
 import type {
   CaseSummary,
   CaseClassificationRequestDTO,
@@ -96,7 +97,7 @@ function toCase(dto: CaseDTO): Case {
     createdOn: new Date(dto.createdOn.replace(" ", "T")),
     updatedOn: new Date(dto.updatedOn.replace(" ", "T")),
     title: dto.title,
-    description: dto.description ?? "",
+    description: stripHtmlTags(dto.description) ?? "",
     assigned: dto.assignedEngineer?.label,
     statusId: dto.status?.id,
     severityId: dto.severity?.id,
@@ -112,7 +113,7 @@ function toCase(dto: CaseDTO): Case {
 export function toComment(dto: CommentDTO): Comment {
   return {
     id: dto.id,
-    content: dto.content,
+    content: stripHtmlTags(dto.content),
     createdOn: new Date(dto.createdOn.replace(" ", "T")),
     createdBy: dto.createdBy,
     attachments: dto.inlineAttachments.map((attachment) => ({

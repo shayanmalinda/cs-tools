@@ -16,11 +16,14 @@
 
 import LayoutProvider from "./layout/LayoutProvider";
 import ProjectProvider from "./project/ProjectProvider";
+import { ColorModeProvider } from "./theme";
 
 export default function AppProvider({ children }: { children: React.ReactNode }) {
   return (
-    <LayoutProvider>
-      <ProjectProvider>{children}</ProjectProvider>
-    </LayoutProvider>
+    <ColorModeProvider>
+      <LayoutProvider>
+        <ProjectProvider>{children}</ProjectProvider>
+      </LayoutProvider>
+    </ColorModeProvider>
   );
 }

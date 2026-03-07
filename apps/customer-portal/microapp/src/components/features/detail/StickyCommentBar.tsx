@@ -17,6 +17,7 @@
 import type { ChangeEvent, ReactNode, KeyboardEvent } from "react";
 import { Box, CircularProgress, IconButton, Stack, TextField, pxToRem } from "@wso2/oxygen-ui";
 import { SendHorizonal } from "@wso2/oxygen-ui-icons-react";
+import { useThemeMode } from "@root/src/context/theme";
 
 interface StickyCommentBarProps {
   value: string;
@@ -36,6 +37,7 @@ export function StickyCommentBar({
   onChange,
   onSend,
 }: StickyCommentBarProps) {
+  const mode = useThemeMode();
   const hasContent = value.trim().length > 0;
 
   const send = () => {
@@ -59,7 +61,7 @@ export function StickyCommentBar({
       bottom={90}
       gap={4}
       justifyContent="space-between"
-      bgcolor="background.paper"
+      bgcolor={mode === "dark" ? "black" : "white"}
     >
       {topSlot && <Box sx={{ m: -2 }}>{topSlot}</Box>}
 

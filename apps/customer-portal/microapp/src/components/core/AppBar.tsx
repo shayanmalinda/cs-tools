@@ -36,7 +36,7 @@ import { useProject } from "@context/project";
 
 import { APP_BAR_CONFIG } from "@components/layout/config";
 import { PROJECT_STATUS_META } from "@config/constants";
-import { ArrowLeft, Bell, ChevronDown, Folder, LogOut } from "@wso2/oxygen-ui-icons-react";
+import { ArrowLeft, Bell, ChevronDown, Folder, Grip, LogOut } from "@wso2/oxygen-ui-icons-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { projects } from "@src/services/projects";
 import { goToMyAppsScreen } from "../microapp-bridge";
@@ -86,7 +86,7 @@ export function AppBar() {
         {config.showNotifications && (
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
             <ExitButton />
-            <NotificationButton to="/notifications" />
+            {/* <NotificationButton to="/notifications" /> */}
           </Stack>
         )}
 
@@ -195,8 +195,8 @@ function ExitButton() {
       }}
       onClick={goToMyAppsScreen}
     >
-      <LogOut size={pxToRem(20)} style={{ transform: "rotate(-180deg)" }} />
-      <Typography>Exit</Typography>
+      <Grip size={pxToRem(20)} />
+      <Typography>Go to Apps</Typography>
     </IconButton>
   );
 }

@@ -7,6 +7,7 @@ import { PriorityChip, StatusChip } from "./Chip";
 import { TYPE_CONFIG } from "./config";
 import type { CaseSummary } from "@src/types";
 import type { Chat } from "@root/src/types/chat.model";
+import { stripHtmlTags } from "@root/src/utils/others";
 
 dayjs.extend(relativeTime);
 
@@ -78,7 +79,7 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
             </Typography>
             {type === "case" && (
               <Typography variant="subtitle2" color="text.secondary">
-                {props.description}
+                {stripHtmlTags(props.description)}
               </Typography>
             )}
           </Stack>

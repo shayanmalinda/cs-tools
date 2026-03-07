@@ -2,6 +2,7 @@ import { Box, Card, Divider, pxToRem, Skeleton, Stack, Typography, type SxProps,
 import { Sparkle } from "@wso2/oxygen-ui-icons-react";
 import { KBCard } from "./KBCard";
 import { ChecklistItem } from "./ChecklistItem";
+import Markdown from "react-markdown";
 
 export type MessageBlock =
   | { type: "text"; value: string }
@@ -42,8 +43,8 @@ export function MessageBubble({ author, blocks, timestamp = "Just Now", sx }: Ch
             switch (block.type) {
               case "text":
                 return (
-                  <Typography key={index} variant="body2">
-                    {block.value}
+                  <Typography key={index} variant="body2" component="span">
+                    <Markdown>{block.value}</Markdown>
                   </Typography>
                 );
 
