@@ -160,10 +160,33 @@ public isolated function searchAttachments(string idToken, ReferenceSearchPayloa
 # + idToken - ID token for authorization
 # + payload - Attachment creation payload
 # + return - Attachment creation response or error
-public isolated function createAttachment(string idToken, AttachmentPayload payload)
+public isolated function createAttachment(string idToken, AttachmentCreatePayload payload)
     returns AttachmentCreateResponse|error {
 
     return csEntityClient->/attachments.post(payload, generateHeaders(idToken));
+}
+
+# Update an attachment.
+#
+# + idToken - ID token for authorization
+# + attachmentId - Unique ID of the attachment to be updated
+# + payload - Attachment update payload containing details to be updated in the attachment
+# + return - Attachment update response containing details of the updated attachment or error
+public isolated function updateAttachment(string idToken, IdString attachmentId, AttachmentUpdatePayload payload)
+    returns AttachmentUpdateResponse|error {
+
+    return csEntityClient->/attachments/[attachmentId].patch(payload, generateHeaders(idToken));
+}
+
+# Delete an attachment.
+#
+# + idToken - ID token for authorization
+# + attachmentId - Unique ID of the attachment to be deleted
+# + return - Attachment delete response containing success message or error
+public isolated function deleteAttachment(string idToken, IdString attachmentId)
+    returns AttachmentDeleteResponse|error {
+
+    return csEntityClient->/attachments/[attachmentId].delete(generateHeaders(idToken));
 }
 
 # Get products of a deployment.

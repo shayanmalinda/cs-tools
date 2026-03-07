@@ -526,7 +526,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + payload - Attachment creation payload
     # + return - Created attachment or error response
     resource function post deployments/[entity:IdString id]/attachments(http:RequestContext ctx,
-            types:AttachmentPayload payload)
+            types:AttachmentCreatePayload payload)
         returns types:CreatedAttachment|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -544,7 +544,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     referenceType: entity:DEPLOYMENT,
                     name: payload.name,
                     'type: payload.'type,
-                    file: payload.content
+                    file: payload.content,
+                    description: payload?.description
                 });
         if createdAttachmentResponse is error {
             if getStatusCode(createdAttachmentResponse) == http:STATUS_UNAUTHORIZED {
@@ -583,6 +584,72 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             createdBy: createdAttachmentResponse.attachment.createdBy,
             downloadUrl: createdAttachmentResponse.attachment.downloadUrl
         };
+    }
+
+    # Update an attachment of a deployment.
+    #
+    # + deploymentId - ID of the deployment
+    # + attachmentId - ID of the attachment to be updated
+    # + payload - Attachment update payload
+    # + return - Updated attachment or error response
+    resource function patch deployments/[string deploymentId]/attachments/[string attachmentId](http:RequestContext ctx,
+            types:AttachmentUpdatePayload payload)
+        returns entity:UpdatedAttachment|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:AttachmentUpdateResponse|error response = entity:updateAttachment(userInfo.idToken, attachmentId,
+                {
+                    referenceId: deploymentId,
+                    referenceType: entity:DEPLOYMENT,
+                    name: payload?.name,
+                    description: payload?.description
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is forbidden to update attachment with ID: ${
+                        attachmentId}!`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You're not authorized to update attachments for the requested deployment. " +
+                        "Please check your access permissions or contact support."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                string customError = "Invalid request parameters for updating the attachment.";
+                log:printWarn(customError);
+                return <http:BadRequest>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            string customError = "Failed to update the attachment.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        return response.attachment;
     }
 
     # Get overall project statistics by ID.
@@ -1668,7 +1735,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     #
     # + id - ID of the case
     # + return - Created attachment or error response
-    resource function post cases/[entity:IdString id]/attachments(http:RequestContext ctx, types:AttachmentPayload payload)
+    resource function post cases/[entity:IdString id]/attachments(http:RequestContext ctx,
+            types:AttachmentCreatePayload payload)
         returns types:CreatedAttachment|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1723,6 +1791,133 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             createdOn: createdAttachmentResponse.attachment.createdOn,
             createdBy: createdAttachmentResponse.attachment.createdBy,
             downloadUrl: createdAttachmentResponse.attachment.downloadUrl
+        };
+    }
+
+    # Update an attachment for a specific case.
+    #
+    # + caseId - ID of the case
+    # + attachmentId - ID of the attachment
+    # + payload - Attachment update payload
+    # + return - Updated attachment or error response
+    resource function patch cases/[entity:IdString caseId]/attachments/[entity:IdString attachmentId](
+            http:RequestContext ctx, types:AttachmentUpdatePayload payload)
+        returns entity:UpdatedAttachment|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:AttachmentUpdateResponse|error response = entity:updateAttachment(userInfo.idToken, attachmentId,
+                {
+                    referenceId: caseId,
+                    referenceType: entity:CASE,
+                    name: payload?.name
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is forbidden to update attachment with ID: ${
+                        attachmentId} for case with ID: ${caseId}!`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You're not authorized to update attachments for the requested case. " +
+                        "Please check your access permissions or contact support."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                string customError = "Invalid request parameters for updating the attachment.";
+                log:printWarn(customError);
+                return <http:BadRequest>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            string customError = "Failed to update the attachment.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return response.attachment;
+    }
+
+    # Delete an attachment.
+    #
+    # + id - ID of the attachment
+    # + return - Success message or error response
+    resource function delete attachments/[entity:IdString id](http:RequestContext ctx)
+        returns http:Ok|http:Unauthorized|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:AttachmentDeleteResponse|error response = entity:deleteAttachment(userInfo.idToken, id);
+        if response is error {
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is forbidden to delete attachment with ID: ${id}!`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You're not authorized to delete attachments for the requested case. " +
+                        "Please check your access permissions or contact support."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Attachment with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The attachment you're trying to delete does not exist. " +
+                        "Please check and try again."
+                    }
+                };
+            }
+
+            string customError = "Failed to delete the attachment.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Attachment deleted successfully."
+            }
         };
     }
 
@@ -3271,71 +3466,6 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
         return mapProjectChangeRequestStatsResponse(response);
-    }
-
-    # Create a new comment for a specific change request.
-    #
-    # + id - ID of the change request
-    # + payload - Comment creation payload
-    # + return - Created comment or error response
-    resource function post change\-requests/[entity:IdString id]/comments(http:RequestContext ctx,
-            types:CommentCreatePayload payload)
-        returns entity:CreatedComment|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
-
-        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        entity:CommentCreateResponse|error createdCommentResponse = entity:createComment(userInfo.idToken,
-                {
-                    referenceId: id,
-                    referenceType: entity:CHANGE_REQUEST,
-                    content: payload.content,
-                    'type: payload.'type,
-                    createdBy: userInfo.email
-                });
-        if createdCommentResponse is error {
-            if getStatusCode(createdCommentResponse) == http:STATUS_UNAUTHORIZED {
-                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
-                return <http:Unauthorized>{
-                    body: {
-                        message: ERR_MSG_UNAUTHORIZED_ACCESS
-                    }
-                };
-            }
-            if getStatusCode(createdCommentResponse) == http:STATUS_FORBIDDEN {
-                log:printWarn(string `User: ${
-                        userInfo.userId} is forbidden to comment on change request with ID: ${id}!`);
-                return <http:Forbidden>{
-                    body: {
-                        message: "You're not authorized to comment on the requested change request. " +
-                        "Please check your access permissions or contact support."
-                    }
-                };
-            }
-            if getStatusCode(createdCommentResponse) == http:STATUS_BAD_REQUEST {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Invalid request parameters for creating a comment on change request."
-                    }
-                };
-            }
-
-            string customError = "Failed to create a new comment for change request.";
-            log:printError(customError, createdCommentResponse);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        return createdCommentResponse.comment;
     }
 
     # Get comments for a specific change request.

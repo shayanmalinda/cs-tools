@@ -57,10 +57,5 @@ public enum CaseType {
 
 # Time card state enum
 public enum TimeCardState {
-    APPROVED = "Approved",
-    SUBMITTED = "Submitted",
-    PENDING = "Pending",
-    REJECTED = "Rejected",
-    PROCESSED = "Processed",
-    RECALLED = "Recalled"
+    APPROVED = "Approved"
 }

@@ -214,7 +214,9 @@ public isolated function mapAttachmentsResponse(entity:AttachmentsResponse respo
             size: attachment.sizeBytes,
             createdBy: attachment.createdBy,
             createdOn: attachment.createdOn,
-            downloadUrl: attachment.downloadUrl
+            downloadUrl: attachment.downloadUrl,
+            content: attachment.content,
+            description: attachment.description
         };
 
     return {
