@@ -36,6 +36,7 @@ import {
 } from "@wso2/oxygen-ui-icons-react";
 import { useState, type JSX } from "react";
 import { CaseSeverity, CaseSeverityLevel } from "@constants/supportConstants";
+import { isS0SeverityLabel } from "@constants/dashboardConstants";
 import type { CaseMetadataResponse } from "@models/responses";
 import { getSeverityColor } from "@utils/support";
 import Editor from "@components/common/rich-text-editor/Editor";
@@ -62,6 +63,7 @@ export interface CaseDetailsSectionProps {
   isTitleDisabled?: boolean;
   relatedCaseNumber?: string;
   isSecurityReport?: boolean;
+  excludeS0?: boolean;
 }
 
 /**
@@ -90,6 +92,7 @@ export function CaseDetailsSection({
   isTitleDisabled = false,
   relatedCaseNumber,
   isSecurityReport = false,
+  excludeS0 = false,
 }: CaseDetailsSectionProps): JSX.Element {
   const [isEditing, setIsEditing] = useState(false);
   const effectiveEditing = isRelatedCaseMode || isEditing;
@@ -130,11 +133,17 @@ export function CaseDetailsSection({
     [CaseSeverity.CATASTROPHIC]: CaseSeverityLevel.S0,
   };
 
+  const filteredBase = excludeS0
+    ? baseSeverityLevels.filter((level) => !isS0SeverityLabel(level.label))
+    : baseSeverityLevels;
+  const filteredExtra = (extraSeverityLevels ?? []).filter(
+    (extra) =>
+      !filteredBase.some((level) => level.id === extra.id) &&
+      (!excludeS0 || !isS0SeverityLabel(extra.label)),
+  );
   const severityLevels = [
-    ...baseSeverityLevels,
-    ...(extraSeverityLevels ?? []).filter(
-      (extra) => !baseSeverityLevels.some((level) => level.id === extra.id),
-    ),
+    ...filteredBase,
+    ...filteredExtra,
   ].map((level) => ({
     ...level,
     label: SEVERITY_LABEL_MAP[level.label] ?? level.label,
