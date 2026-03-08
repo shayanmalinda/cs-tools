@@ -18,12 +18,14 @@ import { useEffect, type JSX, useMemo, useCallback } from "react";
 import { Header as HeaderUI } from "@wso2/oxygen-ui";
 import { useNavigate, useLocation, useParams } from "react-router";
 import useInfiniteProjects, { flattenProjectPages } from "@api/useGetProjects";
+import useGetProjectDetails from "@api/useGetProjectDetails";
 import { useLogger } from "@hooks/useLogger";
 import Brand from "@components/common/header/Brand";
 import Actions from "@components/common/header/Actions";
 import SearchBar from "@components/common/header/SearchBar";
 import ProjectSwitcher from "@components/common/header/ProjectSwitcher";
 import { useAsgardeo } from "@asgardeo/react";
+import { PROJECT_TYPE_LABELS } from "@constants/projectDetailsConstants";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -83,6 +85,11 @@ export default function Header({ onToggleSidebar }: HeaderProps): JSX.Element {
     return projects.find((p) => p.id === projectId);
   }, [projectId, projects]);
 
+  const { data: projectDetails } = useGetProjectDetails(projectId || "");
+  const isManagedCloudSubscription =
+    projectDetails?.type?.label === PROJECT_TYPE_LABELS.MANAGED_CLOUD_SUBSCRIPTION;
+  const excludeS0 = !isManagedCloudSubscription;
+
   /**
    * Handles the project change.
    *
@@ -123,7 +130,7 @@ export default function Header({ onToggleSidebar }: HeaderProps): JSX.Element {
             isError={isError}
           />
           {/* header search bar */}
-          <SearchBar projectId={projectId} />
+          <SearchBar projectId={projectId} excludeS0={excludeS0} />
         </>
       )}
       {/* header spacer */}
