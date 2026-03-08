@@ -27,7 +27,7 @@ import {
   Typography,
 } from "@wso2/oxygen-ui";
 import { Upload, X } from "@wso2/oxygen-ui-icons-react";
-import { useEffect, type JSX } from "react";
+import { useEffect, useMemo, type JSX } from "react";
 import type { CatalogItemVariable } from "@models/responses";
 import {
   isAttachmentField,
@@ -195,16 +195,22 @@ export default function VariableFormFields({
   onAttachmentRemove,
   onAttachmentAdd,
 }: VariableFormFieldsProps): JSX.Element {
-  const sortedVariables = variables
-    ? [...variables].sort((a, b) => a.order - b.order)
-    : [];
+  const sortedVariables = useMemo(
+    () =>
+      variables ? [...variables].sort((a, b) => a.order - b.order) : [],
+    [variables],
+  );
   const deduplicatedForDisplay = deduplicateVariables(sortedVariables);
 
-  const allContextFields = contextValues
-    ? sortedVariables.filter((v) =>
-        isContextField(v.questionText, contextValues),
-      )
-    : [];
+  const allContextFields = useMemo(
+    () =>
+      contextValues
+        ? sortedVariables.filter((v) =>
+            isContextField(v.questionText, contextValues),
+          )
+        : [],
+    [contextValues, sortedVariables],
+  );
   const contextFieldsForDisplay = deduplicateVariables(allContextFields).filter(
     (v) =>
       !CONTEXT_FIELDS_HIDDEN_FROM_DISPLAY.some((p) =>
@@ -225,7 +231,7 @@ export default function VariableFormFields({
         onChange(v.id, val);
       }
     });
-  }, [contextValues, allContextFields, onChange]);
+  }, [contextValues, allContextFields, onChange, values]);
 
   if (isLoading) {
     return (

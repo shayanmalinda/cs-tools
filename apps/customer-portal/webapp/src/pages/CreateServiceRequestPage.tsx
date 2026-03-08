@@ -135,7 +135,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
       (i) => i.id === selectedCatalogItemId,
     );
     return item?.label;
-  }, [catalogsData?.catalogs, selectedCatalogId, selectedCatalogItemId]);
+  }, [catalogsData, selectedCatalogId, selectedCatalogItemId]);
 
   const { mutate: postCase, isPending: isCreatePending } = usePostCase();
 
