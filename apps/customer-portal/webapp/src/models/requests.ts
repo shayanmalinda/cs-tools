@@ -78,6 +78,14 @@ export interface SharedEnvContext {
   tier: string;
 }
 
+// Request body for PATCH /users/me (partial update, only changed fields).
+export interface PatchUserMeRequest {
+  phoneNumber?: string;
+  timeZone?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 // Request body for case classification.
 export interface CaseClassificationRequest extends SharedEnvContext {
   chatHistory: string;
