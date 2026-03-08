@@ -51,6 +51,7 @@ export interface AllCasesSearchBarProps {
   deployments?: ProjectDeploymentItem[];
   onFilterChange: (field: string, value: string) => void;
   onClearFilters: () => void;
+  excludeS0?: boolean;
 }
 
 /**
@@ -69,6 +70,7 @@ export default function AllCasesSearchBar({
   deployments,
   onFilterChange,
   onClearFilters,
+  excludeS0 = false,
 }: AllCasesSearchBarProps): JSX.Element {
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     onSearchChange(event.target.value);
@@ -125,6 +127,7 @@ export default function AllCasesSearchBar({
             filterMetadata={filterMetadata}
             deployments={deployments}
             onFilterChange={onFilterChange}
+            excludeS0={excludeS0}
           />
         </>
       )}
