@@ -39,9 +39,9 @@ import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
 import {
   formatPhoneForDisplay,
-  parseE164,
+  parseE164ToCountryCode,
   PHONE_COUNTRY_OPTIONS,
-  toE164,
+  toE164FromCountryCode,
   validatePhoneE164,
 } from "@utils/phone";
 import { TIME_ZONE_OPTIONS } from "@constants/timeZoneConstants";
@@ -68,7 +68,7 @@ export default function UserProfileModal({
   const patchUserMe = usePatchUserMe();
 
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [countryCode, setCountryCode] = useState("+1");
+  const [countryCode, setCountryCode] = useState("US");
   const [nationalNumber, setNationalNumber] = useState("");
   const [timeZone, setTimeZone] = useState("");
   const [isPhoneEditing, setIsPhoneEditing] = useState(false);
@@ -77,7 +77,7 @@ export default function UserProfileModal({
     if (open && userDetails) {
       const raw = userDetails.phoneNumber ?? "";
       setPhoneNumber(raw);
-      const { countryCode: cc, nationalNumber: nn } = parseE164(raw);
+      const { countryCode: cc, nationalNumber: nn } = parseE164ToCountryCode(raw);
       setCountryCode(cc);
       setNationalNumber(nn);
       setTimeZone(userDetails.timeZone ?? "");
@@ -87,7 +87,7 @@ export default function UserProfileModal({
 
   const handlePhoneCountryChange = useCallback(
     (e: { target: { value: unknown } }) =>
-      setCountryCode(String(e.target.value ?? "+1")),
+      setCountryCode(String(e.target.value ?? "US")),
     [],
   );
   const handlePhoneNumberChange = useCallback(
@@ -104,7 +104,7 @@ export default function UserProfileModal({
   const handleSave = useCallback(() => {
     if (!userDetails) return;
 
-    const e164 = toE164(countryCode, nationalNumber);
+    const e164 = toE164FromCountryCode(countryCode, nationalNumber);
     const phoneError = validatePhoneE164(e164);
     if (phoneError) {
       showError(phoneError);
@@ -246,7 +246,7 @@ export default function UserProfileModal({
                       size="small"
                     >
                       {PHONE_COUNTRY_OPTIONS.map((o) => (
-                        <MenuItem key={o.dialCode} value={o.dialCode}>
+                        <MenuItem key={o.countryCode} value={o.countryCode}>
                           {o.flag} {o.label}
                         </MenuItem>
                       ))}

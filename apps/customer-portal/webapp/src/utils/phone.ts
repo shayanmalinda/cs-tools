@@ -77,6 +77,30 @@ export const PHONE_COUNTRY_OPTIONS: PhoneCountryOption[] =
   initializeCountryOptions();
 
 /**
+ * Get dial code from ISO country code.
+ *
+ * @param isoCountryCode - ISO 3166-1 alpha-2 country code (e.g., "US", "GB").
+ * @returns Dial code with + prefix (e.g., "+1", "+44"), or empty string if not found.
+ */
+export function getDialCodeFromCountryCode(isoCountryCode: string): string {
+  const option = PHONE_COUNTRY_OPTIONS.find(
+    (o) => o.countryCode === isoCountryCode,
+  );
+  return option?.dialCode || "";
+}
+
+/**
+ * Get ISO country code from dial code.
+ *
+ * @param dialCode - Dial code with + prefix (e.g., "+1", "+44").
+ * @returns ISO country code (e.g., "US", "GB"), or empty string if not found.
+ */
+export function getCountryCodeFromDialCode(dialCode: string): string {
+  const option = PHONE_COUNTRY_OPTIONS.find((o) => o.dialCode === dialCode);
+  return option?.countryCode || "";
+}
+
+/**
  * Format E.164 phone for display (e.g. "+1 555 123 4567").
  *
  * @param e164 - E.164 string (e.g. "+15551234567").
@@ -118,11 +142,49 @@ export function parseE164(
   return { countryCode: "+1", nationalNumber: digits };
 }
 
-/** Build E.164 from country code and national number. */
-export function toE164(countryCode: string, nationalNumber: string): string {
+/**
+ * Parse E.164 to { countryCode (ISO), nationalNumber }.
+ * Returns ISO country code instead of dial code.
+ *
+ * @param e164 - E.164 string.
+ * @returns Parsed parts with ISO country code.
+ */
+export function parseE164ToCountryCode(
+  e164: string | null | undefined,
+): { countryCode: string; nationalNumber: string } {
+  if (!e164?.trim()) return { countryCode: "US", nationalNumber: "" };
+  const digits = e164.replace(/\D/g, "");
+  if (digits.length === 0) return { countryCode: "US", nationalNumber: "" };
+  for (let len = 4; len >= 1; len--) {
+    const code = "+" + digits.slice(0, len);
+    const rest = digits.slice(len);
+    const dialCodeOption = PHONE_COUNTRY_OPTIONS.find(
+      (o) => o.dialCode === code,
+    );
+    if (dialCodeOption && rest.length >= 5) {
+      return {
+        countryCode: dialCodeOption.countryCode,
+        nationalNumber: rest,
+      };
+    }
+  }
+  return { countryCode: "US", nationalNumber: digits };
+}
+
+/**
+ * Build E.164 from ISO country code and national number.
+ *
+ * @param isoCountryCode - ISO 3166-1 alpha-2 country code (e.g., "US", "GB").
+ * @param nationalNumber - National number without country code.
+ * @returns E.164 formatted phone number.
+ */
+export function toE164FromCountryCode(
+  isoCountryCode: string,
+  nationalNumber: string,
+): string {
+  const dialCode = getDialCodeFromCountryCode(isoCountryCode);
   const digits = nationalNumber.replace(/\D/g, "");
-  const code = countryCode.startsWith("+") ? countryCode : `+${countryCode}`;
-  return digits ? code + digits : "";
+  return digits ? dialCode + digits : "";
 }
 
 /** E.164 regex: + followed by 10–15 digits. */
