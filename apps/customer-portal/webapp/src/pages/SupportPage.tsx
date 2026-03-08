@@ -50,8 +50,13 @@ export default function SupportPage(): JSX.Element {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
 
-  const { data: project } = useGetProjectDetails(projectId || "");
+  const {
+    data: project,
+    isLoading: isProjectLoading,
+  } = useGetProjectDetails(projectId || "");
+  const isProjectLoaded = !isProjectLoading && project !== undefined;
   const isManagedCloudSubscription =
+    isProjectLoaded &&
     project?.type?.label === PROJECT_TYPE_LABELS.MANAGED_CLOUD_SUBSCRIPTION;
 
   const { data: filterMetadata } = useGetProjectFilters(projectId || "");
@@ -105,9 +110,10 @@ export default function SupportPage(): JSX.Element {
 
   const rawCases =
     data?.pages?.[0]?.cases?.slice(0, SUPPORT_OVERVIEW_CASES_LIMIT) ?? [];
-  const cases = isManagedCloudSubscription
-    ? rawCases
-    : rawCases.filter((c) => !isS0Case(c));
+  const cases =
+    isProjectLoaded && !isManagedCloudSubscription
+      ? rawCases.filter((c) => !isS0Case(c))
+      : rawCases;
 
   const chatItems: ChatHistoryItem[] = (
     conversationsData?.conversations?.slice(0, SUPPORT_OVERVIEW_CHAT_LIMIT) ??
@@ -221,7 +227,7 @@ export default function SupportPage(): JSX.Element {
           </SupportOverviewCard>
         </Grid>
       </Grid>
-      {isManagedCloudSubscription && (
+      {isProjectLoaded && isManagedCloudSubscription && (
         <Box sx={{ mt: 3 }}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, lg: 6 }}>
