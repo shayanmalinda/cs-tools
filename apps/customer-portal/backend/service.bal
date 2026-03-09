@@ -3728,7 +3728,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
         
-        string? createdFor = payload.createdFor;
+        // Default 'createdFor' to the requesting user's email for user tokens before any ownership checks.
+        string? createdFor = payload.tokenType == registry:USER_TOKEN ? userInfo.email : payload.createdFor;
 
         // Enforce 'createdFor' email for service tokens.
         if payload.tokenType == registry:SERVICE_TOKEN && createdFor is () {
@@ -3751,8 +3752,6 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 }
             };
         }
-
-        createdFor = payload.tokenType == registry:USER_TOKEN ? userInfo.email : createdFor;
 
         registry:TokenCreationResponse|error response = registry:createToken(
                 {
