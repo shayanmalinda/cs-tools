@@ -3715,7 +3715,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+        boolean isAdmin = authorization:checkRoles([authorization:adminRole], userDetails.roles);
 
         // Only allow admins to create service tokens
         if !isAdmin && payload.tokenType == registry:SERVICE_TOKEN  {
@@ -3868,7 +3868,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+        boolean isAdmin = authorization:checkRoles([authorization:adminRole], userDetails.roles);
 
         registry:Token[]|error response = registry:searchTokens(
                 {
@@ -3937,7 +3937,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+        boolean isAdmin = authorization:checkRoles([authorization:adminRole], userDetails.roles);
 
         registry:Token|error token = registry:getTokenById(id);
         if token is error {
@@ -4079,7 +4079,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+        boolean isAdmin = authorization:checkRoles([authorization:adminRole], userDetails.roles);
         
         registry:Token|error token = registry:getTokenById(id);
         if token is error {
