@@ -293,6 +293,26 @@ public type ProjectResponse record {|
         # Technical owner email
         string? technicalOwnerEmail;
     |} account;
+    # Query hour information
+    string? totalQueryHours;
+    # Consumed query hours
+    string? consumedQueryHours;
+    # Remaining query hours
+    string? remainingQueryHours;
+    # Go-live date
+    entity:Date? goLiveDate;
+    # Go-live plan date
+    entity:Date? goLivePlanDate;
+    # Onboarding hour information
+    string? totalOnboardingHours;
+    # Consumed onboarding hours
+    string? consumedOnboardingHours;
+    # Remaining onboarding hours
+    string? remainingOnboardingHours;
+    # Onboarding expiry date
+    entity:Date? onboardingExpiryDate;
+    # Onboarding status
+    string? onboardingStatus;
 |};
 
 # Projects response.
