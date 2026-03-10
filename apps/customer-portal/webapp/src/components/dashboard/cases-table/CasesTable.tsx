@@ -248,7 +248,7 @@ const CasesTable = ({
           <Box sx={{ mb: 3 }}>
             <CasesFilters
               filters={filters}
-              filterFields={dynamicFilterFields}
+              filterFields={dynamicFilterFields as any}
               onFilterChange={handleUpdateFilter}
             />
           </Box>

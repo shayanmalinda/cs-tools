@@ -51,7 +51,7 @@ const ProjectMetadata = ({
   isError,
 }: ProjectMetadataProps): JSX.Element => {
   const chipStyle = {
-    font: "caption",
+    typography: "caption",
     maxWidth: "140px",
     "& .MuiChip-label": {
       display: "block",
@@ -115,16 +115,24 @@ const ProjectMetadata = ({
             </Typography>
             {isLoading || isError ? (
               <Skeleton variant="rounded" width={80} height={24} />
-            ) : (
-              <Tooltip title={type?.label ?? ""} arrow>
+            ) : type?.label ? (
+              <Tooltip title={type.label} arrow>
                 <Chip
-                  label={type?.label ?? ""}
+                  label={type.label}
                   size="small"
                   variant="outlined"
-                  color={getProjectTypeColor(type?.label ?? "")}
+                  color={getProjectTypeColor(type.label)}
                   sx={chipStyle}
                 />
               </Tooltip>
+            ) : (
+              <Chip
+                label=""
+                size="small"
+                variant="outlined"
+                color={getProjectTypeColor("")}
+                sx={chipStyle}
+              />
             )}
           </Box>
         </Grid>
@@ -147,7 +155,7 @@ const ProjectMetadata = ({
             </Typography>
             {isLoading || isError ? (
               <Skeleton variant="rounded" width={80} height={24} />
-            ) : (
+            ) : supportTier ? (
               <Tooltip title={supportTier} arrow>
                 <Chip
                   label={supportTier}
@@ -157,6 +165,14 @@ const ProjectMetadata = ({
                   sx={chipStyle}
                 />
               </Tooltip>
+            ) : (
+              <Chip
+                label={supportTier}
+                size="small"
+                color={getSupportTierColor(supportTier)}
+                variant="outlined"
+                sx={chipStyle}
+              />
             )}
           </Box>
         </Grid>
@@ -179,7 +195,7 @@ const ProjectMetadata = ({
             </Typography>
             {isLoading || isError ? (
               <Skeleton variant="rounded" width={60} height={24} />
-            ) : (
+            ) : slaStatus ? (
               <Tooltip title={slaStatus} arrow>
                 <Chip
                   label={slaStatus}
@@ -189,6 +205,14 @@ const ProjectMetadata = ({
                   sx={chipStyle}
                 />
               </Tooltip>
+            ) : (
+              <Chip
+                label={slaStatus}
+                size="small"
+                color={getSLAStatusColor(slaStatus)}
+                variant="outlined"
+                sx={chipStyle}
+              />
             )}
           </Box>
         </Grid>

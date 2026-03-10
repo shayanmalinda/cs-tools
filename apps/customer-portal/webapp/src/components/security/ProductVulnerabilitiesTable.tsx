@@ -139,6 +139,11 @@ const ProductVulnerabilitiesTable = ({
     return result;
   }, [filters, severityOptions]);
 
+  const activeFilterCount = useMemo(
+    () => activeFilterFields.filter((f) => appliedFilters[f.id]).length,
+    [activeFilterFields, appliedFilters],
+  );
+
   return (
     <ListingTable.Container sx={{ width: "100%", mb: 4, p: 3 }}>
       <ProductVulnerabilitiesTableHeader
@@ -148,18 +153,14 @@ const ProductVulnerabilitiesTable = ({
           setPage(0);
         }}
         onFilterToggle={() => {
-          if (
-            activeFilterFields.filter((f) => appliedFilters[f.id]).length > 0
-          ) {
+          if (activeFilterCount > 0) {
             handleClearFilters();
           } else {
             setIsFilterOpen(!isFilterOpen);
           }
         }}
         isFiltersOpen={isFilterOpen}
-        activeFiltersCount={
-          activeFilterFields.filter((f) => appliedFilters[f.id]).length
-        }
+        activeFiltersCount={activeFilterCount}
       />
 
       {/* Filter dropdowns section */}
