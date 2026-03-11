@@ -147,6 +147,7 @@ export interface PostCaseAttachmentRequest {
   name: string;
   type: string;
   content: string;
+  description?: string;
   referenceType?: string;
 }
 
@@ -155,6 +156,13 @@ export interface PostDeploymentAttachmentRequest {
   name: string;
   type: string;
   content: string;
+  description?: string;
+}
+
+// Request body for PATCHing an attachment (cases or deployments).
+export interface PatchAttachmentRequest {
+  name?: string;
+  description?: string;
 }
 
 // Request body for PATCH /deployments/:deploymentId/products/:productId.

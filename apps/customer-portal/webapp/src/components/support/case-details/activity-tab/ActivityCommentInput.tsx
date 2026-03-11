@@ -204,7 +204,7 @@ export default function ActivityCommentInput({
             onChange={setValue}
             disabled={isDisabled}
             resetTrigger={resetTrigger}
-            minHeight={focusMode ? 60 : 40}
+            minHeight={isFocused ? 120 : 60}
             showToolbar={true}
             placeholder={
               isCaseClosed
@@ -215,8 +215,8 @@ export default function ActivityCommentInput({
             onAttachmentClick={handleAttachmentClick}
             attachments={attachments.map((a) => a.file)}
             onAttachmentRemove={handleAttachmentRemove}
-            showKeyboardHint={true}
-            maxHeight={isFocused ? "310px" : focusMode ? "60px" : "40px"}
+            showKeyboardHint={false}
+            maxHeight={isFocused ? "310px" : focusMode ? "120px" : "60px"}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           />

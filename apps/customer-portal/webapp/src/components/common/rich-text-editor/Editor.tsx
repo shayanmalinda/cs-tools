@@ -50,7 +50,11 @@ import { useLogger } from "@hooks/useLogger";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { $getRoot } from "lexical";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { KEY_ENTER_COMMAND, COMMAND_PRIORITY_LOW } from "lexical";
+import {
+  KEY_ENTER_COMMAND,
+  COMMAND_PRIORITY_HIGH,
+  INSERT_PARAGRAPH_COMMAND,
+} from "lexical";
 
 /**
  * Internal component to handle editable state changes.
@@ -116,7 +120,7 @@ const OnChangeHTMLPlugin = ({
 
 /**
  * Plugin to call onSubmitKeyDown when Enter is pressed without Shift.
- * Shift+Enter inserts newline; Enter submits.
+ * Shift+Enter inserts new paragraph (new line); Enter submits.
  */
 const EnterSubmitPlugin = ({
   onSubmit,
@@ -130,17 +134,23 @@ const EnterSubmitPlugin = ({
   useEffect(() => {
     if (!onSubmit || disabled) return;
 
-    return editor.registerCommand(
+    const unregEnter = editor.registerCommand(
       KEY_ENTER_COMMAND,
       (event: KeyboardEvent | null) => {
         if (event === null) return false;
-        if (event.shiftKey) return false;
+        if (event.shiftKey) {
+          event.preventDefault?.();
+          editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+          return true;
+        }
         event.preventDefault?.();
         onSubmit();
         return true;
       },
-      COMMAND_PRIORITY_LOW,
+      COMMAND_PRIORITY_HIGH,
     );
+
+    return unregEnter;
   }, [editor, onSubmit, disabled]);
 
   return null;

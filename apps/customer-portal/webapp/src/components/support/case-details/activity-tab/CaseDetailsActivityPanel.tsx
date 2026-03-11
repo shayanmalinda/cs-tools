@@ -22,7 +22,7 @@ import {
   alpha,
   useTheme,
 } from "@wso2/oxygen-ui";
-import { useMemo, useEffect, useRef, type JSX } from "react";
+import { useMemo, useEffect, useRef, useState, type JSX } from "react";
 import useGetCaseComments from "@api/useGetCaseComments";
 import useGetUserDetails from "@api/useGetUserDetails";
 import type { CaseComment } from "@models/responses";
@@ -30,6 +30,7 @@ import EmptyIcon from "@components/common/empty-state/EmptyIcon";
 import { formatCommentDate } from "@utils/support";
 import ActivityCommentInput from "@case-details-activity/ActivityCommentInput";
 import CommentBubble from "@case-details-activity/CommentBubble";
+import ImageFullscreenModal from "@case-details-activity/ImageFullscreenModal";
 import { hasDisplayableContent } from "@utils/support";
 
 // TODO : DUE TO URGENCY THIS COMPONENT BREAKS THE BEST PRACTICES , NEED FULL REFACTOR
@@ -114,7 +115,7 @@ export default function CaseDetailsActivityPanel({
     );
   } else {
     content = (
-      <ActivityContent
+      <ActivityContentWithImageModal
         commentsToShow={commentsToShow}
         caseCreatedOn={caseCreatedOn}
         currentUserEmail={currentUserEmail}
@@ -152,6 +153,26 @@ interface ActivityContentProps {
     firstName?: string;
     lastName?: string;
   } | null;
+  onImageClick?: (src: string) => void;
+}
+
+function ActivityContentWithImageModal(props: ActivityContentProps): JSX.Element {
+  const [fullscreenImageSrc, setFullscreenImageSrc] = useState<string | null>(
+    null,
+  );
+  return (
+    <>
+      <ActivityContent
+        {...props}
+        onImageClick={(src) => setFullscreenImageSrc(src)}
+      />
+      <ImageFullscreenModal
+        open={!!fullscreenImageSrc}
+        imageSrc={fullscreenImageSrc}
+        onClose={() => setFullscreenImageSrc(null)}
+      />
+    </>
+  );
 }
 
 function ActivityContent({
@@ -160,6 +181,7 @@ function ActivityContent({
   currentUserEmail,
   primaryBg,
   userDetails,
+  onImageClick,
 }: ActivityContentProps): JSX.Element {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -244,16 +266,15 @@ function ActivityContent({
           commentsToShow.map((comment) => {
             const commentCreatorEmail = comment.createdBy?.toLowerCase() ?? "";
             const isCurrentUser = commentCreatorEmail === currentUserEmail;
-            const isSupportEngineer = commentCreatorEmail.endsWith("@wso2.com");
 
             return (
               <CommentBubble
                 key={comment.id}
                 comment={comment}
                 isCurrentUser={isCurrentUser}
-                isSupportEngineer={isSupportEngineer}
                 primaryBg={primaryBg}
                 userDetails={userDetails}
+                onImageClick={onImageClick}
               />
             );
           })

@@ -88,6 +88,7 @@ export default function UploadAttachmentModal({
   const postAttachments = usePostAttachments();
   const postDeploymentAttachment = usePostDeploymentAttachment();
   const isDeploymentMode = !!deploymentId && !caseId;
+  const showDescription = isDeploymentMode;
   const isPending = isDeploymentMode
     ? postDeploymentAttachment.isPending
     : postAttachments.isPending;
@@ -95,6 +96,7 @@ export default function UploadAttachmentModal({
 
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileSizeErrorVisible, setFileSizeErrorVisible] = useState(false);
   const [readErrorVisible, setReadErrorVisible] = useState(false);
@@ -110,6 +112,7 @@ export default function UploadAttachmentModal({
   const reset = useCallback(() => {
     setFile(null);
     setName("");
+    setDescription("");
     setFileSizeErrorVisible(false);
     setReadErrorVisible(false);
   }, []);
@@ -192,6 +195,7 @@ export default function UploadAttachmentModal({
         name: attachmentName,
         type: file.type || "application/octet-stream",
         content,
+        ...(description.trim() && { description: description.trim() }),
       };
 
       if (isDeploymentMode) {
@@ -225,6 +229,7 @@ export default function UploadAttachmentModal({
     deploymentId,
     file,
     name,
+    description,
     fileTooLarge,
     isDeploymentMode,
     postAttachments,
@@ -303,7 +308,21 @@ export default function UploadAttachmentModal({
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={!file}
+          sx={{ mt: 2 }}
         />
+        {showDescription && (
+          <TextField
+            fullWidth
+            label="Description (optional)"
+            placeholder="Add a short description for this file"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={!file}
+            multiline
+            minRows={2}
+            sx={{ mt: 2 }}
+          />
+        )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
         <Button onClick={handleClose} disabled={isPending}>

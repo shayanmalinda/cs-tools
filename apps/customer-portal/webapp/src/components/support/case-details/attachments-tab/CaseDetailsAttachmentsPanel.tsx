@@ -22,9 +22,13 @@ import {
   flattenCaseAttachments,
 } from "@api/useGetCaseAttachments";
 import type { CaseAttachment } from "@models/responses";
+import { useDeleteAttachment } from "@api/useDeleteAttachment";
+import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import UploadAttachmentModal from "@case-details-attachments/UploadAttachmentModal";
 import AttachmentListItem from "@case-details-attachments/AttachmentListItem";
 import AttachmentsListSkeleton from "@case-details-attachments/AttachmentsListSkeleton";
+import DeleteAttachmentModal from "@case-details-attachments/DeleteAttachmentModal";
+import EditCaseAttachmentModal from "@case-details-attachments/EditCaseAttachmentModal";
 import EmptyIcon from "@components/common/empty-state/EmptyIcon";
 
 const ITEMS_PER_PAGE = 10;
@@ -45,8 +49,13 @@ export default function CaseDetailsAttachmentsPanel({
   caseId,
   isCaseClosed = false,
 }: CaseDetailsAttachmentsPanelProps): JSX.Element {
+  const { showError } = useErrorBanner();
   const [uploadOpen, setUploadOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [attachmentToDelete, setAttachmentToDelete] =
+    useState<CaseAttachment | null>(null);
+  const [attachmentToEdit, setAttachmentToEdit] =
+    useState<CaseAttachment | null>(null);
 
   const {
     data,
@@ -57,6 +66,8 @@ export default function CaseDetailsAttachmentsPanel({
     fetchNextPage,
     isFetchNextPageError,
   } = useGetCaseAttachments(caseId);
+
+  const deleteAttachment = useDeleteAttachment();
 
   const allAttachments = useMemo(() => flattenCaseAttachments(data), [data]);
 
@@ -105,9 +116,51 @@ export default function CaseDetailsAttachmentsPanel({
   ]);
 
   const handleDownload = (att: CaseAttachment) => {
+    if (att.content) {
+      const isDataUrl = att.content.startsWith("data:");
+      const href = isDataUrl
+        ? att.content
+        : `data:${att.type || "application/octet-stream"};base64,${att.content}`;
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = att.name || "attachment";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.click();
+      return;
+    }
     if (att.downloadUrl) {
       window.open(att.downloadUrl, "_blank", "noopener,noreferrer");
     }
+  };
+
+  const handleDeleteClick = (att: CaseAttachment) => {
+    setAttachmentToDelete(att);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!attachmentToDelete?.id) return;
+    deleteAttachment.mutate(
+      { attachmentId: attachmentToDelete.id, caseId },
+      {
+        onSuccess: () => setAttachmentToDelete(null),
+        onError: (error) => {
+          showError(error.message);
+        },
+      },
+    );
+  };
+
+  const handleEditClick = (att: CaseAttachment) => {
+    setAttachmentToEdit(att);
+  };
+
+  const handleEditSuccess = () => {
+    setAttachmentToEdit(null);
+  };
+
+  const handleEditError = (message: string) => {
+    showError(message);
   };
 
   if (!caseId) {
@@ -177,6 +230,9 @@ export default function CaseDetailsAttachmentsPanel({
                   key={att.id}
                   attachment={att}
                   onDownload={handleDownload}
+                  onDelete={isCaseClosed ? undefined : handleDeleteClick}
+                  onEdit={isCaseClosed ? undefined : handleEditClick}
+                  hideDescription
                 />
               ))
             )}
@@ -200,6 +256,23 @@ export default function CaseDetailsAttachmentsPanel({
         open={uploadOpen}
         caseId={caseId}
         onClose={() => setUploadOpen(false)}
+      />
+
+      <DeleteAttachmentModal
+        open={!!attachmentToDelete}
+        attachmentName={attachmentToDelete?.name ?? null}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={!!attachmentToDelete && deleteAttachment.isPending}
+      />
+
+      <EditCaseAttachmentModal
+        open={!!attachmentToEdit}
+        attachment={attachmentToEdit}
+        caseId={caseId}
+        onClose={() => setAttachmentToEdit(null)}
+        onSuccess={handleEditSuccess}
+        onError={handleEditError}
       />
     </>
   );
