@@ -703,7 +703,7 @@ export default function CreateCasePage(): JSX.Element {
         ? CaseType.SECURITY_REPORT_ANALYSIS
         : CaseType.DEFAULT_CASE,
       deploymentId: String(deploymentMatch.id),
-      description: descriptionPlain,
+      description,
       issueTypeKey,
       deployedProductId: String(productId),
       projectId,

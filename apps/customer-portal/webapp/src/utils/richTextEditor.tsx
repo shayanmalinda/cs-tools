@@ -70,8 +70,10 @@ export function escapeHtml(text: string): string {
 /**
  * Sanitizes a URL by allowing only safe protocols.
  * Rejects protocol-relative URLs (e.g. //evil.com); allows single leading slash for relative paths.
+ * Also allows data:image/* base64 URLs for inline images in the rich text editor.
  */
-const SAFE_URL_PATTERN = /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i;
+const SAFE_URL_PATTERN =
+  /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#|data:image\/[a-zA-Z0-9.+-]+;base64,)/i;
 export function sanitizeUrl(url: string): string {
   const decoded = url.replace(/&amp;/g, "&").trim();
   return SAFE_URL_PATTERN.test(decoded) ? decoded : "";

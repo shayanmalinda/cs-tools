@@ -703,6 +703,7 @@ export interface DeploymentAttachmentsResponse {
 export interface DeploymentDocument {
   id: string;
   name: string;
+  description?: string | null;
   category?: string;
   sizeBytes?: number;
   size?: number;
@@ -710,6 +711,7 @@ export interface DeploymentDocument {
   createdOn?: string;
   uploadedBy?: string;
   createdBy?: string;
+  content?: string | null;
   downloadUrl?: string;
 }
 
@@ -810,8 +812,10 @@ export interface CaseAttachment {
   id: string;
   name: string;
   type: string;
+  description?: string | null;
   size?: number;
   sizeBytes?: string;
+  content?: string | null;
   downloadUrl: string;
   createdOn: string;
   createdBy: string;
