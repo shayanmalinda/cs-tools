@@ -41,12 +41,11 @@ export default function AttachmentsListSkeleton(): JSX.Element {
             <Skeleton variant="text" width="60%" height={24} />
             <Skeleton variant="text" width="40%" height={16} sx={{ mt: 0.5 }} />
           </Box>
-          <Skeleton
-            variant="rectangular"
-            width={100}
-            height={32}
-            sx={{ borderRadius: 1 }}
-          />
+          <Box sx={{ display: "flex", gap: 0.25 }}>
+            <Skeleton variant="rounded" width={32} height={32} />
+            <Skeleton variant="rounded" width={32} height={32} />
+            <Skeleton variant="rounded" width={32} height={32} />
+          </Box>
         </Paper>
       ))}
     </Stack>
