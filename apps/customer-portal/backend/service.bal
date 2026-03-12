@@ -4122,7 +4122,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 };
             }
             if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
-                logForbiddenProjectAccess(id, userInfo.userId);
+                logForbiddenProjectAccess(tokenInformation.snProjectId, userInfo.userId);
                 return <http:Forbidden>{
                     body: {
                         message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
@@ -4130,7 +4130,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 };
             }
             if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
-                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                log:printWarn(string `Project with ID: ${tokenInformation.snProjectId} not found for user: ${
+                    userInfo.userId}`);
                 return <http:NotFound>{
                     body: {
                         message: "The requested token does not exist or you don't have access to it."
