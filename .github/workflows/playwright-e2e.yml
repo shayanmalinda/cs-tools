@@ -1,23 +1,10 @@
-# Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
-#
-# WSO2 LLC. licenses this file to you under the Apache License,
-# Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-
 name: Playwright E2E Tests
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - add-e2e-ui-testing-workflows # This will trigger the run automatically
+  workflow_dispatch: # This will work only after merging to main
 
 jobs:
   e2e:
@@ -74,14 +61,10 @@ jobs:
           CI: true
         run: pnpm run test:e2e
 
-      - name: Upload Playwright artifacts on failure
-        if: failure()
+      - name: Upload Playwright artifacts
+        if: always() # Changed to 'always' so you can see results even if it passes
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-artifacts
-          path: |
-            apps/customer-portal/webapp/test-results/**
-            apps/customer-portal/webapp/playwright-report/**
-          if-no-files-found: ignore
+          name: playwright-report
+          path: apps/customer-portal/webapp/playwright-report/
           retention-days: 7
-
