@@ -57,8 +57,9 @@ public isolated function searchCases(string idToken, string projectId, types:Cas
         let entity:ReferenceTableItem? conversation = case.conversation
         let entity:ChoiceListItem? severity = case.severity
         let entity:ChoiceListItem? state = case.state
-        let entity:ReferenceTableItem? catalog = case.catalog
-        let entity:ReferenceTableItem? catalogItem = case.catalogItem
+        let entity:ChoiceListItem? engagementType = case.engagementType
+        let entity:ReferenceTableItem? catalog = case?.catalog
+        let entity:ReferenceTableItem? catalogItem = case?.catalogItem
         let entity:ReferenceTableItem? assignedTeam = case.assignedTeam
         let entity:ReferenceTableItem? product = case.product
         select {
@@ -69,6 +70,7 @@ public isolated function searchCases(string idToken, string projectId, types:Cas
             createdOn: case.createdOn,
             createdBy: case.createdBy,
             description: case.description,
+            duration: case.duration,
             project: project != () ? {id: project.id, label: project.name} : (),
             'type: 'type != () ? {id: 'type.id, label: 'type.name} : (),
             deployedProduct: deployedProduct != () ? {id: deployedProduct.id, label: deployedProduct.name} : (),
@@ -79,6 +81,7 @@ public isolated function searchCases(string idToken, string projectId, types:Cas
             conversation: conversation != () ? {id: conversation.id, label: conversation.name} : (),
             severity: severity != () ? {id: severity.id.toString(), label: severity.label} : (),
             status: state != () ? {id: state.id.toString(), label: state.label} : (),
+            engagementType: engagementType != () ? {id: engagementType.id.toString(), label: engagementType.label} : (),
             catalog: catalog != () ? {id: catalog.id, label: catalog.name} : (),
             catalogItem: catalogItem != () ? {id: catalogItem.id, label: catalogItem.name} : (),
             assignedTeam: assignedTeam != () ? {id: assignedTeam.id, label: assignedTeam.name} : (),
@@ -122,6 +125,8 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
         select {id: item.id, label: item.name};
     types:ReferenceItem[] conversationStates = from entity:ChoiceListItem item in projectMetadata.conversationStates
         select {id: item.id.toString(), label: item.label};
+    types:ReferenceItem[] engagementTypes = from entity:ChoiceListItem item in projectMetadata.engagementTypes
+        select {id: item.id.toString(), label: item.label};
 
     return {
         caseStates,
@@ -135,6 +140,7 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
         caseTypes,
         conversationStates,
         timeCardStates,
+        engagementTypes,
         severityBasedAllocationTime: projectMetadata.severityBasedAllocationTime
     };
 }
@@ -513,12 +519,13 @@ public isolated function mapCaseResponse(entity:CaseResponse response) returns t
     entity:ReferenceTableItem? conversation = response.conversation;
     entity:ChoiceListItem? severity = response.severity;
     entity:ChoiceListItem? state = response.state;
-    entity:ReferenceTableItem? catalog = response.catalog;
-    entity:ReferenceTableItem? catalogItem = response.catalogItem;
+    entity:ReferenceTableItem? catalog = response?.catalog;
+    entity:ReferenceTableItem? catalogItem = response?.catalogItem;
     entity:ReferenceTableItem? assignedTeam = response.assignedTeam;
     entity:ReferenceTableItem[]? changeRequests = response?.changeRequests;
     entity:ServiceRequestVariable[]? variables = response?.variables;
     entity:ReferenceTableItem? product = response.product;
+    entity:ChoiceListItem? engagementType = response.engagementType;
 
     return {
         id: response.id,
@@ -526,6 +533,7 @@ public isolated function mapCaseResponse(entity:CaseResponse response) returns t
         number: response.number,
         title: response.title,
         description: response.description,
+        duration: response.duration,
         createdOn: response.createdOn,
         createdBy: response.createdBy,
         slaResponseTime: response.slaResponseTime,
@@ -537,6 +545,7 @@ public isolated function mapCaseResponse(entity:CaseResponse response) returns t
         conversation: conversation != () ? {id: conversation.id, label: conversation.name} : (),
         severity: severity != () ? {id: severity.id.toString(), label: severity.label} : (),
         status: state != () ? {id: state.id.toString(), label: state.label} : (),
+        engagementType: engagementType != () ? {id: engagementType.id.toString(), label: engagementType.label} : (),
         catalog: catalog != () ? {id: catalog.id, label: catalog.name} : (),
         catalogItem: catalogItem != () ? {id: catalogItem.id, label: catalogItem.name} : (),
         assignedTeam: assignedTeam != () ? {id: assignedTeam.id, label: assignedTeam.name} : (),

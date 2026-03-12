@@ -52,7 +52,8 @@ public enum CaseType {
     DEFAULT_CASE = "default_case",
     SERVICE_REQUEST = "service_request",
     SECURITY_REPORT_ANALYSIS = "security_report_analysis",
-    ANNOUNCEMENT = "announcement"
+    ANNOUNCEMENT = "announcement",
+    ENGAGEMENT = "engagement"
 }
 
 # Time card state enum

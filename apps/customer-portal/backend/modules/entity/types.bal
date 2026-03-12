@@ -326,6 +326,8 @@ public type Case record {|
     string? title;
     # Case description
     string? description;
+    # Duration
+    string? duration;
     # issue type of the case
     ChoiceListItem? issueType;
     # Status information
@@ -333,13 +335,15 @@ public type Case record {|
     # Severity information
     ChoiceListItem? severity;
     # Catalog information (if the case is a service request)
-    ReferenceTableItem? catalog;
+    ReferenceTableItem? catalog?;
     # Catalog item information (if the case is a service request)
-    ReferenceTableItem? catalogItem;
+    ReferenceTableItem? catalogItem?;
     # Assigned team
     ReferenceTableItem? assignedTeam;
     # WSO2 product information
     ReferenceTableItem? product;
+    # Engagement type information
+    ChoiceListItem engagementType?;
     json...;
 |};
 
@@ -523,6 +527,8 @@ public type ProjectMetadataResponse record {|
     ChoiceListItem[] conversationStates;
     # List of available case types
     ReferenceTableItem[] caseTypes;
+    # List of available engagement types
+    ChoiceListItem[] engagementTypes;
     # Severity based allocation time mapping (severity ID to allocation time in minutes)
     map<int> severityBasedAllocationTime;
     json...;

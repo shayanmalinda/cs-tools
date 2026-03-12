@@ -76,6 +76,8 @@ public type Case record {|
     string? title;
     # Case description
     string? description;
+    # Duration
+    string? duration;
     # issueType of the case
     ReferenceItem? issueType;
     # Severity of the case
@@ -83,13 +85,15 @@ public type Case record {|
     # State of the case
     ReferenceItem? status;
     # Catalog information (if the case is a service request)
-    ReferenceItem? catalog;
+    ReferenceItem? catalog?;
     # Catalog item information (if the case is a service request)
-    ReferenceItem? catalogItem;
+    ReferenceItem? catalogItem?;
     # Assigned team
     ReferenceItem? assignedTeam;
     # Product information
     ReferenceItem? product;
+    # Engagement type information
+    ReferenceItem engagementType?;
 |};
 
 # Case information.
@@ -240,6 +244,8 @@ public type ProjectFilterOptions record {|
     ReferenceItem[] caseTypes;
     # List of available time card states
     ReferenceItem[] timeCardStates;
+    # List of available engagement types
+    ReferenceItem[] engagementTypes;
     # Severity based allocation time mapping (severity ID to allocation time in minutes)
     map<int> severityBasedAllocationTime;
 |};

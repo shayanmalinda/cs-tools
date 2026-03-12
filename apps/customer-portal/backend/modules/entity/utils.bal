@@ -170,7 +170,7 @@ public isolated function validateCaseCreatePayload(CaseCreatePayload payload) re
     string? title = payload.title;
     string? description = payload.description;
 
-    if caseType == DEFAULT_CASE {
+    if caseType is DEFAULT_CASE {
         if title is () {
             return "Title is required for default case.";
         }
@@ -186,7 +186,7 @@ public isolated function validateCaseCreatePayload(CaseCreatePayload payload) re
         if payload.severityKey is () {
             return "Severity key is required for default case.";
         }
-    } else if caseType == SERVICE_REQUEST {
+    } else if caseType is SERVICE_REQUEST {
         if payload.catalogId is () {
             return "Catalog is required for service request case.";
         }
@@ -197,7 +197,7 @@ public isolated function validateCaseCreatePayload(CaseCreatePayload payload) re
         if variables is () || variables.length() == 0 {
             return "At least one variable is required for service request case.";
         }
-    } else if caseType == SECURITY_REPORT_ANALYSIS {
+    } else if caseType is SECURITY_REPORT_ANALYSIS {
         if title is () {
             return "Title is required for security report analysis case type.";
         }
