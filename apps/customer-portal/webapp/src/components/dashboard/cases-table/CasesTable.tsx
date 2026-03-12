@@ -26,11 +26,7 @@ import type { FilterField } from "@components/common/filter-panel/FilterPopover"
 import CasesTableHeader from "@components/dashboard/cases-table/CasesTableHeader";
 import CasesFilters from "@components/dashboard/cases-table/CasesFilters";
 import CasesList from "@components/dashboard/cases-table/CasesList";
-import {
-  normalizeCaseTypeOptions,
-  mapSeverityToDisplay,
-  isS0Case,
-} from "@utils/support";
+import { mapSeverityToDisplay, isS0Case } from "@utils/support";
 import { isS0SeverityLabel } from "@constants/dashboardConstants";
 import type { CaseListItem, CaseSearchResponse } from "@models/responses";
 
@@ -104,12 +100,6 @@ const CasesTable = ({
           label: d.type?.label || d.name,
           value: d.id,
         })) || [],
-    },
-    {
-      id: "caseTypes",
-      label: "Case Type",
-      type: "select",
-      options: normalizeCaseTypeOptions(filtersMetadata?.caseTypes || []),
     },
   ];
 
