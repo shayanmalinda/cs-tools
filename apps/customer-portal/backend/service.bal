@@ -734,7 +734,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     #
     # + id - ID of the project
     # + return - Project statistics response or error
-    resource function get projects/[entity:IdString id]/stats(http:RequestContext ctx, string[]? caseTypes)
+    resource function get projects/[entity:IdString id]/stats(http:RequestContext ctx, entity:CaseType[]? caseTypes)
         returns types:ProjectStatsResponse|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -801,7 +801,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     #
     # + id - ID of the project
     # + return - Project statistics overview or error response
-    resource function get projects/[entity:IdString id]/stats/cases(http:RequestContext ctx, string[]? caseTypes)
+    resource function get projects/[entity:IdString id]/stats/cases(http:RequestContext ctx,
+            entity:CaseType[]? caseTypes)
         returns types:ProjectCaseStats|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -824,7 +825,15 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        return mapCaseStats(caseStats);
+        entity:ProjectChangeRequestStatsResponse|error changeReqStats =
+            entity:getProjectChangeRequestStats(userInfo.idToken, id);
+        if changeReqStats is error {
+            log:printError("Failed to retrieve change request statistics.", changeReqStats);
+            // To return other stats even if change request stats retrieval fails, error will not be returned.
+        }
+
+        return mapCaseStats(caseStats,
+                    changeReqStats is entity:ProjectChangeRequestStatsResponse ? changeReqStats.totalCount : ());
     }
 
     # Get conversation statistics for a project by ID.
@@ -882,7 +891,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     #
     # + id - ID of the project
     # + return - Project support statistics or error response
-    resource function get projects/[entity:IdString id]/stats/support(http:RequestContext ctx, string[]? caseTypes)
+    resource function get projects/[entity:IdString id]/stats/support(http:RequestContext ctx,
+            entity:CaseType[]? caseTypes)
         returns types:ProjectSupportStats|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -3968,7 +3978,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             }
             if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
                 log:printWarn(string `Project with ID: ${tokenInformation.snProjectId} not found for user: ${
-                    userInfo.userId}`);
+                        userInfo.userId}`);
                 return <http:NotFound>{
                     body: {
                         message: "The requested token does not exist or you don't have access to it."
@@ -4089,7 +4099,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        registry:TokenDescriptionInfo|error tokenInformation 
+        registry:TokenDescriptionInfo|error tokenInformation
             = registry:deriveTokenInfoFromDescription(token.description);
         if tokenInformation is error {
             log:printError("Failed to derive token information.", tokenInformation);
@@ -4101,7 +4111,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         }
 
         entity:ProjectResponse|error projectResponse = entity:getProject(userInfo.idToken,
-            tokenInformation.snProjectId);
+                tokenInformation.snProjectId);
         if projectResponse is error {
             if getStatusCode(projectResponse) == http:STATUS_UNAUTHORIZED {
                 log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
@@ -4112,7 +4122,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 };
             }
             if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
-                logForbiddenProjectAccess(id, userInfo.userId);
+                logForbiddenProjectAccess(tokenInformation.snProjectId, userInfo.userId);
                 return <http:Forbidden>{
                     body: {
                         message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
@@ -4120,7 +4130,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 };
             }
             if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
-                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                log:printWarn(string `Project with ID: ${tokenInformation.snProjectId} not found for user: ${
+                    userInfo.userId}`);
                 return <http:NotFound>{
                     body: {
                         message: "The requested token does not exist or you don't have access to it."

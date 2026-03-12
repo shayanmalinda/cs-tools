@@ -370,8 +370,11 @@ public isolated function mapProductVulnerabilityMetadataResponse(entity:Vulnerab
 # Map project case stats response to the desired structure.
 #
 # + response - Project case stats response from the entity service
+# + changeReqStats - Count of change requests to be added to total interactions
 # + return - Mapped project case stats response
-public isolated function mapCaseStats(entity:ProjectCaseStatsResponse response) returns types:ProjectCaseStats {
+public isolated function mapCaseStats(entity:ProjectCaseStatsResponse response, int? changeReqStats)
+    returns types:ProjectCaseStats {
+
     types:ReferenceItem[] stateCount = from entity:ChoiceListItem item in response.stateCount
         select {id: item.id.toString(), label: item.label, count: item.count};
     types:ReferenceItem[] severityCount = from entity:ChoiceListItem item in response.severityCount
@@ -381,16 +384,26 @@ public isolated function mapCaseStats(entity:ProjectCaseStatsResponse response) 
     select {id: item.id.toString(), label: item.label, count: item.count};
     types:ReferenceItem[] caseTypeCount = from entity:ReferenceTableItem item in response.caseTypeCount
         select {id: item.id, label: item.name, count: item.count};
+    types:ReferenceItem[] engagementTypeCount = from entity:ChoiceListItem item in response.engagementTypeCount
+        select {id: item.id.toString(), label: item.label, count: item.count};
+    types:ReferenceItem[] outstandingEngagementTypeCount =
+    from entity:ChoiceListItem item in response.outstandingEngagementTypeCount
+    select {id: item.id.toString(), label: item.label, count: item.count};
 
     return {
+        totalInteractions: response.totalCount + (changeReqStats ?: 0),
         totalCases: response.totalCount,
         averageResponseTime: response.averageResponseTime,
         resolvedCases: response.resolvedCount,
         changeRate: response.changeRate,
+        activeCount: response.activeCount,
+        outstandingCount: response.outstandingCount,
         stateCount,
         severityCount,
         outstandingSeverityCount,
         caseTypeCount,
+        engagementTypeCount,
+        outstandingEngagementTypeCount,
         casesTrend: response.casesTrend
     };
 }
@@ -400,7 +413,7 @@ public isolated function mapCaseStats(entity:ProjectCaseStatsResponse response) 
 # + response - Project case stats response from the entity service
 # + return - Count of open cases, or null if not available
 public isolated function getOpenCasesCountFromProjectCasesStats(entity:ProjectCaseStatsResponse response) returns int? {
-    types:ProjectCaseStats stats = mapCaseStats(response);
+    types:ProjectCaseStats stats = mapCaseStats(response, ()); // Passing nil for changeReqStats as it's not needed for getting open cases count
     types:ReferenceItem[] openCases = stats.stateCount.filter(stat => stat.id == stateIdOpen.toString());
     return openCases.length() > 0 ? openCases[0].count : ();
 }
@@ -807,7 +820,12 @@ public isolated function mapProjectChangeRequestStatsResponse(entity:ProjectChan
 
     types:ReferenceItem[] stateCount = from entity:ChoiceListItem item in response.stateCount
         select {id: item.id.toString(), label: item.label, count: item.count};
-    return {stateCount, totalCount: response.totalCount};
+    return {
+        totalCount: response.totalCount,
+        activeCount: response.activeCount,
+        outstandingCount: response.outstandingCount,
+        stateCount
+    };
 }
 
 # Map projects response to the desired structure.

@@ -584,6 +584,10 @@ public type CasesTrend record {|
 public type ProjectCaseStatsResponse record {|
     # Total case count
     int totalCount;
+    # Active case count (cases that are not in closed state)
+    int activeCount;
+    # Outstanding case count (cases that are not solution proposed or closed)
+    int outstandingCount;
     # Average response time
     decimal averageResponseTime;
     # Resolved case count breakdown
@@ -610,6 +614,10 @@ public type ProjectCaseStatsResponse record {|
     ChoiceListItem[] severityCount;
     # Outstanding cases count by severity
     ChoiceListItem[] outstandingSeverityCount;
+    # Count of cases by engagement type
+    ChoiceListItem[] engagementTypeCount;
+    # Count of Outstanding cases by engagement type
+    ChoiceListItem[] outstandingEngagementTypeCount;
     # Count of cases by type
     ReferenceTableItem[] caseTypeCount;
     # Cases trend
@@ -1692,6 +1700,10 @@ public type ChangeRequestResponse record {|
 public type ProjectChangeRequestStatsResponse record {|
     # Total change request count
     int totalCount;
+    # Active change request count (change requests that are not in rollback or closed or cancelled state)
+    int activeCount;
+    # Outstanding change request count
+    int outstandingCount;
     # Count of change requests by state
     ChoiceListItem[] stateCount;
     json...;
