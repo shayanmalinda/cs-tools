@@ -94,6 +94,7 @@ export default function PendingUpdatesPage(): JSX.Element {
 
   const handleView = useCallback(
     (levelKey: string) => {
+      if (!projectId) return;
       const params = new URLSearchParams({
         productName,
         productBaseVersion,

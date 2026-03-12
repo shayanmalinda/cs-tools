@@ -76,7 +76,7 @@ export default function DescribeIssuePage(): JSX.Element {
       location.key === "default" ||
       (typeof window !== "undefined" && window.history.length <= 1)
     ) {
-      navigate(projectId ? `/${projectId}/dashboard` : "/");
+      navigate(projectId ? `/projects/${projectId}/dashboard` : "/");
     } else {
       navigate(-1);
     }

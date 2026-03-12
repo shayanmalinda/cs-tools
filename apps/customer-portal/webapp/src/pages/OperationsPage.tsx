@@ -41,13 +41,13 @@ export default function OperationsPage(): JSX.Element {
 
   const stats: Partial<Record<OperationsStatKey, number>> | undefined =
     undefined;
-  const isError = true;
+  const isError = false;
 
   return (
     <Stack spacing={3}>
       <Box>
         <SupportStatGrid<OperationsStatKey>
-          isLoading={false}
+          isLoading={stats === undefined}
           isError={isError}
           entityName="operations"
           stats={stats}

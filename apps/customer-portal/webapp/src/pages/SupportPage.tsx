@@ -212,7 +212,7 @@ export default function SupportPage(): JSX.Element {
                         navigate(`/projects/${projectId}/support/chat/${chatId}`);
                       } else {
                         navigate(
-                          `/${projectId}/support/conversations/${chatId}`,
+                          `/projects/${projectId}/support/conversations/${chatId}`,
                           {
                             state: { conversationSummary: summary },
                           },
