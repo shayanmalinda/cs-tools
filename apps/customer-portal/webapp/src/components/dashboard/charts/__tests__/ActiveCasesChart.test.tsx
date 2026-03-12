@@ -86,18 +86,14 @@ vi.mock("../ChartLegend", () => ({
 
 describe("ActiveCasesChart", () => {
   const mockData = {
-    open: 5,
-    workInProgress: 10,
-    awaitingInfo: 3,
-    waitingOnWso2: 5,
-    solutionProposed: 0,
-    reopened: 0,
-    total: 23,
+    serviceRequests: 12,
+    changeRequests: 8,
+    total: 20,
   };
 
   it("should render title correctly", () => {
     render(<ActiveCasesChart data={mockData} isLoading={false} />);
-    expect(screen.getByText("Active Engagements")).toBeInTheDocument();
+    expect(screen.getByText("Outstanding Operations")).toBeInTheDocument();
   });
 
   it("should render skeleton when loading", () => {
@@ -115,9 +111,8 @@ describe("ActiveCasesChart", () => {
 
   it("should render all chart segments even with missing data values", () => {
     const incompleteData = {
-      workInProgress: 10,
-      waitingOnClient: 5,
-      total: 15,
+      serviceRequests: 10,
+      total: 10,
     } as any;
 
     render(<ActiveCasesChart data={incompleteData} isLoading={false} />);
