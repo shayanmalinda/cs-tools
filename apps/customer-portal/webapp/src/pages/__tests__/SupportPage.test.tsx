@@ -291,7 +291,7 @@ describe("SupportPage", () => {
       data: {
         ongoingCases: 10,
         activeChats: 5,
-        sessionChats: 15,
+        resolvedRecently: 15,
         resolvedChats: 20,
       },
     });
@@ -321,7 +321,7 @@ describe("SupportPage", () => {
       data: {
         ongoingCases: 10,
         activeChats: 5,
-        sessionChats: 15,
+        resolvedRecently: 15,
         resolvedChats: 20,
       },
     });
@@ -345,7 +345,7 @@ describe("SupportPage", () => {
       data: {
         ongoingCases: 10,
         activeChats: 5,
-        sessionChats: 15,
+        resolvedRecently: 15,
         resolvedChats: 20,
       },
     });

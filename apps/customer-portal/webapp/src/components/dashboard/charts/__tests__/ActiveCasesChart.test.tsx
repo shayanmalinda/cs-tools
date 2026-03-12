@@ -17,6 +17,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ActiveCasesChart } from "@components/dashboard/charts/ActiveCasesChart";
+import { ACTIVE_CASES_CHART_DATA } from "@constants/dashboardConstants";
 
 // Mock @wso2/oxygen-ui
 vi.mock("@wso2/oxygen-ui", () => ({
@@ -117,10 +118,9 @@ describe("ActiveCasesChart", () => {
 
     render(<ActiveCasesChart data={incompleteData} isLoading={false} />);
 
-    // Verify that all segments are still rendered (value will be undefined)
+    // Verify that all configured segments are still rendered
     const segments = screen.getAllByTestId("pie-segment");
-    // We expect 6 segments because ACTIVE_CASES_CHART_DATA has 6 items
-    expect(segments).toHaveLength(6);
+    expect(segments).toHaveLength(ACTIVE_CASES_CHART_DATA.length);
 
     // Verify that the missing value was defaulted to 0
     const values = segments.map((s) => s.getAttribute("data-value"));

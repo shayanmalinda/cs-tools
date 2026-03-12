@@ -78,6 +78,13 @@ vi.mock("../ChartLegend", () => ({
   ),
 }));
 
+vi.mock("@components/common/error-indicator/ErrorIndicator", () => ({
+  __esModule: true,
+  default: ({ entityName }: { entityName: string }) => (
+    <div data-testid="error-indicator">Error: {entityName}</div>
+  ),
+}));
+
 describe("CasesTrendChart", () => {
   it("should render title correctly", () => {
     render(<CasesTrendChart isLoading={false} />);
@@ -94,5 +101,12 @@ describe("CasesTrendChart", () => {
     render(<CasesTrendChart isLoading={false} />);
     expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
     expect(screen.getByTestId("chart-legend")).toBeInTheDocument();
+  });
+
+  it("should render error state correctly", () => {
+    render(<CasesTrendChart isLoading={false} isError={true} />);
+
+    expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("error-indicator")).toBeInTheDocument();
   });
 });

@@ -155,6 +155,7 @@ export default function DashboardPage(): JSX.Element {
     };
   }, [casesStats, isManagedCloudSubscription]);
 
+  // TODO(DashboardPage): Replace mock outstandingOperations counts with API-driven operations stats.
   const outstandingOperations = useMemo(
     () => ({
       serviceRequests: 12,

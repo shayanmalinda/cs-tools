@@ -111,7 +111,6 @@ const CasesTable = ({
         severityId: filters.severityId ? Number(filters.severityId) : undefined,
         issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
         deploymentId: filters.deploymentId || undefined,
-        caseTypes: filters.caseTypes?.length ? [filters.caseTypes] : undefined,
       },
       sortBy: {
         field: "createdOn",

@@ -119,7 +119,7 @@ describe("OutstandingIncidentsChart", () => {
       high: 3,
       critical: 0,
       catastrophic: 0,
-      total: 5,
+      total: 8,
     };
 
     render(
@@ -127,7 +127,7 @@ describe("OutstandingIncidentsChart", () => {
     );
 
     const segments = screen.getAllByTestId("pie-segment");
-    expect(segments.length).toBe(7);
+    expect(segments.length).toBe(5);
 
     const values = segments.map((s) => s.getAttribute("data-value"));
     expect(values).toContain("0");

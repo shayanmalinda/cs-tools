@@ -84,7 +84,7 @@ const CasesList = ({
               <CasesTableSkeleton rowsPerPage={rowsPerPage} />
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={5} align="center">
                   <Box
                     sx={{
                       display: "flex",
@@ -102,7 +102,7 @@ const CasesList = ({
               </TableRow>
             ) : data?.cases.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={5} align="center">
                   No cases found.
                 </TableCell>
               </TableRow>

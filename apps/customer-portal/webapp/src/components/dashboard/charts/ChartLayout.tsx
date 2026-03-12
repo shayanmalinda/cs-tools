@@ -42,13 +42,12 @@ interface ChartLayoutProps {
 }
 
 /**
- * ChartLayout component displays multiple chart sections including
- * outstanding engagements (severities + case types), active cases, and cases trend.
+ * ChartLayout component displays the three dashboard charts:
+ * outstanding support cases, outstanding operations, and outstanding engagements.
  *
  * @param {ChartLayoutProps} props - Component props
- * @param {Object} props.outstandingCases - Severity and case type counts for Outstanding Engagements chart.
- * @param {Object} props.activeCases - State counts for Active Engagements chart.
- * @param {Array} props.casesTrend - Array of trend data for Cases Trend chart.
+ * @param {Object} props.outstandingCases - Severity counts for Outstanding Support Cases chart.
+ * @param {Object} props.activeCases - Counts for Outstanding Operations chart.
  * @param {boolean} props.isLoading - Flag indicating if the data is loading.
  * @returns {JSX.Element} The chart layout element.
  */

@@ -44,14 +44,16 @@ export const CasesTrendChart = ({
 }: CasesTrendChartProps): JSX.Element => {
   const chartSource = OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA;
 
-  const chartData = isError
-    ? chartSource.map((item) => ({
-        name: item.name,
-        value: 1,
-        color: colors.grey?.[300] ?? "#D1D5DB",
-      }))
-    : isLoading
-      ? []
+  // TODO(CasesTrendChart): Replace placeholder mock data with API-driven trend data.
+  const chartData =
+    isLoading || isError
+      ? chartSource.map((item) => ({
+          name: item.name,
+          value: 0,
+          color: isError
+            ? colors.grey?.[300] ?? "#D1D5DB"
+            : item.color,
+        }))
       : [
           { name: "Onboarding", value: 12, color: chartSource[0].color },
           { name: "Migration", value: 8, color: chartSource[1].color },
@@ -73,9 +75,12 @@ export const CasesTrendChart = ({
         <Box
           sx={{
             height: 240,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <Skeleton variant="rectangular" width="100%" height="100%" />
+          <Skeleton variant="circular" width={160} height={160} />
         </Box>
       ) : (
         <Box
@@ -84,24 +89,6 @@ export const CasesTrendChart = ({
             position: "relative",
           }}
         >
-          {isError && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1,
-                pointerEvents: "none",
-              }}
-            >
-              <ErrorIndicator entityName="outstanding engagements" />
-            </Box>
-          )}
           <Box
             sx={{
               height: "100%",
@@ -139,32 +126,45 @@ export const CasesTrendChart = ({
               </PieChart>
             </ResponsiveContainer>
           </Box>
-          {/* Center content: total value */}
-          {!isError && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                textAlign: "center",
-                pointerEvents: "none",
-              }}
-            >
-              <Typography variant="h4">
-                {chartData.length > 0 ? total : "N/A"}
-              </Typography>
-              <Typography variant="caption">Total</Typography>
-            </Box>
-          )}
+          {/* Center content: total value or error indicator */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              textAlign: "center",
+              pointerEvents: "none",
+            }}
+          >
+            {isError ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <ErrorIndicator entityName="outstanding engagements" />
+                <Typography variant="caption">Total</Typography>
+              </Box>
+            ) : (
+              <>
+                <Typography variant="h4">
+                  {chartData.length > 0 ? total : "N/A"}
+                </Typography>
+                <Typography variant="caption">Total</Typography>
+              </>
+            )}
+          </Box>
         </Box>
       )}
       {/* Legend */}
       {!isLoading && (
         <ChartLegend
-          data={chartSource.map((item) => ({
+          data={chartData.map((item) => ({
             name: item.name,
-            value: 0,
+            value: item.value,
             color: item.color,
           }))}
           isError={isError}
