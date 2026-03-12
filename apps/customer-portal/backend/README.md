@@ -44,7 +44,7 @@ All endpoints are protected by `authorization:JwtInterceptor` and require user c
 
 ### Production
 
-For deployed environments behind (If Choreo), send:
+For deployed environments (e.g., Choreo), send:
 
 - `Authorization: Bearer <asgardeo_access_token>`
 
