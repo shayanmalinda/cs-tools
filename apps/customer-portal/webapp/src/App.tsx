@@ -47,6 +47,8 @@ import LoginPage from "@pages/LoginPage";
 import SecurityPage from "@pages/SecurityPage";
 import SettingsPage from "@pages/SettingsPage";
 import VulnerabilityDetailsPage from "@pages/VulnerabilityDetailsPage";
+import OperationsPage from "@pages/OperationsPage";
+import EngagementsPage from "@pages/EngagementsPage";
 
 export default function App(): JSX.Element {
   return (
@@ -69,12 +71,14 @@ export default function App(): JSX.Element {
               <Route path="/" element={<ProjectHub />} />
 
               {/* Project Specific Routes */}
-              <Route path="/:projectId">
+              <Route path="projects/:projectId">
                 {/* Dashboard */}
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
                 {/* Project Details */}
                 <Route path="project-details" element={<ProjectDetails />} />
+                {/* Operations */}
+                <Route path="operations" element={<OperationsPage />} />
                 {/* Support */}
                 <Route path="support">
                   <Route index element={<SupportPage />} />
@@ -154,10 +158,7 @@ export default function App(): JSX.Element {
                   />
                 </Route>
                 {/* Engagements */}
-                <Route
-                  path="engagements"
-                  element={<ProjectPage title="Engagements" />}
-                />
+                <Route path="engagements" element={<EngagementsPage />} />
                 {/* LegalContracts */}
                 <Route
                   path="legal-contracts"

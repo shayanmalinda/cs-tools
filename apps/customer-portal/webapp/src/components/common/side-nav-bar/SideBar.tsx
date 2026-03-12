@@ -39,9 +39,9 @@ export default function SideBar({
 
   // Get the active item from the location pathname.
   const pathSegments: string[] = location.pathname.split("/").filter(Boolean);
-  const projectIdIndex: number = projectId
-    ? pathSegments.indexOf(projectId)
-    : -1;
+  const projectsIndex = pathSegments.indexOf("projects");
+  const projectIdIndex: number =
+    projectsIndex !== -1 && projectId ? pathSegments.indexOf(projectId) : -1;
   const activeItem: string =
     projectIdIndex !== -1 && pathSegments[projectIdIndex + 1]
       ? pathSegments[projectIdIndex + 1]
@@ -62,7 +62,7 @@ export default function SideBar({
             <Link
               key={item.id}
               component={NavigateLink}
-              to={`/${projectId}/${item.path}`}
+              to={`/projects/${projectId}/${item.path}`}
               color="inherit"
               underline="none"
             >
@@ -83,7 +83,7 @@ export default function SideBar({
         <Sidebar.Category>
           <Link
             component={NavigateLink}
-            to={`/${projectId}/settings`}
+            to={`/projects/${projectId}/settings`}
             color="inherit"
             underline="none"
           >

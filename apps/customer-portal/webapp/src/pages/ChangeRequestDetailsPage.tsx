@@ -308,7 +308,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       <Stack spacing={3}>
         <Button
           startIcon={<ArrowLeft size={16} />}
-          onClick={() => navigate(`/${projectId}/support/change-requests`)}
+          onClick={() => navigate(`/projects/${projectId}/support/change-requests`)}
           sx={{ alignSelf: "flex-start" }}
           variant="text"
         >
@@ -417,7 +417,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       {/* Back Button */}
       <Button
         startIcon={<ArrowLeft size={16} />}
-        onClick={() => navigate(`/${projectId}/support/change-requests`)}
+        onClick={() => navigate(`/projects/${projectId}/support/change-requests`)}
         sx={{ alignSelf: "flex-start" }}
         variant="text"
       >
@@ -925,7 +925,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
           sx={{ flex: 1 }}
           onClick={() => {
             if (changeRequest.case?.id) {
-              navigate(`/${projectId}/support/cases/${changeRequest.case.id}`);
+              navigate(`/projects/${projectId}/support/cases/${changeRequest.case.id}`);
             }
           }}
           disabled={!changeRequest.case?.id}

@@ -206,7 +206,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
     if (window.history.length > 1) {
       navigate(-1);
     } else if (projectId) {
-      navigate(`/${projectId}/support/service-requests`);
+      navigate(`/projects/${projectId}/support/service-requests`);
     } else {
       navigate("/");
     }
@@ -310,7 +310,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
             ? `Service request ${srNumber} created successfully`
             : "Service request created successfully",
         );
-        navigate(`/${projectId}/support/service-requests/${data.id}`);
+        navigate(`/projects/${projectId}/support/service-requests/${data.id}`);
       },
       onError: (error) => {
         const msg =

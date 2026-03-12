@@ -87,16 +87,16 @@ export default function CaseDetailsPage(): JSX.Element {
 
     if (isSecurityReport) {
       navigate(
-        `/${projectId}/security-center?tab=${SecurityTab.VULNERABILITIES}`,
+        `/projects/${projectId}/security-center?tab=${SecurityTab.VULNERABILITIES}`,
       );
     } else {
-      navigate(`/${projectId}/support/cases`);
+      navigate(`/projects/${projectId}/support/cases`);
     }
   };
 
   const handleOpenRelatedCase = () => {
     if (!projectId) return;
-    navigate(`/${projectId}/support/chat/create-related-case`, {
+    navigate(`/projects/${projectId}/support/chat/create-related-case`, {
       state: {
         relatedCase: {
           parentCaseId: data?.id ?? caseId ?? "",

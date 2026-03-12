@@ -37,9 +37,9 @@ const CasesTableHeader = ({
 
   const handleCreateCase = useCallback(() => {
     if (getNoveraChatEnabled()) {
-      navigate(`/${projectId}/support/chat/describe-issue`);
+      navigate(`/projects/${projectId}/support/chat/describe-issue`);
     } else {
-      navigate(`/${projectId}/support/chat/create-case`, {
+      navigate(`/projects/${projectId}/support/chat/create-case`, {
         state: { skipChat: true },
       });
     }

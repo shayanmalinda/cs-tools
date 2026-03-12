@@ -101,9 +101,11 @@ export default function Header({ onToggleSidebar }: HeaderProps): JSX.Element {
       if (project) {
         logger.debug(`Switching to project: ${project.name} (${project.id})`);
 
-        const subPath = location.pathname.split("/").slice(2).join("/");
-
-        navigate(`/${project.id}/${subPath || "dashboard"}`);
+        const pathParts = location.pathname.split("/").filter(Boolean);
+        const projectIndex = pathParts.indexOf("projects");
+        const subPath =
+          projectIndex !== -1 ? pathParts.slice(projectIndex + 2).join("/") : "";
+        navigate(`/projects/${project.id}/${subPath || "dashboard"}`);
       } else {
         logger.warn(`Project with ID ${id} not found for switching`);
       }

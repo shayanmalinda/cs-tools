@@ -569,7 +569,7 @@ export default function CreateCasePage(): JSX.Element {
     if (window.history.length > 1) {
       navigate(-1);
     } else if (projectId) {
-      navigate(`/${projectId}/support/cases`);
+      navigate(`/projects/${projectId}/support/cases`);
     } else {
       navigate("/");
     }
@@ -746,10 +746,10 @@ export default function CreateCasePage(): JSX.Element {
             queryKey: [ApiQueryKeys.PROJECT_CASES, projectId],
           });
           navigate(
-            `/${projectId}/security-center/security-report-analysis/${caseId}?tab=${SecurityTab.VULNERABILITIES}`,
+            `/projects/${projectId}/security-center/security-report-analysis/${caseId}?tab=${SecurityTab.VULNERABILITIES}`,
           );
         } else {
-          navigate(`/${projectId}/support/cases/${caseId}`);
+          navigate(`/projects/${projectId}/support/cases/${caseId}`);
         }
       },
       onError: (error) => {

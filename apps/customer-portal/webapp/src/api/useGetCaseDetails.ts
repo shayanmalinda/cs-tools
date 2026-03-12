@@ -22,14 +22,16 @@ import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CaseDetails } from "@models/responses";
 
 /**
- * Fetches a single case by id for a project.
+ * Fetches a single case by id. When projectId is provided, it is included in the query key.
+ * When projectId is omitted (e.g. for old-URL redirect by caseId only), the API still
+ * returns case details including project.id for redirect.
  *
- * @param {string} projectId - The project id.
+ * @param {string | undefined} projectId - The project id (optional when fetching by caseId only).
  * @param {string} caseId - The case id.
  * @returns {UseQueryResult<CaseDetails, Error>} Query result with case details.
  */
 export default function useGetCaseDetails(
-  projectId: string,
+  projectId: string | undefined,
   caseId: string,
 ): UseQueryResult<CaseDetails, Error> {
   const logger = useLogger();
@@ -37,7 +39,7 @@ export default function useGetCaseDetails(
   const authFetch = useAuthApiClient();
 
   return useQuery<CaseDetails, Error>({
-    queryKey: [ApiQueryKeys.CASE_DETAILS, projectId, caseId],
+    queryKey: [ApiQueryKeys.CASE_DETAILS, projectId ?? "byCaseId", caseId],
     queryFn: async (): Promise<CaseDetails> => {
       logger.debug(
         `Fetching case details: projectId=${projectId}, caseId=${caseId}`,
@@ -68,7 +70,7 @@ export default function useGetCaseDetails(
         throw error;
       }
     },
-    enabled: !!projectId && !!caseId && isSignedIn && !isAuthLoading,
+    enabled: !!caseId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000,
   });
 }

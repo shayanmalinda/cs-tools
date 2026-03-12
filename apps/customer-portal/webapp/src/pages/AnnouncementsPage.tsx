@@ -178,7 +178,7 @@ export default function AnnouncementsPage(): JSX.Element {
         <AnnouncementList
           cases={cases}
           isLoading={false}
-          onCaseClick={(c) => navigate(`/${projectId}/announcements/${c.id}`)}
+          onCaseClick={(c) => navigate(`/projects/${projectId}/announcements/${c.id}`)}
         />
       )}
 

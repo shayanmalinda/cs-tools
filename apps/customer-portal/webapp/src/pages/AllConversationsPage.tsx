@@ -132,7 +132,7 @@ export default function AllConversationsPage(): JSX.Element {
   const handleConversationClick = (conv: Conversation) => {
     if (!projectId) return;
 
-    navigate(`/${projectId}/support/conversations/${conv.id}`, {
+    navigate(`/projects/${projectId}/support/conversations/${conv.id}`, {
       state: {
         conversationSummary: {
           chatId: conv.id,

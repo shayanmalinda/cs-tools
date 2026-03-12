@@ -20,6 +20,7 @@ import {
   BookOpen,
   Bot,
   Calendar,
+  CalendarDays,
   CircleAlert,
   CircleCheck,
   CirclePause,
@@ -32,6 +33,7 @@ import {
   MessageSquare,
   Paperclip,
   Phone,
+  Server,
   TriangleAlert,
   TrendingUp,
   Zap,
@@ -877,6 +879,45 @@ export const SERVICE_REQUEST_STAT_CONFIGS: SupportStatConfig<ServiceRequestStatK
       label: "Rejected",
     },
   ];
+
+/**
+ * Valid keys for operations statistics.
+ */
+export type OperationsStatKey =
+  | "activeServiceRequests"
+  | "activeChangeRequests"
+  | "completedThisMonth"
+  | "upcomingChanges";
+
+/**
+ * Configuration for the operations statistics cards.
+ */
+export const OPERATIONS_STAT_CONFIGS: SupportStatConfig<OperationsStatKey>[] = [
+  {
+    icon: Server,
+    iconColor: "info",
+    key: "activeServiceRequests",
+    label: "Active Service Requests",
+  },
+  {
+    icon: CalendarDays,
+    iconColor: "primary",
+    key: "activeChangeRequests",
+    label: "Active Change Requests",
+  },
+  {
+    icon: CircleCheck,
+    iconColor: "success",
+    key: "completedThisMonth",
+    label: "Completed This Month",
+  },
+  {
+    icon: Calendar,
+    iconColor: "warning",
+    key: "upcomingChanges",
+    label: "Upcoming Changes",
+  },
+];
 
 /**
  * Change request filter definitions.

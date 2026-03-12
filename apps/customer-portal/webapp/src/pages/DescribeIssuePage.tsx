@@ -76,7 +76,7 @@ export default function DescribeIssuePage(): JSX.Element {
       location.key === "default" ||
       (typeof window !== "undefined" && window.history.length <= 1)
     ) {
-      navigate(projectId ? `/${projectId}/dashboard` : "/");
+      navigate(projectId ? `/projects/${projectId}/dashboard` : "/");
     } else {
       navigate(-1);
     }
@@ -102,7 +102,7 @@ export default function DescribeIssuePage(): JSX.Element {
         initialUserMessage: plainText.trim(),
         conversationResponse,
       };
-      navigate(`/${projectId}/support/chat`, { state });
+      navigate(`/projects/${projectId}/support/chat`, { state });
     } catch {
       setHasApiFailed(true);
       showError(
@@ -122,7 +122,7 @@ export default function DescribeIssuePage(): JSX.Element {
 
   const handleCreateCase = useCallback(() => {
     if (!projectId) return;
-    navigate(`/${projectId}/support/chat/create-case`, {
+    navigate(`/projects/${projectId}/support/chat/create-case`, {
       state: { skipChat: true },
     });
   }, [projectId, navigate]);

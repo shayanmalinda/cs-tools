@@ -96,7 +96,7 @@ vi.mock("@wso2/oxygen-ui-icons-react", () => {
 });
 
 // Mock react-router
-const mockLocation = { pathname: "/project-1/dashboard" };
+const mockLocation = { pathname: "/projects/project-1/dashboard" };
 const mockParams: { projectId: string | undefined } = {
   projectId: "project-1",
 };
@@ -119,7 +119,7 @@ vi.mock("@components/common/side-nav-bar/SubscriptionWidget", () => {
 describe("SideBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
   });
 
@@ -141,19 +141,19 @@ describe("SideBar", () => {
     render(<SideBar collapsed={false} />);
 
     const dashboardLink = screen.getByRole("link", { name: /dashboard/i });
-    expect(dashboardLink).toHaveAttribute("href", "/project-1/dashboard");
+    expect(dashboardLink).toHaveAttribute("href", "/projects/project-1/dashboard");
   });
 
   describe("activeItem computation", () => {
-    it("should set activeItem to 'dashboard' when path is exactly /{projectId}", () => {
-      mockLocation.pathname = "/project-1";
+    it("should set activeItem to 'dashboard' when path is exactly /projects/{projectId}", () => {
+      mockLocation.pathname = "/projects/project-1";
       render(<SideBar collapsed={false} />);
       const sidebar = screen.getByTestId("sidebar");
       expect(sidebar).toHaveAttribute("data-active-item", "dashboard");
     });
 
     it("should set activeItem to the segment after nested projectId", () => {
-      mockLocation.pathname = "/project-1/support/tickets";
+      mockLocation.pathname = "/projects/project-1/support/tickets";
       render(<SideBar collapsed={false} />);
       const sidebar = screen.getByTestId("sidebar");
       expect(sidebar).toHaveAttribute("data-active-item", "support");

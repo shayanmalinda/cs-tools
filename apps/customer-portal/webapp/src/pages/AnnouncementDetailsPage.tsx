@@ -70,7 +70,7 @@ export default function AnnouncementDetailsPage(): JSX.Element {
   }, [isError, showError]);
 
   const handleBack = () => {
-    navigate(`/${projectId}/announcements`);
+    navigate(`/projects/${projectId}/announcements`);
   };
 
   return (

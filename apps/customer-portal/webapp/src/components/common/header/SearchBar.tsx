@@ -101,7 +101,7 @@ export default function SearchBar({
   const handleCaseClick = useCallback(
     (caseItem: CaseListItem) => {
       if (effectiveProjectId) {
-        navigate(`/${effectiveProjectId}/support/cases/${caseItem.id}`);
+        navigate(`/projects/${effectiveProjectId}/support/cases/${caseItem.id}`);
         setSearchValue("");
         setIsDropdownOpen(false);
       }

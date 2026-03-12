@@ -264,7 +264,7 @@ const CasesTable = ({
         rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        onCaseClick={(c) => navigate(`/${projectId}/support/cases/${c.id}`)}
+        onCaseClick={(c) => navigate(`/projects/${projectId}/support/cases/${c.id}`)}
         showPagination={!showAll}
       />
     </ListingTable.Container>

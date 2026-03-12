@@ -17,6 +17,7 @@
 import { notificationBannerConfig } from "@config/notificationBannerConfig";
 import { AppShell, Box, useAppShell, LinearProgress } from "@wso2/oxygen-ui";
 import { type JSX, type ReactNode, useRef, useEffect } from "react";
+import { useOldUrlRedirect } from "@hooks/useOldUrlRedirect";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useLocation, Outlet } from "react-router";
 import IdleTimeoutProvider from "@providers/IdleTimeoutProvider";
@@ -41,6 +42,8 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation();
   const mainContentRef = useRef<HTMLDivElement>(null);
 
+  useOldUrlRedirect();
+
   useEffect(() => {
     if (mainContentRef.current) {
       mainContentRef.current.scrollTop = 0;
@@ -58,22 +61,28 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
     setSidebarCollapsed(shellState.sidebarCollapsed);
   }, [shellState.sidebarCollapsed]);
 
-  const isProjectHub = location.pathname === "/";
-  const isCaseDetailsPage = /\/[^/]+\/support\/cases\/[^/]+$/.test(
-    location.pathname,
-  );
+  const isProjectHub = location.pathname === "/" || location.pathname === "";
+  const isCaseDetailsPage =
+    /\/projects\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname) ||
+    /\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname);
   const isSecurityReportAnalysisDetailsPage =
+    /\/projects\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
+      location.pathname,
+    ) ||
     /\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
       location.pathname,
     );
   const isVulnerabilityDetailsPage =
-    /\/[^/]+\/security-center\/[^/]+$/.test(location.pathname) &&
+    (/\/projects\/[^/]+\/security-center\/[^/]+$/.test(location.pathname) ||
+      /\/[^/]+\/security-center\/[^/]+$/.test(location.pathname)) &&
     !location.pathname.includes("security-report-analysis");
-  const isPendingUpdatesPage = /\/[^/]+\/updates\/pending$/.test(
-    location.pathname,
-  );
+  const isPendingUpdatesPage =
+    /\/projects\/[^/]+\/updates\/pending$/.test(location.pathname) ||
+    /\/[^/]+\/updates\/pending$/.test(location.pathname);
   const isUpdateLevelDetailsPage =
-    /\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(location.pathname);
+    /\/projects\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(
+      location.pathname,
+    ) || /\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(location.pathname);
   const isDetailsStylePage =
     isCaseDetailsPage ||
     isSecurityReportAnalysisDetailsPage ||

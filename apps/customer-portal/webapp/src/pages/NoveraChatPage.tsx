@@ -82,7 +82,7 @@ export default function NoveraChatPage(): JSX.Element {
 
   const handleBack = () => {
     if (projectId) {
-      navigate(`/${projectId}/support`);
+      navigate(`/projects/${projectId}/support`);
     } else {
       navigate(-1);
     }
@@ -220,16 +220,16 @@ export default function NoveraChatPage(): JSX.Element {
             region: DEFAULT_CONVERSATION_REGION,
             tier: DEFAULT_CONVERSATION_TIER,
           });
-          navigate(`/${projectId}/support/chat/create-case`, {
+          navigate(`/projects/${projectId}/support/chat/create-case`, {
             state: { messages, classificationResponse, conversationId },
           });
         } catch {
-          navigate(`/${projectId}/support/chat/create-case`, {
+          navigate(`/projects/${projectId}/support/chat/create-case`, {
             state: { messages, conversationId },
           });
         }
       } else {
-        navigate(`/${projectId}/support/chat/create-case`, {
+        navigate(`/projects/${projectId}/support/chat/create-case`, {
           state: { messages, conversationId },
         });
       }
@@ -335,7 +335,7 @@ export default function NoveraChatPage(): JSX.Element {
         setConversationId(response.conversationId);
         // Update URL with conversationId so it persists on refresh
         if (!urlConversationId && projectId) {
-          navigate(`/${projectId}/support/chat/${response.conversationId}`, {
+          navigate(`/projects/${projectId}/support/chat/${response.conversationId}`, {
             replace: true,
           });
         }

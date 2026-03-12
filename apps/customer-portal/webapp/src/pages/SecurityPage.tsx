@@ -51,7 +51,7 @@ const SecurityPage = (): JSX.Element => {
 
   const handleVulnerabilityClick = useCallback(
     (vulnerability: { id: string }) => {
-      navigate(`/${projectId}/security-center/${vulnerability.id}`);
+      navigate(`/projects/${projectId}/security-center/${vulnerability.id}`);
     },
     [navigate, projectId],
   );

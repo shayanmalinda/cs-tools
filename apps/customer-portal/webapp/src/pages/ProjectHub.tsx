@@ -99,7 +99,7 @@ export default function ProjectHub(): JSX.Element {
       projects.length === 1 &&
       !searchQuery
     ) {
-      navigate(`/${projects[0].id}/dashboard`, { replace: true });
+      navigate(`/projects/${projects[0].id}/dashboard`, { replace: true });
     }
   }, [projects, isLoading, isAuthLoading, isError, navigate, searchQuery]);
 
