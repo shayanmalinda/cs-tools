@@ -370,7 +370,7 @@ public isolated function mapProductVulnerabilityMetadataResponse(entity:Vulnerab
 # Map project case stats response to the desired structure.
 #
 # + response - Project case stats response from the entity service
-# + changeReqStats - Count of change requests to be added to total interactions
+# + changeReqStats - Change request stats to be added to total interactions and active count
 # + return - Mapped project case stats response
 public isolated function mapCaseStats(entity:ProjectCaseStatsResponse response,
         entity:ProjectChangeRequestStatsResponse? changeReqStats) returns types:ProjectCaseStats {
