@@ -214,11 +214,14 @@ public isolated function deleteAttachment(string idToken, IdString attachmentId)
 #
 # + idToken - ID token for authorization
 # + deploymentId - ID of the deployment
+# + offset - Offset for pagination
+# + 'limit - Limit for pagination
 # + return - Products response or error
-public isolated function getDeployedProducts(string idToken, string deploymentId)
-    returns DeployedProductsResponse|error {
+public isolated function getDeployedProducts(string idToken, string deploymentId, int offset = DEFAULT_OFFSET,
+    int 'limit = DEFAULT_LIMIT) returns DeployedProductsResponse|error {
 
-    return csEntityClient->/deployed\-products/search.post({deploymentId}, generateHeaders(idToken));
+    return csEntityClient->/deployed\-products/search.post({deploymentId, pagination: {offset, 'limit}},
+        generateHeaders(idToken));
 }
 
 # Create a deployed product.

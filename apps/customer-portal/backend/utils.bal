@@ -245,8 +245,8 @@ public isolated function mapAttachmentsResponse(entity:AttachmentsResponse respo
 #
 # + response - Deployments response from the entity service
 # + return - Mapped deployments response
-public isolated function mapDeployments(entity:DeploymentsResponse response) returns types:Deployment[] {
-    return from entity:Deployment deployment in response.deployments
+public isolated function mapDeployments(entity:DeploymentsResponse response) returns types:DeploymentsResponse {
+    types:Deployment[] deployments = from entity:Deployment deployment in response.deployments
         let entity:ReferenceTableItem? project = deployment.project
         let entity:ChoiceListItem? 'type = deployment.'type
         select {
@@ -259,6 +259,7 @@ public isolated function mapDeployments(entity:DeploymentsResponse response) ret
             project: project != () ? {id: project.id, label: project.name} : (),
             'type: 'type != () ? {id: 'type.id.toString(), label: 'type.label} : ()
         };
+    return {deployments, totalRecords: response.totalRecords, offset: response.offset, 'limit: response.'limit};
 }
 
 # Map deployed products response to the desired structure.
@@ -266,9 +267,9 @@ public isolated function mapDeployments(entity:DeploymentsResponse response) ret
 # + response - Deployed products response from the entity service
 # + return - Mapped deployed products response
 public isolated function mapDeployedProducts(entity:DeployedProductsResponse response)
-    returns types:DeployedProduct[] {
+    returns types:DeployedProductsResponse {
 
-    return from entity:DeployedProduct product in response.deployedProducts
+    types:DeployedProduct[] deployedProducts = from entity:DeployedProduct product in response.deployedProducts
         let entity:ReferenceTableItem? associatedProduct = product.product
         let entity:ReferenceTableItem? deployment = product.deployment
         let entity:ReferenceTableItem? version = product.version
@@ -288,6 +289,13 @@ public isolated function mapDeployedProducts(entity:DeployedProductsResponse res
             version: version != () ? {id: version.id, label: version.name} : (),
             category: category != () ? {id: category.id, label: category.name} : ()
         };
+
+    return {
+        deployedProducts,
+        totalRecords: response.totalRecords,
+        'limit: response.'limit,
+        offset: response.offset
+    };
 }
 
 # Map created case response to the desired structure.
@@ -439,7 +447,7 @@ public isolated function mapSearchCallRequestResponse(entity:CallRequestsRespons
             state: {id: state.id.toString(), label: state.label}
         };
 
-    return {callRequests};
+    return {callRequests, totalRecords: response.totalRecords, 'limit: response.'limit, offset: response.offset};
 }
 
 # Map product versions response to the desired structure.
@@ -460,7 +468,7 @@ public isolated function mapProductVersionsResponse(entity:ProductVersionsRespon
             earliestPossibleSupportEolDate: version.earliestPossibleSupportEolDate,
             product: product != () ? {id: product.id, label: product.name} : ()
         };
-    return {versions};
+    return {versions, totalRecords: response.totalRecords, 'limit: response.'limit, offset: response.offset};
 }
 
 # Map time cards search response to the desired structure.

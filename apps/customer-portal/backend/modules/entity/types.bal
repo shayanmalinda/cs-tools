@@ -116,7 +116,7 @@ public type ProjectSearchPayload record {|
         string searchQuery?;
     } filters?;
     # Pagination details
-    Pagination pagination = {};
+    Pagination pagination?;
 |};
 
 # Projects response.
@@ -814,6 +814,10 @@ public type DeployedProduct record {|
 public type DeployedProductsResponse record {|
     # List of deployed products
     DeployedProduct[] deployedProducts;
+    # Total records count
+    int totalRecords;
+    *Pagination;
+    json...;
 |};
 
 # Request payload for creating a deployed product.
@@ -907,6 +911,15 @@ public type Deployment record {|
     json...;
 |};
 
+# Request payload for searching deployed products by deployment ID.
+public type DeployedProductSearchPayload record {|
+    # Deployment ID
+    IdString deploymentId;
+    # Pagination details
+    Pagination pagination?;
+    json...;
+|};
+
 # Payload for creating a deployment.
 public type DeploymentCreatePayload record {|
     # Project ID
@@ -943,6 +956,10 @@ public type CreatedDeployment record {|
 public type DeploymentsResponse record {|
     # List of deployments
     Deployment[] deployments;
+    # Total records count
+    int totalRecords;
+    *Pagination;
+    json...;
 |};
 
 # Payload for creating a comment.
@@ -1153,6 +1170,9 @@ public type CallRequest record {|
 public type CallRequestsResponse record {|
     # List of call requests
     CallRequest[] callRequests;
+    # Total records count
+    int totalRecords;
+    *Pagination;
     json...;
 |};
 
@@ -1265,7 +1285,7 @@ public type UpdatedDeployment record {|
 # Request payload for searching products.
 public type ProductSearchPayload record {|
     # Pagination details
-    Pagination pagination = {};
+    Pagination pagination?;
 |};
 
 # Product data.
@@ -1281,13 +1301,16 @@ public type Product record {|
 public type ProductsResponse record {|
     # List of products
     Product[] products;
-    json...; // TODO: Remove after adding pagination
+    # Total records count
+    int totalRecords;
+    *Pagination;
+    json...;
 |};
 
 # Request payload for searching product versions.
 public type ProductVersionSearchPayload record {|
     # Pagination details
-    Pagination pagination = {};
+    Pagination pagination?;
 |};
 
 # Product version data.
@@ -1313,7 +1336,10 @@ public type ProductVersion record {|
 public type ProductVersionsResponse record {|
     # List of product versions
     ProductVersion[] versions;
-    json...; // TODO: Add pagination
+    # Total records count
+    int totalRecords;
+    *Pagination;
+    json...;
 |};
 
 # Date.

@@ -389,7 +389,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the project
     # + return - Deployments response or error response
     resource function get projects/[entity:IdString id]/deployments(http:RequestContext ctx)
-        returns types:Deployment[]|http:BadRequest|http:Forbidden|http:InternalServerError {
+        returns types:DeploymentsResponse|http:BadRequest|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -2021,9 +2021,12 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # Get products of a deployment by deployment ID.
     #
     # + id - ID of the deployment
+    # + offset - Offset for pagination
+    # + limit - Number of products to retrieve
     # + return - Deployed products response or error response
-    resource function get deployments/[entity:IdString id]/products(http:RequestContext ctx)
-        returns types:DeployedProduct[]|http:BadRequest|http:Forbidden|http:InternalServerError {
+    resource function get deployments/[entity:IdString id]/products(http:RequestContext ctx,
+        int offset = DEFAULT_OFFSET, int 'limit = DEFAULT_LIMIT)
+        returns types:DeployedProductsResponse|http:BadRequest|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -2034,7 +2037,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        entity:DeployedProductsResponse|error productsResponse = entity:getDeployedProducts(userInfo.idToken, id);
+        entity:DeployedProductsResponse|error productsResponse =
+            entity:getDeployedProducts(userInfo.idToken, id, offset, 'limit);
         if productsResponse is error {
             if getStatusCode(productsResponse) == http:STATUS_FORBIDDEN {
                 log:printWarn(string `Access to deployment ID: ${id} is forbidden for user: ${userInfo.userId}`);

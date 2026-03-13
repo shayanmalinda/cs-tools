@@ -16,7 +16,7 @@
 
 # Default pagination values.
 const DEFAULT_OFFSET = 0;
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 10;
 
 # Valid call request update state values.
 public const PENDING_ON_WSO2 = 2;

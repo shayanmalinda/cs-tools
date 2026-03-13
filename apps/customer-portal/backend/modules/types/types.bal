@@ -545,6 +545,16 @@ public type Deployment record {|
     ReferenceItem? 'type;
 |};
 
+# Deployments response.
+public type DeploymentsResponse record {|
+    # List of deployments
+    Deployment[] deployments;
+    # Total records count
+    int totalRecords;
+    *entity:Pagination;
+    json...;
+|};
+
 # Deployed product data.
 public type DeployedProduct record {|
     # ID
@@ -573,6 +583,15 @@ public type DeployedProduct record {|
     string? endOfLifeOn;
     # Update level of the product
     string? updateLevel;
+|};
+
+# Deployed products response.
+public type DeployedProductsResponse record {|
+    # List of deployed products
+    DeployedProduct[] deployedProducts;
+    # Total records count
+    int totalRecords;
+    *entity:Pagination;
 |};
 
 # Request payload for creating a deployed product.
@@ -892,7 +911,9 @@ public type CallRequest record {|
 public type CallRequestsResponse record {|
     # List of call requests
     CallRequest[] callRequests;
-    // TODO: Remove after adding pagination
+    # Total records count
+    int totalRecords;
+    *entity:Pagination;
 |};
 
 # Request payload for creating a call request.
@@ -940,7 +961,9 @@ public type ProductVersion record {|
 public type ProductVersionsResponse record {|
     # List of product versions
     ProductVersion[] versions;
-    json...; // TODO: Add pagination
+    # Total records count
+    int totalRecords;
+    *entity:Pagination;
 |};
 
 # Time card data.
