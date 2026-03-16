@@ -715,8 +715,6 @@ public type Attachment record {|
     string createdOn;
     # Download URL
     string? downloadUrl;
-    # Base64 encoded file content (data URI format: data:@file/<type>;base64,<content>)
-    string content;
     # Description of the attachment
     string? description;
     json...;
@@ -777,6 +775,14 @@ public type AttachmentDeleteResponse record {|
         string deletedOn;
         json...;
     |} attachment;
+|};
+
+# Attachment details response.
+public type AttachmentResponse record {|
+    *Attachment;
+    # Base64 encoded file content (data URI format: data:@file/<type>;base64,<content>)
+    string content;
+    json...;
 |};
 
 # Deployed product data.

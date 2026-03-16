@@ -1957,6 +1957,63 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         return response.attachment;
     }
 
+    # Get an attachment.
+    #
+    # + id - ID of the attachment
+    # + return - Attachment response or error
+    resource function get attachments/[entity:IdString id](http:RequestContext ctx)
+        returns entity:AttachmentResponse|http:Unauthorized|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:AttachmentResponse|error response = entity:getAttachment(userInfo.idToken, id);
+        if response is error {
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is forbidden to get the attachment with ID: ${id}!`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You're not authorized to get the requested attachment. " +
+                        "Please check your access permissions or contact support."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Attachment with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The attachment you're trying to get does not exist. " +
+                        "Please check and try again."
+                    }
+                };
+            }
+
+            string customError = "Failed to get the attachment.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return response;
+    }
+
     # Delete an attachment.
     #
     # + id - ID of the attachment

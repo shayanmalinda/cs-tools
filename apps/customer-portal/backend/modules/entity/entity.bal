@@ -187,6 +187,15 @@ public isolated function createAttachment(string idToken, AttachmentCreatePayloa
     return csEntityClient->/attachments.post(payload, generateHeaders(idToken));
 }
 
+# Get attachment by ID.
+#
+# + idToken - ID token for authorization
+# + attachmentId - ID of the attachment
+# + return - Attachment response or error
+public isolated function getAttachment(string idToken, IdString attachmentId) returns AttachmentResponse|error {
+    return csEntityClient->/attachments/[attachmentId].get(generateHeaders(idToken));
+}
+
 # Update an attachment.
 #
 # + idToken - ID token for authorization
