@@ -46,6 +46,7 @@ export function ProjectSelector({ open, anchorEl, onClose }: PopoverProps) {
             border: `1px solid ${theme.palette.divider}`,
             borderRadius: 3,
             boxShadow: `${alpha(theme.palette.text.primary, 0.3)} 0px 48px 100px 0px`,
+            mt: "var(--safe-top)",
           }),
         },
       }}
