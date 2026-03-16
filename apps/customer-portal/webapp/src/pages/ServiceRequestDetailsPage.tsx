@@ -15,7 +15,7 @@
 // under the License.
 
 import { useEffect, useRef, type JSX } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import useGetCaseDetails from "@api/useGetCaseDetails";
@@ -29,10 +29,12 @@ import ServiceRequestDetailContent from "@components/support/service-requests/Se
  */
 export default function ServiceRequestDetailsPage(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projectId, serviceRequestId } = useParams<{
     projectId: string;
     serviceRequestId: string;
   }>();
+  const basePath = location.pathname.includes("/operations/") ? "operations" : "support";
 
   const { showLoader, hideLoader } = useLoader();
   const { showError } = useErrorBanner();
@@ -73,7 +75,7 @@ export default function ServiceRequestDetailsPage(): JSX.Element {
   }, [isError, showError]);
 
   const handleBack = () => {
-    navigate(`/projects/${projectId}/support/service-requests`);
+    navigate(`/projects/${projectId}/${basePath}/service-requests`);
   };
 
   return (
