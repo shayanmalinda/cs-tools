@@ -762,14 +762,11 @@ export interface Deployment {
   uptimePercent: number;
 }
 
-// Response for project deployments list.
-export interface DeploymentsResponse {
-  deployments: Deployment[];
-}
-
-// Response for GET /projects/:projectId/deployments (real API).
 export interface ProjectDeploymentsListResponse {
   deployments: ProjectDeploymentItem[];
+  totalRecords?: number;
+  offset?: number;
+  limit?: number;
 }
 
 // Product from GET /products.
@@ -790,17 +787,18 @@ export interface ProductVersionItem {
   product?: { id: string; label: string };
 }
 
-// Response for GET /products.
 export interface ProductsResponse {
-  products?: ProductItem[];
-  totalRecords?: number;
-  offset?: number;
-  limit?: number;
+  products: ProductItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
 }
 
-// Response for POST /products/:productId/versions/search.
 export interface ProductVersionsSearchResponse {
   versions: ProductVersionItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
 }
 
 // Single item from GET /projects/:projectId/deployments (array response).
@@ -813,6 +811,14 @@ export interface ProjectDeploymentItem {
   url: string | null;
   project: { id: string; label: string };
   type: { id: string; label: string };
+}
+
+// Response for GET /deployments/:deploymentId/products (paginated).
+export interface DeployedProductsResponse {
+  deployedProducts: DeploymentProductItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
 }
 
 // Single item from GET /deployments/:deploymentId/products (array response).
@@ -1024,12 +1030,11 @@ export interface CallRequest {
   state: { id: string; label: string };
 }
 
-// Response for case call requests list (POST /cases/:caseId/call-requests/search).
 export interface CallRequestsResponse {
   callRequests: CallRequest[];
-  totalRecords?: number;
-  offset?: number;
-  limit?: number;
+  totalRecords: number;
+  offset: number;
+  limit: number;
 }
 
 // Response for creating or updating a call request (POST/PATCH).

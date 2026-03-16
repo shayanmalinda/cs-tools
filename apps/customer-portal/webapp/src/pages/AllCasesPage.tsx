@@ -40,7 +40,7 @@ import useGetProjectDetails from "@api/useGetProjectDetails";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
 import { useGetDeployments } from "@api/useGetDeployments";
-import { getIncidentAndQueryIds, isS0Case } from "@utils/support";
+import { isS0Case } from "@utils/support";
 import { CaseType } from "@constants/supportConstants";
 import { PROJECT_TYPE_LABELS } from "@constants/projectDetailsConstants";
 import type { AllCasesFilterValues } from "@models/responses";
@@ -66,10 +66,9 @@ export default function AllCasesPage(): JSX.Element {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const {
-    data: project,
-    isLoading: isProjectLoading,
-  } = useGetProjectDetails(projectId || "");
+  const { data: project, isLoading: isProjectLoading } = useGetProjectDetails(
+    projectId || "",
+  );
   const projectReady = !isProjectLoading && project !== undefined;
   const isManagedCloudSubscription =
     project?.type?.label === PROJECT_TYPE_LABELS.MANAGED_CLOUD_SUBSCRIPTION;
@@ -81,19 +80,13 @@ export default function AllCasesPage(): JSX.Element {
   // Fetch deployments for the deployment filter
   const { data: deploymentsData } = useGetDeployments(projectId || "");
 
-  const { incidentId, queryId } = useMemo(
-    () => getIncidentAndQueryIds(filterMetadata?.caseTypes),
-    [filterMetadata?.caseTypes],
-  );
-
   const {
     data: stats,
     isLoading: isStatsQueryLoading,
     isError: isStatsError,
   } = useGetProjectCasesStats(projectId || "", {
-    incidentId,
-    queryId,
-    enabled: !!incidentId && !!queryId,
+    caseTypes: [CaseType.DEFAULT_CASE],
+    enabled: !!projectId,
   });
 
   const caseSearchRequest = useMemo(
@@ -131,12 +124,10 @@ export default function AllCasesPage(): JSX.Element {
   const { showLoader, hideLoader } = useLoader();
 
   // Show loader only for initial load (until first stats + cases response), not for background refetches or fetchNextPage.
-  const statsQueryExpected = !!incidentId && !!queryId;
   const hasStatsResponse = stats !== undefined;
   const hasCasesResponse = data !== undefined;
   const isStatsLoading =
-    isStatsQueryLoading ||
-    (statsQueryExpected && !!projectId && !hasStatsResponse);
+    isStatsQueryLoading || (!!projectId && !hasStatsResponse);
   const isCasesAreaLoading =
     isCasesQueryLoading || (!!projectId && !hasCasesResponse);
 
@@ -172,7 +163,7 @@ export default function AllCasesPage(): JSX.Element {
 
   const totalItems = excludeS0
     ? filteredAndSearchedCases.length
-    : (apiTotalRecords || filteredAndSearchedCases.length);
+    : apiTotalRecords || filteredAndSearchedCases.length;
 
   // Pagination logic
   const paginatedCases = useMemo(() => {
@@ -292,7 +283,9 @@ export default function AllCasesPage(): JSX.Element {
         cases={paginatedCases}
         isLoading={isCasesAreaLoading && !isCasesError}
         isError={isCasesError}
-        onCaseClick={(c) => navigate(`/projects/${projectId}/support/cases/${c.id}`)}
+        onCaseClick={(c) =>
+          navigate(`/projects/${projectId}/support/cases/${c.id}`)
+        }
       />
 
       {/* Pagination */}

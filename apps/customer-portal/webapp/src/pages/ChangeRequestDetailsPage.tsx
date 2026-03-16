@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { type JSX, useMemo } from "react";
 import {
   Box,
@@ -89,10 +89,12 @@ function stripHtmlTags(html: string | null | undefined): string {
  */
 export default function ChangeRequestDetailsPage(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projectId, changeRequestId } = useParams<{
     projectId: string;
     changeRequestId: string;
   }>();
+  const basePath = location.pathname.includes("/operations/") ? "operations" : "support";
 
   const { showError } = useErrorBanner();
 
@@ -308,7 +310,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       <Stack spacing={3}>
         <Button
           startIcon={<ArrowLeft size={16} />}
-          onClick={() => navigate(`/projects/${projectId}/support/change-requests`)}
+          onClick={() => navigate(`/projects/${projectId}/${basePath}/change-requests`)}
           sx={{ alignSelf: "flex-start" }}
           variant="text"
         >
@@ -417,7 +419,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       {/* Back Button */}
       <Button
         startIcon={<ArrowLeft size={16} />}
-        onClick={() => navigate(`/projects/${projectId}/support/change-requests`)}
+        onClick={() => navigate(`/projects/${projectId}/${basePath}/change-requests`)}
         sx={{ alignSelf: "flex-start" }}
         variant="text"
       >
