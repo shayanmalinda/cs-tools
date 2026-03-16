@@ -19,36 +19,26 @@ import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
-import type { ProductItem } from "@models/responses";
-
-function normalizeProducts(raw: unknown): ProductItem[] {
-  if (Array.isArray(raw)) {
-    return raw as ProductItem[];
-  }
-  if (raw && typeof raw === "object" && "products" in raw) {
-    return (raw as { products: ProductItem[] }).products ?? [];
-  }
-  return [];
-}
+import type { ProductItem, ProductsResponse } from "@models/responses";
 
 /**
  * Fetches products list (GET /products).
  *
  * @param {object} params - offset and limit.
- * @returns {UseQueryResult<ProductItem[], Error>} The query result.
+ * @returns {UseQueryResult<ProductsResponse, Error>} The query result.
  */
 export function useGetProducts(params?: {
   offset?: number;
   limit?: number;
-}): UseQueryResult<ProductItem[], Error> {
+}): UseQueryResult<ProductsResponse, Error> {
   const { offset = 0, limit = 10 } = params ?? {};
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
 
-  return useQuery<ProductItem[], Error>({
+  return useQuery<ProductsResponse, Error>({
     queryKey: [ApiQueryKeys.PRODUCTS, offset, limit],
-    queryFn: async (): Promise<ProductItem[]> => {
+    queryFn: async (): Promise<ProductsResponse> => {
       logger.debug(`Fetching products offset=${offset} limit=${limit}`);
 
       try {
@@ -71,10 +61,9 @@ export function useGetProducts(params?: {
           throw new Error(`Error fetching products: ${response.statusText}`);
         }
 
-        const raw = await response.json();
-        const products = normalizeProducts(raw);
-        logger.debug("[useGetProducts] Data received:", products);
-        return products;
+        const data: ProductsResponse = await response.json();
+        logger.debug("[useGetProducts] Data received:", data);
+        return data;
       } catch (error) {
         logger.error("[useGetProducts] Error:", error);
         throw error;
