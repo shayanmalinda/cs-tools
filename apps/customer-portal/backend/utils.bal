@@ -282,7 +282,7 @@ public isolated function mapDeployedProducts(entity:DeployedProductsResponse res
             tps: product.tps,
             releasedOn: product.releasedOn,
             endOfLifeOn: product.endOfLifeOn,
-            updateLevel: product.updateLevel,
+            updates: product.updates,
             product: associatedProduct != () ? {id: associatedProduct.id, label: associatedProduct.name} : (),
             deployment: deployment != () ? {id: deployment.id, label: deployment.name} : (),
             version: version != () ? {id: version.id, label: version.name} : (),

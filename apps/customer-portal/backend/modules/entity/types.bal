@@ -785,6 +785,17 @@ public type AttachmentResponse record {|
     json...;
 |};
 
+# Product update information.
+public type ProductUpdate record {|
+    # Update level
+    int updateLevel;
+    # Update date
+    Date date;
+    # Update details
+    string? details?;
+    json...;
+|};
+
 # Deployed product data.
 public type DeployedProduct record {|
     # ID
@@ -803,6 +814,8 @@ public type DeployedProduct record {|
     ReferenceTableItem? product;
     # Product version
     ReferenceTableItem? version;
+    # Product updates
+    ProductUpdate[]? updates;
     # Cores allocated for the product
     int? cores;
     # TPS allocated for the product
@@ -872,6 +885,8 @@ public type DeployedProductUpdatePayload record {|
     decimal? tps?;
     # Description of the deployed product
     string? description?;
+    # Product updates
+    ProductUpdate[]? updates?;
     # Active status (can only be set to false to deactivate deployed product)
     boolean active?;
 |};

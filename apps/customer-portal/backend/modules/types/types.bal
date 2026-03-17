@@ -570,6 +570,8 @@ public type DeployedProduct record {|
     ReferenceItem? deployment;
     # Product version
     ReferenceItem? version;
+    # Product updates
+    entity:ProductUpdate[]? updates;
     # Cores allocated for the product
     int? cores;
     # TPS allocated for the product
@@ -578,8 +580,6 @@ public type DeployedProduct record {|
     string? releasedOn;
     # End of life date of the product
     string? endOfLifeOn;
-    # Update level of the product
-    string? updateLevel;
 |};
 
 # Deployed products response.

@@ -235,15 +235,17 @@ public isolated function validateDeployedProductUpdatePayload(DeployedProductUpd
     int? cores = payload?.cores;
     decimal? tps = payload?.tps;
     string? description = payload?.description;
+    ProductUpdate[]? updates = payload?.updates;
     if active is boolean {
         if active {
             return "Invalid value for active field. When updating cores or tps, active field should be set to false.";
         }
-        if cores !is () || tps !is () || description !is () {
-            return "When deactivating, cores, tps and description fields should not be provided.";
+        if cores !is () || tps !is () || description !is () || updates !is () {
+            return "When deactivating, cores, tps, description and updates  fields should not be provided.";
         }
-    } else if cores is () && tps is () && description is () {
-        return "At least one of cores or tps or description should be provided when updating deployed product details.";
+    } else if cores is () && tps is () && description is () && updates is () {
+        return "At least one of cores or tps or description or updates should be provided when updating" +
+            "deployed product details.";
     }
     return;
 }
