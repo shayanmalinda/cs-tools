@@ -14,10 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { COLLAPSE_LINE_THRESHOLD } from "@/constants/supportConstants";
-import { estimateLineCount } from "@/utils/support";
-import { Box, Button, Divider, Paper } from "@wso2/oxygen-ui";
-import { ChevronDown } from "@wso2/oxygen-ui-icons-react";
+import { Box, Paper } from "@wso2/oxygen-ui";
 import { useCallback, useEffect, useRef } from "react";
 import type { JSX } from "react";
 
@@ -39,15 +36,11 @@ export interface ChatMessageCardProps {
  */
 export default function ChatMessageCard({
   htmlContent,
-  isExpanded,
-  onToggleExpand,
   isCurrentUser,
   primaryBg,
   onImageClick,
 }: ChatMessageCardProps): JSX.Element {
   const contentRef = useRef<HTMLDivElement>(null);
-  const lineCount = estimateLineCount(htmlContent);
-  const showExpandButton = lineCount > COLLAPSE_LINE_THRESHOLD;
 
   const handleClick = useCallback(
     (e: MouseEvent) => {
@@ -63,12 +56,34 @@ export default function ChatMessageCard({
     [onImageClick],
   );
 
+  const handleImageError = useCallback(
+    (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!(target instanceof HTMLImageElement)) return;
+
+      const currentSrc = target.currentSrc || target.src || "";
+      const fallback = target.getAttribute("data-inline-download-url") || "";
+      const alreadyTriedFallback =
+        target.getAttribute("data-inline-fallback-tried") === "true";
+
+      if (fallback && !alreadyTriedFallback && fallback !== currentSrc) {
+        target.setAttribute("data-inline-fallback-tried", "true");
+        target.src = fallback;
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
     el.addEventListener("click", handleClick);
-    return () => el.removeEventListener("click", handleClick);
-  }, [handleClick]);
+    el.addEventListener("error", handleImageError, true);
+    return () => {
+      el.removeEventListener("click", handleClick);
+      el.removeEventListener("error", handleImageError, true);
+    };
+  }, [handleClick, handleImageError]);
 
   return (
     <Paper
@@ -110,48 +125,10 @@ export default function ChatMessageCard({
             px: 0.5,
             py: 0.25,
           },
-          ...(!isExpanded &&
-            showExpandButton && {
-              display: "-webkit-box",
-              WebkitLineClamp: COLLAPSE_LINE_THRESHOLD,
-              WebkitBoxOrient: "vertical" as const,
-              overflow: "hidden",
-            }),
         }}
         ref={contentRef}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
-      {showExpandButton && (
-        <>
-          <Divider sx={{ my: 0.25 }} />
-          <Button
-            size="small"
-            variant="text"
-            onClick={onToggleExpand}
-            endIcon={
-              <ChevronDown
-                size={14}
-                style={{
-                  transform: isExpanded ? "rotate(180deg)" : "none",
-                  transition: "transform 0.2s",
-                }}
-              />
-            }
-            sx={{
-              alignSelf: "stretch",
-              justifyContent: "center",
-              fontSize: "0.75rem",
-              color: "text.secondary",
-              "&:hover": {
-                color: "text.primary",
-                bgcolor: "action.hover",
-              },
-            }}
-          >
-            {isExpanded ? "Show less" : "Show more"}
-          </Button>
-        </>
-      )}
     </Paper>
   );
 }

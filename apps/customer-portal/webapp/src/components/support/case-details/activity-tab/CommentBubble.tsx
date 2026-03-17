@@ -77,6 +77,7 @@ export default function CommentBubble({
   const withImages = replaceInlineImageSources(
     withoutLabel,
     comment.inlineAttachments,
+    undefined,
   );
   const htmlContent = DOMPurify.sanitize(withImages);
   const displayName = useMemo(() => {
