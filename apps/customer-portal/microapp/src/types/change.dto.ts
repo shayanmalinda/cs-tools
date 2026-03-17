@@ -18,13 +18,15 @@ interface ChangeRequestSummaryDTO {
   updatedOn: string;
 }
 
-interface ChangeRequestDTO {
+export interface ChangeRequestDTO {
   id: string;
   number: string;
   title: string;
   description: string;
   createdBy: string;
   case: (EntityReference & { number: string }) | null;
+  deployment: EntityReference | null;
+  endDate: string | null;
   approvedBy: string | null;
   approvedOn: string | null;
   duration: string | null;
@@ -34,6 +36,7 @@ interface ChangeRequestDTO {
   state: EntityReference | null;
   type: EntityReference | null;
   assignedTeam: EntityReference | null;
+  serviceOutage: string | null;
   rollbackPlan: string | null;
   communicationPlan: string | null;
   testPlan: null | string;

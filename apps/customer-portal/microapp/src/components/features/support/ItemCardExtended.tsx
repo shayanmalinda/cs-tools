@@ -88,7 +88,7 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
               <Calendar size={pxToRem(16)} color={theme.palette.text.secondary} />
               <Typography variant="subtitle2" fontWeight="regular" color="text.secondary">
                 Scheduled:{" "}
-                {props.scheduledOn?.toLocaleDateString("en-US", {
+                {props.endDate?.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -127,7 +127,7 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
                     case "service":
                       return props.createdBy;
                     case "change":
-                      return props.owner ?? "N/A";
+                      return props.assignedTeam ?? "N/A";
                   }
                 })()}
               </Typography>
