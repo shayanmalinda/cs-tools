@@ -50,8 +50,6 @@ public type UserInfoPayload record {|
 
 # Application specific role mapping.
 public type AppRoles record {|
-    # Role for the user
-    string userRole;
     # Role for an Admin
     string adminRole;
 |};
