@@ -48,7 +48,7 @@ describe("ProjectCardBadges", () => {
     expect(screen.getByText(props.slaStatus)).toBeInTheDocument();
   });
 
-  it("should render only one chip", () => {
+  it("should render both project key and SLA chips", () => {
     const props = {
       projectKey: "PROJ-123",
       slaStatus: "Needs Attention",
