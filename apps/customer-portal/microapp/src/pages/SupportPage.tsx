@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Suspense, useState } from "react";
-import { Link } from "react-router-dom";
+import { Suspense, useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Button, Card, Grid, pxToRem, Stack, Tab, Tabs, Typography, useTheme } from "@wso2/oxygen-ui";
 import { MessageSquareQuote } from "@wso2/oxygen-ui-icons-react";
 import { MetricWidget } from "@components/features/dashboard";
@@ -44,9 +44,15 @@ export const ITEM_DETAIL_PATHS: Record<ItemCardProps["type"], (id: string) => st
   change: (id) => `/changes/${id}`,
 };
 
+type TabType = ItemCardProps["type"];
+
 export default function SupportPage() {
   const theme = useTheme();
-  const [tab, setTab] = useState<ItemCardProps["type"]>("case");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab");
+  const allowedTabs: TabType[] = ["case", "chat", "service", "change"];
+  const tabFromParams = allowedTabs.find((t) => t === rawTab) ?? "case";
+  const [tab, setTab] = useState<TabType>(tabFromParams);
 
   const { projectId, noveraEnabled } = useProject();
   const project = useSuspenseQuery(projects.all()).data.find((project) => project.id === projectId);
@@ -99,7 +105,15 @@ export default function SupportPage() {
           </Card>
         </Grid>
       </Grid>
-      <Tabs variant="fullWidth" sx={{ mt: 3 }} value={tab} onChange={(_, value) => setTab(value)}>
+      <Tabs
+        variant="fullWidth"
+        sx={{ mt: 3 }}
+        value={tab}
+        onChange={(_, value) => {
+          setTab(value);
+          setSearchParams({ tab: value }, { replace: true });
+        }}
+      >
         <Tab label="Cases" value="case" disableRipple />
         <Tab label="Chats" value="chat" disableRipple />
         <Tab label="Services Requests" value="service" disableRipple />
