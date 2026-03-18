@@ -801,6 +801,12 @@ export interface ProductVersionsSearchResponse {
   limit: number;
 }
 
+export interface ProductUpdate {
+  updateLevel: number;
+  date: string;
+  details?: string | null;
+}
+
 // Single item from GET /projects/:projectId/deployments (array response).
 export interface ProjectDeploymentItem {
   id: string;
@@ -838,7 +844,7 @@ export function isDeployedProductsResponse(
   return (
     typeof payload === "object" &&
     payload !== null &&
-    Array.isArray((payload as any).deployedProducts)
+    Array.isArray((payload as { deployedProducts?: unknown }).deployedProducts)
   );
 }
 
@@ -855,7 +861,7 @@ export interface DeploymentProductItem {
   tps?: number | null;
   releasedOn?: string | null;
   endOfLifeOn?: string | null;
-  updateLevel?: string | null;
+  updates?: ProductUpdate[] | null;
 }
 
 // Case attachment item (GET /cases/:id/attachments).
