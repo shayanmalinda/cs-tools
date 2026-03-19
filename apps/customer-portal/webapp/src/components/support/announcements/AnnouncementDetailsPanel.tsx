@@ -74,10 +74,7 @@ function normalizeAnnouncementDescriptionHtml(html: string): string {
   );
 
   // Convert <code><n/></code> into a newline.
-  normalized = normalized.replace(
-    /<code>\s*<n\s*\/>\s*<\/code>/gi,
-    "<br />",
-  );
+  normalized = normalized.replace(/<code>\s*<n\s*\/>\s*<\/code>/gi, "<br />");
 
   // Convert any remaining <n/> placeholders into newlines.
   normalized = normalized.replace(/<n\s*\/>/gi, "<br />");
@@ -269,7 +266,12 @@ export default function AnnouncementDetailsPanel({
             const normalizedHtml = normalizeAnnouncementDescriptionHtml(
               data.description,
             );
-            const isEffectivelyEmpty = !normalizedHtml.trim();
+            const normalizedText = normalizedHtml
+              .replace(/<br\s*\/?>/gi, "")
+              .replace(/&nbsp;/gi, " ")
+              .replace(/<[^>]*>/g, "")
+              .trim();
+            const isEffectivelyEmpty = !normalizedText;
 
             if (isEffectivelyEmpty) {
               return (
@@ -280,27 +282,27 @@ export default function AnnouncementDetailsPanel({
             }
 
             return (
-          <Box
-            component="div"
-            sx={{
-              typography: "body2",
-              color: "text.primary",
-              "& p": { mb: 0.5 },
-              "& p:last-child": { mb: 0 },
-              "& code": {
-                display: "block",
-                p: 1,
-                bgcolor: "action.hover",
-                fontSize: "0.875rem",
-                whiteSpace: "pre-wrap",
-                overflowWrap: "break-word",
-              },
-            }}
-            // biome-ignore security/noDangerouslySetInnerHtml: sanitized with DOMPurify
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(normalizedHtml),
-            }}
-          />
+              <Box
+                component="div"
+                sx={{
+                  typography: "body2",
+                  color: "text.primary",
+                  "& p": { mb: 0.5 },
+                  "& p:last-child": { mb: 0 },
+                  "& code": {
+                    display: "block",
+                    p: 1,
+                    bgcolor: "action.hover",
+                    fontSize: "0.875rem",
+                    whiteSpace: "pre-wrap",
+                    overflowWrap: "break-word",
+                  },
+                }}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized with DOMPurify
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(normalizedHtml),
+                }}
+              />
             );
           })()
         ) : (
