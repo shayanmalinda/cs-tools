@@ -54,3 +54,8 @@ export const STATUS_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
   3: "info",
   1006: "info",
 };
+
+export const STRING_OVERRIDES = {
+  // Engagement Type Labels Overrides
+  "New Feature / Improvement": "Improvement",
+};

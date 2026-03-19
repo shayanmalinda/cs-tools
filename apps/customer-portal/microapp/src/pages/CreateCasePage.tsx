@@ -24,7 +24,7 @@ import { useProject } from "@context/project";
 import { projects } from "@src/services/projects";
 import { cases } from "@src/services/cases";
 import type { CaseClassificationResponseDTO } from "@src/types";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type CreateCaseFormValues = {
   project: string;
@@ -87,14 +87,19 @@ export default function CreateCasePage() {
     label: project.name,
   }));
 
-  const deploymentOptions =
-    deploymentQuery.data?.map((deployment) => ({ value: deployment.id, label: deployment.type })) ?? [];
+  const deploymentOptions = useMemo(
+    () => deploymentQuery.data?.map((deployment) => ({ value: deployment.id, label: deployment.type })) ?? [],
+    [deploymentQuery.data],
+  );
 
-  const productOptions =
-    productQuery.data?.map((product) => ({
-      value: product.id,
-      label: product.name,
-    })) ?? [];
+  const productOptions = useMemo(
+    () =>
+      productQuery.data?.map((product) => ({
+        value: product.id,
+        label: product.name,
+      })) ?? [],
+    [productQuery.data, formik.values.deployment],
+  );
 
   const mutation = useMutation({
     ...cases.create,
@@ -146,8 +151,7 @@ export default function CreateCasePage() {
     }
 
     setClassified(autoFilledFields);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [classifications]);
+  }, [classifications, deploymentOptions, productOptions]);
 
   return (
     <>

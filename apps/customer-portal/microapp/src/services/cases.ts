@@ -18,6 +18,7 @@ import type {
   Comment,
   CreateCommentRequestDTO,
   PaginatedArray,
+  GetCasesStatsRequestDTO,
 } from "@src/types";
 
 import {
@@ -75,8 +76,12 @@ const classify = async (
   ).data;
 };
 
-const getCasesStats = async (id: string): Promise<CasesStatsDTO> => {
-  return (await apiClient.get<CasesStatsDTO>(CASE_STATS_ENDPOINT(id))).data;
+const getCasesStats = async (id: string, body: Partial<GetCasesStatsRequestDTO>): Promise<CasesStatsDTO> => {
+  return (
+    await apiClient.get<CasesStatsDTO>(CASE_STATS_ENDPOINT(id), {
+      params: { ...body, caseTypes: body.caseTypes?.join(",") },
+    })
+  ).data;
 };
 
 const getComments = async (id: string): Promise<Comment[]> => {
@@ -181,10 +186,10 @@ export const cases = {
     mutationFn: (body: Omit<CaseClassificationRequestDTO, "region" | "tier">) => classify(body),
   }),
 
-  stats: (id: string) =>
+  stats: (id: string, body: Partial<GetCasesStatsRequestDTO> = {}) =>
     queryOptions({
-      queryKey: ["cases-stats", id],
-      queryFn: () => getCasesStats(id),
+      queryKey: ["cases-stats", id, body],
+      queryFn: () => getCasesStats(id, body),
       staleTime: 0,
       gcTime: 0,
     }),

@@ -1,4 +1,4 @@
-import type { EntityReference, Pagination } from "@src/types";
+import type { CasesStatsDTO, EntityReference, Pagination } from "@src/types";
 
 export interface ChangeRequestsDTO extends Pagination {
   changeRequests: ChangeRequestSummaryDTO[];
@@ -55,3 +55,8 @@ export interface GetChangeRequestsRquestDTO {
     offset?: number;
   };
 }
+
+export type ChangeRequestsStatsDTO = Pick<
+  CasesStatsDTO,
+  "totalCount" | "activeCount" | "outstandingCount" | "stateCount"
+>;

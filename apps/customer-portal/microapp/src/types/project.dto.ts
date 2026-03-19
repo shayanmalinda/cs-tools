@@ -37,7 +37,11 @@ export interface ProjectDTO {
   onboardingStatus: string | null;
 }
 
-type ProjectSummaryDTO = Pick<ProjectDTO, "id" | "name" | "key" | "createdOn" | "description">;
+type ProjectSummaryDTO = Pick<ProjectDTO, "id" | "name" | "key" | "createdOn" | "description" | "type"> & {
+  activeCasesCount: number;
+  activeChatsCount: number;
+  slaStatus: string;
+};
 
 export interface ProjectStatsDTO {
   projectStats: {
@@ -69,7 +73,9 @@ export interface ProjectDeploymentDTO {
   type: EntityReference;
 }
 
-export type DeploymentProductsDTO = DeploymentProductDTO[];
+export interface DeploymentProductsDTO extends Pagination {
+  deployedProducts: DeploymentProductDTO[];
+}
 
 export interface DeploymentProductDTO {
   id: string;

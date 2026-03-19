@@ -12,7 +12,7 @@ export interface Project {
   description: string;
   metrics: ProjectMetrics;
   status?: ProjectStatus;
-  type: ProjectType;
+  type: string;
 }
 
 export interface ProjectInfo {

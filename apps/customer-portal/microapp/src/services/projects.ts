@@ -18,6 +18,8 @@ import type {
   Deployment,
   DeploymentProductDTO,
   DeploymentProductsDTO,
+  PaginatedArray,
+  Pagination,
   Product,
   Project,
   ProjectDeploymentDTO,
@@ -25,31 +27,21 @@ import type {
   ProjectDTO,
   ProjectInfo,
   ProjectsDTO,
-  ProjectStatsDTO,
   ProjectStatus,
 } from "@src/types";
 import {
   PROJECT_DEPLOYMENTS_ENDPOINT,
-  PROJECT_STATS_ENDPOINT,
   PROJECTS_ENDPOINT,
   PROJECT_DEPLOYMENT_PRODUCTS_ENDPOINT,
   PROJECT_DETAILS_ENDPOINT,
 } from "@config/endpoints";
 import apiClient from "@src/services/apiClient";
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import { stripHtmlTags } from "@utils/others";
 
 const getAllProjects = async (): Promise<Project[]> => {
   const projects = (await apiClient.post<ProjectsDTO>(PROJECTS_ENDPOINT, {})).data.projects;
-  const projectsWithStats = await Promise.all(
-    projects.map(async (project) => {
-      const stats: ProjectStatsDTO | undefined = await apiClient
-        .get<ProjectStatsDTO>(PROJECT_STATS_ENDPOINT(project.id), { timeout: 3000 })
-        .then((res) => res.data)
-        .catch(() => undefined);
-      return mapProjectAndStatsDTOToProject(project, stats);
-    }),
-  );
+  const projectsWithStats = await Promise.all(projects.map(mapProjectDTOToProjectSummary));
 
   return projectsWithStats;
 };
@@ -59,21 +51,41 @@ const getProject = async (id: string): Promise<ProjectInfo> => {
   return mapProjectDTOToProject(response);
 };
 
-const getDeploymentsByProject = async (id: string): Promise<Deployment[]> => {
-  const response = (await apiClient.get<ProjectDeploymentsDTO>(PROJECT_DEPLOYMENTS_ENDPOINT(id))).data;
+const getDeploymentsByProject = async (
+  id: string,
+  body: Partial<Omit<Pagination, "totalRecords">>,
+): Promise<PaginatedArray<Deployment>> => {
+  const response = (await apiClient.get<ProjectDeploymentsDTO>(PROJECT_DEPLOYMENTS_ENDPOINT(id), { params: body }))
+    .data;
+  const result = response.deployments.map(toDeployment) as PaginatedArray<Deployment>;
+  result.pagination = {
+    totalRecords: response.totalRecords,
+    offset: response.offset,
+    limit: response.limit,
+  };
 
-  return response.deployments.map(toDeployment);
+  return result;
 };
 
-const getProductsByDeployment = async (deploymentId: string): Promise<Product[]> => {
-  const products = (await apiClient.get<DeploymentProductsDTO>(PROJECT_DEPLOYMENT_PRODUCTS_ENDPOINT(deploymentId)))
-    .data;
+const getProductsByDeployment = async (
+  deploymentId: string,
+  body: Partial<Omit<Pagination, "totalRecords">>,
+): Promise<PaginatedArray<Product>> => {
+  const response = (
+    await apiClient.get<DeploymentProductsDTO>(PROJECT_DEPLOYMENT_PRODUCTS_ENDPOINT(deploymentId), { params: body })
+  ).data;
+  const result = response.deployedProducts.map(toProduct) as PaginatedArray<Product>;
+  result.pagination = {
+    totalRecords: response.totalRecords,
+    offset: response.offset,
+    limit: response.limit,
+  };
 
-  return products.map(toProduct);
+  return result;
 };
 
 /* Mappers */
-function mapProjectAndStatsDTOToProject(project: ProjectsDTO["projects"][number], stats?: ProjectStatsDTO): Project {
+function mapProjectDTOToProjectSummary(project: ProjectsDTO["projects"][number]): Project {
   return {
     id: project.id,
     projectKey: project.key,
@@ -81,11 +93,11 @@ function mapProjectAndStatsDTOToProject(project: ProjectsDTO["projects"][number]
     createdOn: new Date(project.createdOn.replace(" ", "T")),
     description: project.description ? project.description.replace(/<\/?[^>]+(>|$)/g, "") : "",
     metrics: {
-      cases: stats?.projectStats.openCases,
-      chats: stats?.projectStats.activeChats,
+      cases: project.activeCasesCount,
+      chats: project.activeChatsCount,
     },
-    status: stats?.projectStats.slaStatus as ProjectStatus,
-    type: "Regular", // TODO:
+    status: project.slaStatus as ProjectStatus,
+    type: project.type?.label ?? "N/A",
   };
 }
 
@@ -140,15 +152,39 @@ export const projects = {
       queryFn: () => getProject(id),
     }),
 
-  deployments: (id: string) =>
+  deployments: (id: string, body: Partial<Omit<Pagination, "totalRecords">> = {}) =>
     queryOptions({
-      queryKey: ["deployments", id],
-      queryFn: () => getDeploymentsByProject(id),
+      queryKey: ["deployments", id, body],
+      queryFn: () => getDeploymentsByProject(id, body),
     }),
 
-  products: (deploymentId: string) =>
+  deploymentsPaginated: (id: string, body: Partial<Omit<Pagination, "totalRecords">> = {}) =>
+    infiniteQueryOptions({
+      queryKey: ["deployments", "paginated", id, body],
+      queryFn: ({ pageParam }) => getDeploymentsByProject(id, { ...body, offset: pageParam }),
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => {
+        const { offset, limit, totalRecords } = lastPage.pagination;
+        const maxOffset = Math.ceil(totalRecords / limit);
+        return offset >= maxOffset ? undefined : offset + 1;
+      },
+    }),
+
+  products: (deploymentId: string, body: Partial<Omit<Pagination, "totalRecords">> = {}) =>
     queryOptions({
       queryKey: ["products", deploymentId],
-      queryFn: () => getProductsByDeployment(deploymentId),
+      queryFn: () => getProductsByDeployment(deploymentId, body),
+    }),
+
+  productsPaginated: (deploymentId: string, body: Partial<Omit<Pagination, "totalRecords">> = {}) =>
+    infiniteQueryOptions({
+      queryKey: ["products", "paginated", deploymentId, body],
+      queryFn: ({ pageParam }) => getProductsByDeployment(deploymentId, { ...body, offset: pageParam }),
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => {
+        const { offset, limit, totalRecords } = lastPage.pagination;
+        const maxOffset = Math.ceil(totalRecords / limit);
+        return offset >= maxOffset ? undefined : offset + 1;
+      },
     }),
 };

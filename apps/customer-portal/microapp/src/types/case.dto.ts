@@ -137,17 +137,19 @@ export interface CaseClassificationResponseDTO {
 }
 
 export interface CasesStatsDTO {
-  totalCases: number;
+  totalCount: number;
+  activeCount: number;
+  outstandingCount: number;
   averageResponseTime: number;
-  resolvedCases: {
-    total: number;
-    currentMonth: number;
-  };
+  resolvedCases: { total: number; currentMonth: number; pastThirtyDays: number };
+  changeRate: { resolvedEngagements: number; averageResponseTime: number };
   stateCount: { id: string; label: string; count: number }[];
   severityCount: { id: string; label: string; count: number }[];
   outstandingSeverityCount: { id: string; label: string; count: number }[];
   caseTypeCount: { id: string; label: string; count: number }[];
   casesTrend: { period: string; severities: { id: string; label: string; count: number }[] }[];
+  engagementTypeCount: { id: string; label: string; count: number }[];
+  outstandingEngagementTypeCount: { id: string; label: string; count: number }[];
 }
 
 export interface CommentsDTO extends Pagination {
@@ -175,4 +177,8 @@ export interface CommentDTO {
 export interface CreateCommentRequestDTO {
   content: string;
   type: "work_note" | "comments";
+}
+
+export interface GetCasesStatsRequestDTO {
+  caseTypes: string[];
 }

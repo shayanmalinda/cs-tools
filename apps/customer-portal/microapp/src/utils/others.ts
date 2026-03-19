@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { STRING_OVERRIDES } from "../components/features/support/config";
+
 export const stringAvatar = (name: string) => {
   if (!name) return "";
   const parts = name.trim().split(/\s+/);
@@ -35,4 +37,8 @@ export function capitalize(text: string): string {
 export const stripHtmlTags = (str: string): string => {
   if (!str) return "";
   return str.replace(/<[^>]*>?/gm, "");
+};
+
+export const overrideOrDefault = (s: string) => {
+  return STRING_OVERRIDES[s] ?? s;
 };

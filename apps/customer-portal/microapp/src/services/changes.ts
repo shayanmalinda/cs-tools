@@ -6,10 +6,15 @@ import type {
   ChangeRequestsDTO,
   ChangeRequestDTO,
   ChangeRequest,
+  ChangeRequestsStatsDTO,
 } from "@src/types";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
-import { CHANGE_REQUEST_DETAILS_ENDPOINT, PROJECT_CHANGE_REQUESTS_ENDPOINT } from "@src/config/endpoints";
+import {
+  CHANGE_REQUEST_DETAILS_ENDPOINT,
+  CHANGE_REQUEST_STATS_ENDPOINT,
+  PROJECT_CHANGE_REQUESTS_ENDPOINT,
+} from "@src/config/endpoints";
 
 const getAllChangeRequests = async (
   id: string,
@@ -29,6 +34,10 @@ const getAllChangeRequests = async (
 const getChangeRequest = async (id: string): Promise<ChangeRequest> => {
   const response = (await apiClient.get<ChangeRequestDTO>(CHANGE_REQUEST_DETAILS_ENDPOINT(id))).data;
   return toChangeRequest(response);
+};
+
+const getChangeRequestsStats = async (id: string): Promise<ChangeRequestsStatsDTO> => {
+  return (await apiClient.get<ChangeRequestsStatsDTO>(CHANGE_REQUEST_STATS_ENDPOINT(id))).data;
 };
 
 /* Mappers */
@@ -95,5 +104,13 @@ export const changeRequests = {
         const maxOffset = Math.ceil(totalRecords / limit);
         return offset >= maxOffset ? undefined : offset + 1;
       },
+    }),
+
+  stats: (id: string) =>
+    queryOptions({
+      queryKey: ["change-requests-stats", id],
+      queryFn: () => getChangeRequestsStats(id),
+      staleTime: 0,
+      gcTime: 0,
     }),
 };
