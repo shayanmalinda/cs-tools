@@ -45,7 +45,7 @@ import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetChangeRequests, {
   useGetChangeRequestsInfinite,
 } from "@api/useGetChangeRequests";
-import { useGetProjectChangeRequestStats } from "@api/useGetProjectChangeRequestStats";
+import { useGetProjectChangeRequestsStats } from "@api/useGetProjectChangeRequestsStats";
 import ChangeRequestsStatCards from "@components/support/change-requests/ChangeRequestsStatCards";
 import ChangeRequestsSearchBar from "@components/support/change-requests/ChangeRequestsSearchBar";
 import ChangeRequestsList from "@components/support/change-requests/ChangeRequestsList";
@@ -80,7 +80,20 @@ export default function ChangeRequestsPage(): JSX.Element {
     data: stats,
     isLoading: isStatsLoading,
     isError: isStatsError,
-  } = useGetProjectChangeRequestStats(projectId || "", { enabled: !!projectId });
+    isFetching: isStatsFetching,
+  } = useGetProjectChangeRequestsStats(projectId || "", { enabled: !!projectId });
+
+  // Debug logging for stats
+  useEffect(() => {
+    console.log("[ChangeRequestsPage] Stats Debug:", {
+      projectId,
+      stats,
+      isStatsLoading,
+      isStatsError,
+      isStatsFetching,
+      enabled: !!projectId,
+    });
+  }, [projectId, stats, isStatsLoading, isStatsError, isStatsFetching]);
 
   // Build API request (following cases listing pattern)
   const changeRequestSearchRequest = useMemo<
@@ -295,7 +308,7 @@ export default function ChangeRequestsPage(): JSX.Element {
 
       {/* Stat cards */}
       <ChangeRequestsStatCards
-        isLoading={isStatsLoading || (!stats && !isStatsError)}
+        isLoading={isStatsLoading}
         isError={isStatsError}
         stats={stats}
       />
