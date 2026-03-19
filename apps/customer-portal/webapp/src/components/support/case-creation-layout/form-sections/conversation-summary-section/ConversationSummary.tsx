@@ -16,31 +16,50 @@
 
 import {
   Box,
+  Button,
   colors,
   Divider,
   Paper,
   Skeleton,
   Typography,
 } from "@wso2/oxygen-ui";
-import { Bot, MessageSquare } from "@wso2/oxygen-ui-icons-react";
-import type { JSX } from "react";
-import type { CaseCreationMetadata } from "@models/responses";
+import { Bot, ExternalLink, MessageSquare } from "@wso2/oxygen-ui-icons-react";
+import { type JSX } from "react";
+import { useNavigate, useParams } from "react-router";
+import useGetConversationSummary from "@api/useGetConversationSummary";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 
 export interface ConversationSummaryProps {
-  metadata?: CaseCreationMetadata | null;
-  isLoading?: boolean;
+  conversationId?: string;
 }
 
 /**
  * Sidebar component showing conversation summary and tips.
  *
+ * @param {ConversationSummaryProps} props - conversationId to fetch summary.
  * @returns {JSX.Element} The conversation summary sidebar.
  */
 export function ConversationSummary({
-  metadata,
-  isLoading = false,
+  conversationId,
 }: ConversationSummaryProps): JSX.Element {
+  const navigate = useNavigate();
+  const { projectId } = useParams<{ projectId: string }>();
+  
+  const {
+    data: summary,
+    isLoading,
+    isError,
+  } = useGetConversationSummary(
+    projectId || "",
+    conversationId || "",
+  );
+
+  const handleViewConversation = () => {
+    if (projectId && conversationId) {
+      navigate(`/projects/${projectId}/support/conversations/${conversationId}`);
+    }
+  };
+
   return (
     <Paper sx={{ p: 3, position: "sticky", top: 3 }}>
       {/* sidebar header container */}
@@ -59,12 +78,12 @@ export function ConversationSummary({
           </Typography>
           {isLoading ? (
             <Skeleton variant="text" width="20%" height={20} />
-          ) : metadata?.conversationSummary?.messagesExchanged != null ? (
-            <Typography variant="body2">
-              {metadata.conversationSummary.messagesExchanged}
-            </Typography>
-          ) : (
+          ) : isError || summary?.messagesExchanged == null ? (
             <ErrorIndicator entityName="Messages exchanged" size="small" />
+          ) : (
+            <Typography variant="body2">
+              {summary.messagesExchanged}
+            </Typography>
           )}
         </Box>
         <Box>
@@ -73,15 +92,15 @@ export function ConversationSummary({
           </Typography>
           {isLoading ? (
             <Skeleton variant="text" width="60%" height={20} />
-          ) : metadata?.conversationSummary?.troubleshootingAttempts != null ? (
-            <Typography variant="body2">
-              {metadata.conversationSummary.troubleshootingAttempts}
-            </Typography>
-          ) : (
+          ) : isError || summary?.troubleshootingAttempts == null ? (
             <ErrorIndicator
               entityName="Troubleshooting attempts"
               size="small"
             />
+          ) : (
+            <Typography variant="body2">
+              {summary.troubleshootingAttempts}
+            </Typography>
           )}
         </Box>
         <Box>
@@ -90,32 +109,32 @@ export function ConversationSummary({
           </Typography>
           {isLoading ? (
             <Skeleton variant="text" width="50%" height={20} />
-          ) : metadata?.conversationSummary?.kbArticlesReviewed != null ? (
-            <Typography variant="body2">
-              {metadata.conversationSummary.kbArticlesReviewed}
-            </Typography>
-          ) : (
+          ) : isError || summary?.kbArticlesReviewed == null ? (
             <ErrorIndicator entityName="KB articles reviewed" size="small" />
+          ) : (
+            <Typography variant="body2">
+              {summary.kbArticlesReviewed}
+            </Typography>
           )}
         </Box>
       </Box>
 
       <Divider sx={{ mb: 3 }} />
 
-      <Typography
-        variant="body2"
+      <Button
+        variant="text"
+        endIcon={<ExternalLink size={16} />}
+        onClick={handleViewConversation}
+        disabled={isLoading || !projectId || !conversationId}
         sx={{
-          color: "primary.main",
-          cursor: isLoading ? "default" : "pointer",
-          fontWeight: 600,
           mb: 3,
-          display: "block",
-          opacity: isLoading ? 0.5 : 1,
-          pointerEvents: isLoading ? "none" : "auto",
+          textTransform: "none",
+          px: 0,
+          justifyContent: "flex-start",
         }}
       >
         View full conversation
-      </Typography>
+      </Button>
 
       {/* conversation attachment tip container */}
       <Paper sx={{ p: 2 }}>
