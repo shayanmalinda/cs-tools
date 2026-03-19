@@ -4414,7 +4414,6 @@ isolated service / on new websocket:Listener(wsPort) {
             log:printError("WebSocket upgrade rejected: authorization failed", userInfo);
             return error websocket:UpgradeError("Unauthorized");
         }
-        log:printInfo(string `Upgrading to WebSocket for session ID: ${sessionId}, user: ${userInfo.email}`);
         return new WsProxyService(sessionId);
     }
 }
