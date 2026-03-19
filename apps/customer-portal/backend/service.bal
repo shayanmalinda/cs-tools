@@ -1438,7 +1438,9 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + conversationId - ID of the conversation
     # + return - Conversation summary or error
     resource function get projects/[entity:IdString projectId]/summary/[entity:IdString conversationId](http:RequestContext ctx)
-        returns ai_chat_agent:ConversationSummaryResponse|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+    resource function get projects/[entity:IdString projectId]/summary/[entity:IdString conversationId](
+            http:RequestContext ctx) returns ai_chat_agent:ConversationSummaryResponse|http:BadRequest|
+        http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
