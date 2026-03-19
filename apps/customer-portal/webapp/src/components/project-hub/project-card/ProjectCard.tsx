@@ -77,6 +77,7 @@ export default function ProjectCard({
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        minHeight: 320,
       }}
     >
       {/* project card badges */}

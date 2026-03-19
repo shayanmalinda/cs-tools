@@ -120,7 +120,7 @@ describe("ProjectCard", () => {
 
     fireEvent.click(screen.getByTestId("card-button"));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/1/dashboard");
+    expect(mockNavigate).toHaveBeenCalledWith("/projects/1/dashboard");
   });
 
   it("should call onViewDashboard if provided", () => {
