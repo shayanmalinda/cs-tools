@@ -52,7 +52,7 @@ public isolated service class JwtInterceptor {
         if userIdToken is error {
             string errorMsg = "Missing user id token info header!";
             log:printError(errorMsg, userIdToken);
-            return <http:InternalServerError>{
+            return <http:Unauthorized>{
                 body: {
                     message: errorMsg
                 }
