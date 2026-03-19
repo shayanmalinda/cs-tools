@@ -52,7 +52,7 @@ export default function IdleTimeoutProvider({
   const onIdle = () => {
     if (isSignedIn && !isLoading) {
       setSessionWarningOpen(false);
-      signOut().finally(() => navigate("/login"));
+      signOut().finally(() => navigate("/home"));
     }
   };
 
@@ -74,7 +74,7 @@ export default function IdleTimeoutProvider({
     try {
       await signOut();
     } finally {
-      navigate("/login");
+      navigate("/home");
     }
   };
 

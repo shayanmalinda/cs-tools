@@ -21,16 +21,16 @@ import AppLayout from "@layouts/AppLayout";
 
 /**
  * AuthGuard renders AppLayout (header/footer) so loading state is visible
- * and Asgardeo authentication flow can be observed. Redirects to login only
+ * and Asgardeo authentication flow can be observed. Redirects to home only
  * when not signed in and auth check is complete.
  *
- * @returns {JSX.Element} AppLayout or redirect to login.
+ * @returns {JSX.Element} AppLayout or redirect to home.
  */
 export default function AuthGuard(): JSX.Element {
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
 
   if (!isSignedIn && !isAuthLoading) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <AppLayout />;

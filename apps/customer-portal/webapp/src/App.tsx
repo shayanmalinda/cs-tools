@@ -17,6 +17,7 @@
 import { type JSX } from "react";
 import { Route, Routes, Navigate } from "react-router";
 import AuthGuard from "@layouts/AuthGuard";
+import HomePage from "@pages/HomePage";
 import ProjectHub from "@pages/ProjectHub";
 import ProjectPage from "@pages/ProjectPage";
 import ProjectDetails from "@pages/ProjectDetails";
@@ -42,7 +43,6 @@ import CreateCasePage from "@pages/CreateCasePage";
 import { ErrorBannerProvider } from "@context/error-banner/ErrorBannerContext";
 import { SuccessBannerProvider } from "@context/success-banner/SuccessBannerContext";
 import { LoaderProvider } from "@context/linear-loader/LoaderContext";
-import LoginPage from "@pages/LoginPage";
 import SecurityPage from "@pages/SecurityPage";
 import SettingsPage from "@pages/SettingsPage";
 import VulnerabilityDetailsPage from "@pages/VulnerabilityDetailsPage";
@@ -56,7 +56,7 @@ export default function App(): JSX.Element {
         <SuccessBannerProvider>
           <Routes>
             {/* Public Route */}
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/home" element={<HomePage />} />
 
             <Route element={<AuthGuard />}>
               {/* ProjectHub Page */}
@@ -192,7 +192,7 @@ export default function App(): JSX.Element {
             </Route>
 
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </SuccessBannerProvider>
       </ErrorBannerProvider>
