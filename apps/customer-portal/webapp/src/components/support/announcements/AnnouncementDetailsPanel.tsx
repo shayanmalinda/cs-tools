@@ -25,12 +25,12 @@ import {
   alpha,
   useTheme,
 } from "@wso2/oxygen-ui";
+import DOMPurify from "dompurify";
 import { ArrowLeft, Calendar, FileText } from "@wso2/oxygen-ui-icons-react";
 import type { JSX, ReactElement } from "react";
 import type { CaseDetails } from "@models/responses";
 import {
   formatUtcToLocalNoTimezone,
-  stripHtml,
   getStatusColor,
   getStatusIconElement,
   resolveColorFromTheme,
@@ -42,6 +42,47 @@ export interface AnnouncementDetailsPanelProps {
   isLoading: boolean;
   isError: boolean;
   onBack: () => void;
+}
+
+/**
+ * Normalizes announcement HTML:
+ * - Converts empty <code> blocks to a newline (<br />) so we don't render useless whitespace.
+ * - Converts <code><n/><code/>-style placeholders (and bare <n/>) into newlines.
+ *
+ * @param {string} html - Raw HTML from backend.
+ * @returns {string} Normalized HTML.
+ */
+function normalizeAnnouncementDescriptionHtml(html: string): string {
+  let normalized = html;
+
+  // Convert empty <p><code>...</code></p> blocks to a single newline.
+  normalized = normalized.replace(
+    /<p>\s*<code>\s*(?:&nbsp;|\s|<br\s*\/?>)*<\/code>\s*<\/p>/gi,
+    "<br />",
+  );
+
+  // Convert empty standalone <code> blocks to a newline.
+  normalized = normalized.replace(
+    /<code>\s*(?:&nbsp;|\s|<br\s*\/?>)*<\/code>/gi,
+    "<br />",
+  );
+
+  // Convert the placeholder pattern <code><n/><code/> into a newline.
+  normalized = normalized.replace(
+    /<code>\s*<n\s*\/>\s*<code\s*\/>\s*/gi,
+    "<br />",
+  );
+
+  // Convert <code><n/></code> into a newline.
+  normalized = normalized.replace(
+    /<code>\s*<n\s*\/>\s*<\/code>/gi,
+    "<br />",
+  );
+
+  // Convert any remaining <n/> placeholders into newlines.
+  normalized = normalized.replace(/<n\s*\/>/gi, "<br />");
+
+  return normalized;
 }
 
 /**
@@ -223,9 +264,50 @@ export default function AnnouncementDetailsPanel({
         <Typography variant="h6" color="text.primary">
           Description
         </Typography>
-        <Typography variant="body2" color="text.primary">
-          {data.description ? stripHtml(data.description) : "Nothing"}
-        </Typography>
+        {data.description ? (
+          (() => {
+            const normalizedHtml = normalizeAnnouncementDescriptionHtml(
+              data.description,
+            );
+            const isEffectivelyEmpty = !normalizedHtml.trim();
+
+            if (isEffectivelyEmpty) {
+              return (
+                <Typography variant="body2" color="text.primary">
+                  Nothing
+                </Typography>
+              );
+            }
+
+            return (
+          <Box
+            component="div"
+            sx={{
+              typography: "body2",
+              color: "text.primary",
+              "& p": { mb: 0.5 },
+              "& p:last-child": { mb: 0 },
+              "& code": {
+                display: "block",
+                p: 1,
+                bgcolor: "action.hover",
+                fontSize: "0.875rem",
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+              },
+            }}
+            // biome-ignore security/noDangerouslySetInnerHtml: sanitized with DOMPurify
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(normalizedHtml),
+            }}
+          />
+            );
+          })()
+        ) : (
+          <Typography variant="body2" color="text.primary">
+            Nothing
+          </Typography>
+        )}
       </Paper>
     </Box>
   );

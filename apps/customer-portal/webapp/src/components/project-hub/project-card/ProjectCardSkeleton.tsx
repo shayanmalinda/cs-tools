@@ -39,11 +39,18 @@ const ProjectCardSkeleton = (): JSX.Element => {
         flexDirection: "column",
         height: "100%",
         width: "100%",
+        minHeight: 320,
       }}
     >
-      {/* project card badges skeleton */}
+      {/* project card badges skeleton (project key + SLA status chips) */}
       <Form.CardContent sx={{ width: "100%", pt: 2, pb: 0 }}>
-        <Box display="flex" justifyContent="flex-start" alignItems="center">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={1}
+        >
+          <Skeleton variant="rounded" width={80} height={24} />
           <Skeleton variant="rounded" width={80} height={24} />
         </Box>
       </Form.CardContent>
@@ -60,7 +67,7 @@ const ProjectCardSkeleton = (): JSX.Element => {
           <Typography
             variant="body2"
             sx={{
-              minHeight: "5rem",
+              minHeight: "6rem",
               display: "block",
             }}
           >
