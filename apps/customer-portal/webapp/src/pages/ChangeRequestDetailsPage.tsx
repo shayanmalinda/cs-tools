@@ -415,525 +415,546 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
   const testPlanText = stripHtmlTags(changeRequest.testPlan);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* Back Button */}
-      <Button
-        startIcon={<ArrowLeft size={16} />}
-        onClick={() => navigate(`/projects/${projectId}/${basePath}/change-requests`)}
-        sx={{ alignSelf: "flex-start" }}
-        variant="text"
-      >
-        Back to Change Requests
-      </Button>
-
-      {/* Header Section */}
-      <Paper variant="outlined" sx={{ p: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, minHeight: "100vh" }}>
+      {/* Fixed Header: Back Button */}
+      <Box sx={{ flexShrink: 0 }}>
+        <Button
+          startIcon={<ArrowLeft size={16} />}
+          onClick={() => navigate(`/projects/${projectId}/${basePath}/change-requests`)}
+          sx={{ alignSelf: "flex-start" }}
+          variant="text"
         >
-          <Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <Typography variant="h5" color="text.primary">
-                {changeRequest.title || "Not Available"}
-              </Typography>
-              {changeRequest.hasServiceOutage && (
-                <Chip
-                  label="Service Outage"
-                  size="small"
-                  sx={{
-                    bgcolor: alpha(colors.red[500], 0.1),
-                    color: colors.red[800],
-                    borderColor: alpha(colors.red[500], 0.2),
-                    border: "1px solid",
-                  }}
-                />
-              )}
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                fontSize: "0.875rem",
-                color: "text.secondary",
-              }}
-            >
-              <Typography variant="body2" fontWeight={600} color="text.primary">
-                {changeRequest.number}
-              </Typography>
-              <Typography variant="body2" color="text.disabled">
-                |
-              </Typography>
-              <Typography variant="body2">
-                Service Request: {changeRequest.case?.number || "Not Available"}
-              </Typography>
-              <Typography variant="body2" color="text.disabled">
-                |
-              </Typography>
-              <Typography variant="body2">
-                Created {changeRequest.createdOn}
-              </Typography>
-            </Box>
-          </Box>
+          Back to Change Requests
+        </Button>
+      </Box>
 
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {changeRequest.impact?.label &&
-              typeof changeRequest.impact.label === "string" && (
-                <Chip
-                  label={formatImpactLabel(changeRequest.impact.label)}
-                  size="small"
-                  sx={{
-                    bgcolor: impactColor.bg,
-                    color: impactColor.text,
-                    borderColor: impactColor.border,
-                    border: "1px solid",
-                  }}
-                />
-              )}
-            {changeRequest.state?.label &&
-              typeof changeRequest.state.label === "string" && (
-                <Chip
-                  icon={renderStateIcon()}
-                  label={String(changeRequest.state.label)}
-                  size="small"
-                  sx={{
-                    bgcolor: statusColor.bg,
-                    color: statusColor.text,
-                    borderColor: statusColor.border,
-                    border: "1px solid",
-                    "& .MuiChip-icon": {
-                      color: statusColor.text,
-                    },
-                  }}
-                />
-              )}
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Content Section */}
-      {/* Workflow Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-            <ChevronRight size={20} />
-            <Typography variant="h6">Change Request Workflow</Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Track the progress of this change request through each stage
-          </Typography>
-        </Box>
-
-        <Box sx={{ px: 3, pb: 3 }}>
-          <Stack spacing={0}>
-            {workflowStages.map((stage, index) => (
-              <Box key={index} sx={{ position: "relative" }}>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box
+      {/* Fixed Header: Component A (Database Changes section) */}
+      <Box sx={{ flexShrink: 0 }}>
+        <Paper variant="outlined" sx={{ p: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 2,
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, flexWrap: "wrap" }}>
+                <Typography variant="h5" color="text.primary">
+                  {changeRequest.title || "Not Available"}
+                </Typography>
+                {changeRequest.hasServiceOutage && (
+                  <Chip
+                    label="Service Outage"
+                    size="small"
                     sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
+                      bgcolor: alpha(colors.red[500], 0.1),
+                      color: colors.red[800],
+                      borderColor: alpha(colors.red[500], 0.2),
+                      border: "1px solid",
                     }}
-                  >
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "2px solid",
-                        bgcolor: stage.disabled
-                          ? alpha(colors.grey[500], 0.05)
-                          : stage.completed
-                            ? alpha(colors.green[500], 0.1)
-                            : stage.current
-                              ? alpha(colors.blue[500], 0.1)
-                              : alpha(colors.grey[500], 0.1),
-                        borderColor: stage.disabled
-                          ? colors.grey[200]
-                          : stage.completed
-                            ? colors.green[500]
-                            : stage.current
-                              ? colors.blue[500]
-                              : colors.grey[300],
-                        opacity: stage.disabled ? 0.5 : 1,
-                      }}
-                    >
-                      {stage.completed ? (
-                        <CircleCheckBig size={20} color={colors.green[600]} />
-                      ) : (
-                        <Circle
-                          size={20}
-                          color={
-                            stage.current ? colors.blue[600] : colors.grey[400]
-                          }
-                          fill={stage.current ? colors.blue[600] : "none"}
-                        />
-                      )}
-                    </Box>
-                    {index < workflowStages.length - 1 && (
-                      <Box
-                        sx={{
-                          width: 2,
-                          height: 64,
-                          mt: 0.5,
-                          bgcolor:
-                            currentStateIndex > index
-                              ? colors.green[300]
-                              : colors.grey[200],
-                          opacity: 1,
-                        }}
-                      />
-                    )}
-                  </Box>
-                  <Box
-                    sx={{
-                      flex: 1,
-                      pb: index < workflowStages.length - 1 ? 2 : 0,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 0.5,
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            fontWeight={stage.current ? 600 : 500}
-                            color={
-                              stage.disabled
-                                ? "text.disabled"
-                                : stage.current
-                                  ? colors.blue[900]
-                                  : "text.primary"
-                            }
-                            sx={{ opacity: stage.disabled ? 0.5 : 1 }}
-                          >
-                            {stage.name}
-                          </Typography>
-                          {stage.current && !stage.disabled && (
-                            <Chip
-                              label="Current Stage"
-                              size="small"
-                              sx={{
-                                bgcolor: alpha(colors.blue[500], 0.1),
-                                color: colors.blue[800],
-                                borderColor: alpha(colors.blue[500], 0.2),
-                                border: "1px solid",
-                                height: 20,
-                                fontSize: "0.7rem",
-                              }}
-                            />
-                          )}
-                        </Box>
-                        <Typography
-                          variant="caption"
-                          color={
-                            stage.disabled
-                              ? "text.disabled"
-                              : stage.completed || stage.current
-                                ? "text.primary"
-                                : "text.disabled"
-                          }
-                          sx={{ opacity: stage.disabled ? 0.5 : 1 }}
-                        >
-                          {stage.description}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
+                  />
+                )}
               </Box>
-            ))}
-          </Stack>
-        </Box>
-      </Paper>
-
-      {/* Scheduled Maintenance Window Card */}
-      <ScheduledMaintenanceWindowCard changeRequest={changeRequest} />
-
-      {/* Deployment & Component Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Server size={20} color={colors.grey[600]} />
-            <Typography variant="h6">Deployment & Component</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ px: 3, py: 3 }}>
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Deployment
-              </Typography>
-              <Typography variant="body2">
-                {typeof changeRequest.deployment?.label === "string"
-                  ? changeRequest.deployment.label
-                  : "Not Available"}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Component
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Package size={16} color={colors.grey[400]} />
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  fontSize: "0.875rem",
+                  color: "text.secondary",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Typography variant="body2" fontWeight={600} color="text.primary">
+                  {changeRequest.number}
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  |
+                </Typography>
                 <Typography variant="body2">
-                  {typeof changeRequest.deployedProduct?.label === "string"
-                    ? changeRequest.deployedProduct.label
-                    : "Not Available"}
+                  Service Request: {changeRequest.case?.number || "Not Available"}
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  |
+                </Typography>
+                <Typography variant="body2">
+                  Created {changeRequest.createdOn}
                 </Typography>
               </Box>
             </Box>
-          </Box>
-        </Box>
-      </Paper>
 
-      {/* Change Description Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <FileText size={20} color={colors.grey[600]} />
-            <Typography variant="h6">Change Description</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <Typography
-                variant="body2"
-                color="text.primary"
-                fontWeight={500}
-                sx={{ mb: 1 }}
-              >
-                Change Description
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {descriptionText || "No description available"}
-              </Typography>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              {changeRequest.impact?.label &&
+                typeof changeRequest.impact.label === "string" && (
+                  <Chip
+                    label={formatImpactLabel(changeRequest.impact.label)}
+                    size="small"
+                    sx={{
+                      bgcolor: impactColor.bg,
+                      color: impactColor.text,
+                      borderColor: impactColor.border,
+                      border: "1px solid",
+                    }}
+                  />
+                )}
+              {changeRequest.state?.label &&
+                typeof changeRequest.state.label === "string" && (
+                  <Chip
+                    icon={renderStateIcon()}
+                    label={String(changeRequest.state.label)}
+                    size="small"
+                    sx={{
+                      bgcolor: statusColor.bg,
+                      color: statusColor.text,
+                      borderColor: statusColor.border,
+                      border: "1px solid",
+                      "& .MuiChip-icon": {
+                        color: statusColor.text,
+                      },
+                    }}
+                  />
+                )}
             </Box>
-          </Stack>
-        </Box>
-      </Paper>
-
-      {/* Impact Analysis Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <TriangleAlert size={20} color={colors.grey[600]} />
-            <Typography variant="h6">Impact Analysis</Typography>
           </Box>
-        </Box>
+        </Paper>
+      </Box>
 
-        <Box sx={{ px: 3, py: 3 }}>
-          <Stack spacing={3}>
-            <Box>
-              <Typography
-                variant="body2"
-                color="text.primary"
-                fontWeight={500}
-                sx={{ mb: 1 }}
-              >
-                Impact Description
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {impactText || "No impact description available"}
-              </Typography>
+      {/* Scrollable 2-Column Layout */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: 2,
+          flex: 1,
+          overflow: { xs: "visible", md: "hidden" },
+        }}
+      >
+        {/* Left Column - Scrollable Content */}
+        <Box sx={{ flex: 1, overflow: { xs: "visible", md: "auto" }, display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Scheduled Maintenance Window Card */}
+          <ScheduledMaintenanceWindowCard changeRequest={changeRequest} />
+
+          {/* Deployment & Component Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Server size={20} color={colors.grey[600]} />
+                <Typography variant="h6">Deployment & Component</Typography>
+              </Box>
             </Box>
 
-            {changeRequest.hasServiceOutage && (
-              <>
-                <Divider />
+            <Box sx={{ px: 3, py: 3 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Deployment
+                  </Typography>
+                  <Typography variant="body2">
+                    {typeof changeRequest.deployment?.label === "string"
+                      ? changeRequest.deployment.label
+                      : "Not Available"}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Component
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Package size={16} color={colors.grey[400]} />
+                    <Typography variant="body2">
+                      {typeof changeRequest.deployedProduct?.label === "string"
+                        ? changeRequest.deployedProduct.label
+                        : "Not Available"}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </Paper>
 
+          {/* Change Description Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <FileText size={20} color={colors.grey[600]} />
+                <Typography variant="h6">Change Description</Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ px: 3, py: 3 }}>
+              <Stack spacing={3}>
                 <Box>
                   <Typography
                     variant="body2"
                     color="text.primary"
                     fontWeight={500}
-                    sx={{ mb: 2 }}
+                    sx={{ mb: 1 }}
                   >
-                    Service Outage Details
+                    Change Description
                   </Typography>
-                  <Paper
-                    sx={{
-                      bgcolor: alpha(colors.red[500], 0.05),
-                      border: 1,
-                      borderColor: alpha(colors.red[500], 0.2),
-                      p: 2,
-                    }}
-                  >
-                    <Box sx={{ display: "flex", gap: 1.5 }}>
-                      <TriangleAlert
-                        size={20}
-                        color={colors.red[600]}
-                        style={{ marginTop: 2 }}
-                      />
-                      <Typography variant="body2" color="text.primary">
-                        {serviceOutageText || "Service outage details not available"}
-                      </Typography>
-                    </Box>
-                  </Paper>
+                  <Typography variant="body2" color="text.secondary">
+                    {descriptionText || "No description available"}
+                  </Typography>
                 </Box>
-              </>
-            )}
-          </Stack>
-        </Box>
-      </Paper>
-
-      {/* Communication Plan Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Users size={20} color={colors.grey[600]} />
-            <Typography variant="h6">Communication Plan</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ px: 3, py: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            {communicationPlanText || "No communication plan available"}
-          </Typography>
-        </Box>
-      </Paper>
-
-      {/* Rollback Plan Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <RotateCcw size={20} color={colors.grey[600]} />
-            <Typography variant="h6">Rollback Plan</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ px: 3, py: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            {rollbackPlanText || "No rollback plan available"}
-          </Typography>
-        </Box>
-      </Paper>
-
-      {/* Test Plan Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Shield size={20} color={colors.grey[600]} />
-            <Typography variant="h6">Test Plan</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ px: 3, py: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            {testPlanText || "No test plan available"}
-          </Typography>
-        </Box>
-      </Paper>
-
-      {/* Approval Information Card */}
-      <Paper variant="outlined">
-        <Box sx={{ px: 3, pt: 3, pb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Approval Information
-          </Typography>
-
-          <Stack spacing={1.5}>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">
-                Created By
-              </Typography>
-              <Typography variant="body2">
-                {changeRequest.createdBy || "Not Available"}
-              </Typography>
+              </Stack>
             </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">
-                Created Date
-              </Typography>
-              <Typography variant="body2">{changeRequest.createdOn}</Typography>
+          </Paper>
+
+          {/* Impact Analysis Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <TriangleAlert size={20} color={colors.grey[600]} />
+                <Typography variant="h6">Impact Analysis</Typography>
+              </Box>
             </Box>
 
-            <Divider />
+            <Box sx={{ px: 3, py: 3 }}>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    fontWeight={500}
+                    sx={{ mb: 1 }}
+                  >
+                    Impact Description
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {impactText || "No impact description available"}
+                  </Typography>
+                </Box>
 
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
+                {changeRequest.hasServiceOutage && (
+                  <>
+                    <Divider />
+
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        color="text.primary"
+                        fontWeight={500}
+                        sx={{ mb: 2 }}
+                      >
+                        Service Outage Details
+                      </Typography>
+                      <Paper
+                        sx={{
+                          bgcolor: alpha(colors.red[500], 0.05),
+                          border: 1,
+                          borderColor: alpha(colors.red[500], 0.2),
+                          p: 2,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", gap: 1.5 }}>
+                          <TriangleAlert
+                            size={20}
+                            color={colors.red[600]}
+                            style={{ marginTop: 2 }}
+                          />
+                          <Typography variant="body2" color="text.primary">
+                            {serviceOutageText || "Service outage details not available"}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Box>
+                  </>
+                )}
+              </Stack>
+            </Box>
+          </Paper>
+
+          {/* Communication Plan Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Users size={20} color={colors.grey[600]} />
+                <Typography variant="h6">Communication Plan</Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ px: 3, py: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                {communicationPlanText || "No communication plan available"}
+              </Typography>
+            </Box>
+          </Paper>
+
+          {/* Rollback Plan Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <RotateCcw size={20} color={colors.grey[600]} />
+                <Typography variant="h6">Rollback Plan</Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ px: 3, py: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                {rollbackPlanText || "No rollback plan available"}
+              </Typography>
+            </Box>
+          </Paper>
+
+          {/* Test Plan Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Shield size={20} color={colors.grey[600]} />
+                <Typography variant="h6">Test Plan</Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ px: 3, py: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                {testPlanText || "No test plan available"}
+              </Typography>
+            </Box>
+          </Paper>
+
+          {/* Approval Information Card */}
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3, pb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Approval Information
+              </Typography>
+
+              <Stack spacing={1.5}>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Created By
+                  </Typography>
+                  <Typography variant="body2">
+                    {changeRequest.createdBy || "Not Available"}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Created Date
+                  </Typography>
+                  <Typography variant="body2">{changeRequest.createdOn}</Typography>
+                </Box>
+
+                <Divider />
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Approved By
+                  </Typography>
+                  <Typography variant="body2">
+                    {changeRequest.approvedBy?.label || "Not available"}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Approved Date
+                  </Typography>
+                  <Typography variant="body2">
+                    {changeRequest.approvedOn || "Not available"}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          </Paper>
+
+          {/* Action Buttons */}
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<Download size={18} />}
+              sx={{ flex: 1 }}
+              onClick={() => {
+                try {
+                  generateChangeRequestDetailsPdf(changeRequest, []);
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : "Failed to generate PDF";
+                  showError(message);
+                  console.error("PDF generation error:", error);
+                }
               }}
             >
-              <Typography variant="body2" color="text.secondary">
-                Approved By
-              </Typography>
-              <Typography variant="body2">
-                {changeRequest.approvedBy?.label || "Not available"}
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
+              Download Change Request PDF
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<ExternalLink size={18} />}
+              sx={{ flex: 1 }}
+              onClick={() => {
+                if (changeRequest.case?.id) {
+                  navigate(`/projects/${projectId}/support/cases/${changeRequest.case.id}`);
+                }
               }}
+              disabled={!changeRequest.case?.id}
             >
-              <Typography variant="body2" color="text.secondary">
-                Approved Date
-              </Typography>
-              <Typography variant="body2">
-                {changeRequest.approvedOn || "Not available"}
+              View Related Service Request
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Right Column - Workflow (Fixed Width, Scrollable) */}
+        <Box sx={{ width: { xs: "100%", md: 400 }, flexShrink: 0, overflow: { xs: "visible", md: "auto" } }}>
+          <Paper variant="outlined">
+            <Box sx={{ px: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                <Typography variant="h6">Change Request Workflow</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Track the progress of this change request through each stage
               </Typography>
             </Box>
-          </Stack>
-        </Box>
-      </Paper>
 
-      {/* Action Buttons */}
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<Download size={18} />}
-          sx={{ flex: 1 }}
-          onClick={() => {
-            try {
-              generateChangeRequestDetailsPdf(changeRequest, []);
-            } catch (error) {
-              const message = error instanceof Error ? error.message : "Failed to generate PDF";
-              showError(message);
-              console.error("PDF generation error:", error);
-            }
-          }}
-        >
-          Download Change Request PDF
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<ExternalLink size={18} />}
-          sx={{ flex: 1 }}
-          onClick={() => {
-            if (changeRequest.case?.id) {
-              navigate(`/projects/${projectId}/support/cases/${changeRequest.case.id}`);
-            }
-          }}
-          disabled={!changeRequest.case?.id}
-        >
-          View Related Service Request
-        </Button>
+            <Box sx={{ px: 3, pb: 3 }}>
+              <Stack spacing={0}>
+                {workflowStages.map((stage, index) => (
+                  <Box key={index} sx={{ position: "relative" }}>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "2px solid",
+                            bgcolor: stage.disabled
+                              ? alpha(colors.grey[500], 0.05)
+                              : stage.completed
+                                ? alpha(colors.green[500], 0.1)
+                                : stage.current
+                                  ? alpha(colors.blue[500], 0.1)
+                                  : alpha(colors.grey[500], 0.1),
+                            borderColor: stage.disabled
+                              ? colors.grey[200]
+                              : stage.completed
+                                ? colors.green[500]
+                                : stage.current
+                                  ? colors.blue[500]
+                                  : colors.grey[300],
+                            opacity: stage.disabled ? 0.5 : 1,
+                          }}
+                        >
+                          {stage.completed ? (
+                            <CircleCheckBig size={20} color={colors.green[600]} />
+                          ) : (
+                            <Circle
+                              size={20}
+                              color={
+                                stage.current ? colors.blue[600] : colors.grey[400]
+                              }
+                              fill={stage.current ? colors.blue[600] : "none"}
+                            />
+                          )}
+                        </Box>
+                        {index < workflowStages.length - 1 && (
+                          <Box
+                            sx={{
+                              width: 2,
+                              height: 64,
+                              mt: 0.5,
+                              bgcolor:
+                                currentStateIndex > index
+                                  ? colors.green[300]
+                                  : colors.grey[200],
+                              opacity: 1,
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Box
+                        sx={{
+                          flex: 1,
+                          pb: index < workflowStages.length - 1 ? 2 : 0,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 0.5,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight={stage.current ? 600 : 500}
+                                color={
+                                  stage.disabled
+                                    ? "text.disabled"
+                                    : stage.current
+                                      ? colors.blue[900]
+                                      : "text.primary"
+                                }
+                                sx={{ opacity: stage.disabled ? 0.5 : 1 }}
+                              >
+                                {stage.name}
+                              </Typography>
+                              {stage.current && !stage.disabled && (
+                                <Chip
+                                  label="Current"
+                                  size="small"
+                                  sx={{
+                                    bgcolor: alpha(colors.blue[500], 0.1),
+                                    color: colors.blue[800],
+                                    borderColor: alpha(colors.blue[500], 0.2),
+                                    border: "1px solid",
+                                    height: 20,
+                                    fontSize: "0.7rem",
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              color={
+                                stage.disabled
+                                  ? "text.disabled"
+                                  : stage.completed || stage.current
+                                    ? "text.primary"
+                                    : "text.disabled"
+                              }
+                              sx={{ opacity: stage.disabled ? 0.5 : 1 }}
+                            >
+                              {stage.description}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          </Paper>
+        </Box>
       </Box>
     </Box>
   );
