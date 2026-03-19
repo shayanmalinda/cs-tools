@@ -161,6 +161,7 @@ export default function CreateCasePage() {
           zIndex: (theme) => theme.zIndex.drawer + 1,
           flexDirection: "column",
           gap: 2,
+          pointerEvents: "none",
         }}
         open={mutation.isPending}
       >

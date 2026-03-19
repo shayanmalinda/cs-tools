@@ -17,6 +17,7 @@
 import { useState, type ReactNode } from "react";
 import {
   Avatar,
+  Backdrop,
   Box,
   Button,
   Card,
@@ -58,7 +59,7 @@ export default function EditUserPage({ mode = "invite" }: { mode?: "invite" | "e
   const createUserMutation = useMutation({
     ...users.create(projectId!),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users", projectId] });
+      queryClient.resetQueries({ queryKey: ["users", projectId] });
       navigate(-1);
     },
   });
@@ -66,7 +67,7 @@ export default function EditUserPage({ mode = "invite" }: { mode?: "invite" | "e
   const editUserMutation = useMutation({
     ...users.edit(projectId!, email),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users", projectId] });
+      queryClient.resetQueries({ queryKey: ["users", projectId] });
       navigate(-1);
     },
   });
@@ -74,115 +75,129 @@ export default function EditUserPage({ mode = "invite" }: { mode?: "invite" | "e
   const deleteUserMutation = useMutation({
     ...users.delete(projectId!, email),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users", projectId] });
+      queryClient.resetQueries({ queryKey: ["users", projectId] });
       navigate(-1);
     },
   });
 
   return (
-    <Stack gap={2}>
-      {mode === "edit" && <UserSummaryCard firstName={firstName} lastName={lastName} email={email} />}
-      {mode === "invite" && <InvitationNotice />}
-      <SectionCard title="User Details">
-        <Stack gap={2}>
-          <TextField
-            size="small"
-            label="Email Address"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            helperText={mode === "edit" ? "Email cannot be edited" : undefined}
-            slotProps={{
-              htmlInput: { readOnly: mode === "edit" },
-            }}
-          />
-
-          <TextField
-            size="small"
-            label="First Name"
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
-            helperText={mode === "edit" ? "First Name cannot be edited" : undefined}
-            slotProps={{
-              htmlInput: { readOnly: mode === "edit" },
-            }}
-          />
-
-          <TextField
-            size="small"
-            label="Last Name"
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
-            helperText={mode === "edit" ? "Last Name cannot be edited" : undefined}
-            slotProps={{
-              htmlInput: { readOnly: mode === "edit" },
-            }}
-          />
-        </Stack>
-      </SectionCard>
-
-      <SectionCard title="User Role">
-        <RoleSelector value={role} onChange={setRole} />
-      </SectionCard>
-
-      {mode === "invite" && (
-        <>
-          <SectionCard title="Invitation Summary">
-            <InvitationSummaryContent
-              projectName={project?.name}
-              email={email}
-              name={firstName + " " + lastName}
-              role={role}
-            />
-          </SectionCard>
-          <ExpirationNotice />
-        </>
-      )}
-
-      {mode === "edit" && (
-        <>
-          <PermissionDetails />
-          <DangerZone onDelete={deleteUserMutation.mutate} />
-        </>
-      )}
-
-      <Button
-        disabled={
-          mode === "edit"
-            ? role === (state.role ? (state.role === "Admin" ? defaultUserRole : state.role) : defaultUserRole)
-            : false
-        }
-        variant="contained"
-        onClick={() => {
-          if (mode === "invite")
-            createUserMutation.mutate({
-              contactEmail: email,
-              contactFirstName: firstName,
-              contactLastName: lastName,
-              isCsIntegrationUser: true,
-              isSecurityContact: false,
-            });
-
-          if (mode === "edit") {
-            const isSecurityContact = role === "System User";
-
-            editUserMutation.mutate({
-              isSecurityContact,
-            });
-          }
+    <>
+      <Backdrop
+        sx={{
+          color: "primary.contrastText",
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          flexDirection: "column",
+          gap: 2,
+          pointerEvents: "none",
         }}
+        open={createUserMutation.isPending || editUserMutation.isPending || deleteUserMutation.isPending}
       >
-        {mode === "invite" ? "Send Invitation" : "Save Changes"}
-      </Button>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+      <Stack gap={2}>
+        {mode === "edit" && <UserSummaryCard firstName={firstName} lastName={lastName} email={email} />}
+        {mode === "invite" && <InvitationNotice />}
+        <SectionCard title="User Details">
+          <Stack gap={2}>
+            <TextField
+              size="small"
+              label="Email Address"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              helperText={mode === "edit" ? "Email cannot be edited" : undefined}
+              slotProps={{
+                htmlInput: { readOnly: mode === "edit" },
+              }}
+            />
 
-      <Button
-        variant="outlined"
-        component={Link}
-        sx={{ textTransform: "initial", bgcolor: "background.paper" }}
-        to="/users"
-      >
-        Cancel
-      </Button>
-    </Stack>
+            <TextField
+              size="small"
+              label="First Name"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              helperText={mode === "edit" ? "First Name cannot be edited" : undefined}
+              slotProps={{
+                htmlInput: { readOnly: mode === "edit" },
+              }}
+            />
+
+            <TextField
+              size="small"
+              label="Last Name"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              helperText={mode === "edit" ? "Last Name cannot be edited" : undefined}
+              slotProps={{
+                htmlInput: { readOnly: mode === "edit" },
+              }}
+            />
+          </Stack>
+        </SectionCard>
+
+        <SectionCard title="User Role">
+          <RoleSelector value={role} onChange={setRole} />
+        </SectionCard>
+
+        {mode === "invite" && (
+          <>
+            <SectionCard title="Invitation Summary">
+              <InvitationSummaryContent
+                projectName={project?.name}
+                email={email}
+                name={firstName + " " + lastName}
+                role={role}
+              />
+            </SectionCard>
+            <ExpirationNotice />
+          </>
+        )}
+
+        {mode === "edit" && (
+          <>
+            <PermissionDetails />
+            <DangerZone onDelete={deleteUserMutation.mutate} />
+          </>
+        )}
+
+        <Button
+          disabled={
+            mode === "edit"
+              ? role === (state.role ? (state.role === "Admin" ? defaultUserRole : state.role) : defaultUserRole)
+              : false
+          }
+          variant="contained"
+          onClick={() => {
+            if (mode === "invite")
+              createUserMutation.mutate({
+                contactEmail: email,
+                contactFirstName: firstName,
+                contactLastName: lastName,
+                isCsIntegrationUser: false,
+                isSecurityContact: role == "System User",
+              });
+
+            if (mode === "edit") {
+              const isSecurityContact = role === "System User";
+
+              editUserMutation.mutate({
+                isSecurityContact,
+              });
+            }
+          }}
+        >
+          {mode === "invite" ? "Send Invitation" : "Save Changes"}
+        </Button>
+
+        <Button
+          variant="outlined"
+          component={Link}
+          sx={{ textTransform: "initial", bgcolor: "background.paper" }}
+          to="/users"
+        >
+          Cancel
+        </Button>
+      </Stack>
+    </>
   );
 }
 
