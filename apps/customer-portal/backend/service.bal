@@ -4254,7 +4254,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + return - Change request details object or Error
     isolated resource function post projects/[string projectId]/deployments/[string deploymentId]/license
         (product_consumption_subscription:DownloadLicensePayload payload, http:RequestContext ctx)
-        returns product_consumption_subscription:License|http:InternalServerError|http:Unauthorized|http:Forbidden|http:NotFound {
+        returns product_consumption_subscription:License|http:InternalServerError|http:Unauthorized|http:Forbidden|
+        http:NotFound {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
