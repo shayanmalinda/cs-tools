@@ -4413,7 +4413,6 @@ isolated service / on new websocket:Listener(wsPort) {
     isolated resource function get [string sessionId](http:Request req) returns websocket:Service|websocket:UpgradeError {
         authorization:UserInfoPayload|error userInfo = authorization:getUserInfoFromRequest(req);
         if userInfo is error {
-            log:printError("WebSocket upgrade rejected: authorization failed", userInfo);
             return error websocket:UpgradeError(userInfo.message());
         }
         return new WsProxyService(sessionId);
