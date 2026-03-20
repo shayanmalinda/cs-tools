@@ -20,9 +20,8 @@
 # + return - License details or error
 public isolated function downloadLicense(LicenseDownloadPayload payload) returns License|error {
     // 1. Get current status
-    Result statusRes =
-        check productConsumptionClient->/projects/[payload.projectId]/consumption/status
-.post({email: payload.email, deploymentId: payload.deploymentId});
+    Result statusRes = check productConsumptionClient->/projects/[payload.projectId]/consumption/status
+        .post({email: payload.email, deploymentId: payload.deploymentId});
 
     int status = statusRes.result.status;
     string? applicationId = statusRes.result.applicationId;
@@ -34,12 +33,13 @@ public isolated function downloadLicense(LicenseDownloadPayload payload) returns
         if applicationName is () || applicationDescription is () {
             return error("Application name and description are required for application creation.");
         }
-        ApplicationCreateResponse app =
-            check productConsumptionClient->/applications.post({name: applicationName, description: applicationDescription});
+        ApplicationCreateResponse app = check productConsumptionClient->/applications.post({name: applicationName,
+            description: applicationDescription});
 
         applicationId = app.applicationId;
 
-        Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({status: STATUS_CREATED, applicationId});
+        Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({
+            status: STATUS_CREATED, applicationId});
 
         status = STATUS_CREATED;
     }
@@ -49,14 +49,9 @@ public isolated function downloadLicense(LicenseDownloadPayload payload) returns
 
     if status == STATUS_CREATED {
         ApplicationSubscriptionResponse _ = check productConsumptionClient->/applications/[applicationId]/subscribe
-.post(<ApplicationSubscriptionPayload>{
-            applicationId
-        });
+            .post(applicationId);
 
-        Result _ = check productConsumptionClient->/projects/[payload.projectId]
-.patch({
-            status: STATUS_SUBSCRIBED
-        });
+        Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({status: STATUS_SUBSCRIBED});
 
         status = STATUS_SUBSCRIBED;
     }
