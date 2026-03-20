@@ -100,7 +100,7 @@ export default function ServiceDetailPage() {
                 label="Status"
                 value={
                   data?.statusId ? (
-                    <StatusChip id={data.statusId} size="small" />
+                    <StatusChip type="service" id={data.statusId} size="small" />
                   ) : (
                     <Skeleton variant="text" width={50} height={30} />
                   )

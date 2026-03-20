@@ -35,7 +35,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { useProject } from "@context/project";
 import ms from "ms";
-import { stripHtmlTags, useScrollControl } from "../utils/others";
+import { stripHtmlTags } from "../utils/others";
 
 dayjs.extend(relativeTime);
 
@@ -134,7 +134,7 @@ export default function CaseDetailPage() {
                 label="Status"
                 value={
                   data?.statusId ? (
-                    <StatusChip id={data.statusId} size="small" />
+                    <StatusChip type="case" id={data.statusId} size="small" />
                   ) : (
                     <Skeleton variant="text" width={50} height={30} />
                   )

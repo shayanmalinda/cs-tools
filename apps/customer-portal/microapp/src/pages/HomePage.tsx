@@ -65,7 +65,7 @@ export default function HomePage() {
   const averageResponseTimeChangeRate = defaultCaseTypeStats?.changeRate.averageResponseTime;
 
   const outstandingSupportCasesPieData = defaultCaseTypeStats?.outstandingSeverityCount.map((item) => ({
-    label: item.label,
+    label: overrideOrDefault(item.label),
     value: item.count,
     color: PROJECT_SEVERITY_PIE_COLORS[item.id] || colors.grey[500],
   }));

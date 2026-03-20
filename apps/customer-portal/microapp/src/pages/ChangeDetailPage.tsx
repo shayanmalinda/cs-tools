@@ -71,7 +71,7 @@ export default function ChangeDetailPage() {
                 label="Status"
                 value={
                   data?.statusId ? (
-                    <StatusChip id={data.statusId} size="small" />
+                    <StatusChip type="change" id={data.statusId} size="small" />
                   ) : (
                     <Skeleton variant="text" width={50} height={30} />
                   )
@@ -83,7 +83,7 @@ export default function ChangeDetailPage() {
                 label="Impact"
                 value={
                   data ? (
-                    <PriorityChip size="small" id={data?.impactId} />
+                    <PriorityChip type="change" size="small" id={data?.impactId} />
                   ) : (
                     <Skeleton variant="rounded" width={70} height={22} sx={{ borderRadius: "16px" }} />
                   )

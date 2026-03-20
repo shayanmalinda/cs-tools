@@ -46,7 +46,7 @@ export default function AllItemsPage({ type }: { type: ItemCardProps["type"] }) 
   );
 }
 
-export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] | "notifications" }) {
+export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] }) {
   const { projectId } = useProject();
   const { data: filters } = useSuspenseQuery(cases.filters(projectId!));
 
@@ -55,15 +55,20 @@ export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] | "noti
     chat: "Search chats by ID, title, or message...",
     service: "Search Service Requests by ID, title, or description...",
     change: "Search Change Requests by ID, title, or description...",
-    notifications: "Search Notifications",
   };
 
-  return (
-    <FilterSlotBuilder
-      searchPlaceholder={SEARCH_PLACEHOLDER_CONFIG[type]}
-      tabs={filters.caseStates.map((filter) => ({ label: filter.label, value: filter.id }))}
-    />
-  );
+  const tabs = (() => {
+    switch (type) {
+      case "chat":
+        return filters.conversationStates;
+      case "change":
+        return filters.changeRequestStates;
+      default:
+        return filters.caseStates;
+    }
+  })().map((filter) => ({ label: filter.label, value: filter.id }));
+
+  return <FilterSlotBuilder searchPlaceholder={SEARCH_PLACEHOLDER_CONFIG[type]} tabs={tabs} />;
 }
 
 function ItemsListContent({ type, filter, search }: { type: ItemCardProps["type"]; filter: string; search: string }) {

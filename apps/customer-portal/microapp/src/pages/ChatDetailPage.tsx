@@ -141,7 +141,7 @@ export default function ChatDetailPage() {
                 label="Status"
                 value={
                   data?.statusId ? (
-                    <StatusChip id={data.statusId} size="small" />
+                    <StatusChip type="chat" id={data.statusId} size="small" />
                   ) : (
                     <Skeleton variant="text" width={50} height={30} />
                   )

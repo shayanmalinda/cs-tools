@@ -57,9 +57,11 @@ export interface CasesFiltersDTO {
   issueTypes: EntityReference[];
   deploymentTypes: EntityReference[];
   callRequestStates: EntityReference[];
+  conversationStates: EntityReference[];
   changeRequestStates: EntityReference[];
   changeRequestImpacts: EntityReference[];
   caseTypes: EntityReference[];
+  timeZones: EntityReference[];
   severityBasedAllocationTime: {
     "0": number;
     "10": number;

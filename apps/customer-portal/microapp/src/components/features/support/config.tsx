@@ -42,10 +42,15 @@ export const PRIORITY_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
   12: "info",
   11: "primary",
   10: "primary",
-  14: "primary",
 };
 
-export const STATUS_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
+export const IMPACT_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
+  1: "error",
+  2: "warning",
+  3: "success",
+};
+
+export const CASE_STATUS_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
   1: "info",
   10: "primary",
   18: "success",
@@ -55,7 +60,36 @@ export const STATUS_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
   1006: "info",
 };
 
+export const CONVERSATION_STATUS_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
+  1: "info",
+  2: "success",
+  3: "success",
+  4: "primary",
+  5: "default",
+};
+
+export const CHANGE_REQUEST_STATUS_CHIP_COLOR_CONFIG: Record<string, ChipProps["color"]> = {
+  "-5": "default",
+  "-4": "info",
+  "-3": "warning",
+  "5": "warning",
+  "-2": "primary",
+  "-1": "primary",
+  "0": "info",
+  "1": "info",
+  "2": "error",
+  "3": "success",
+  "4": "default",
+};
+
 export const STRING_OVERRIDES = {
   // Engagement Type Labels Overrides
   "New Feature / Improvement": "Improvement",
+
+  // Severity Type Names
+  "Low (P4)": "S4",
+  "Medium (P3)": "S3",
+  "High (P2)": "S2",
+  "Critical (P1)": "S1",
+  "Catastrophic (P0)": "S0",
 };
