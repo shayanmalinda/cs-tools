@@ -294,6 +294,12 @@ export default function ManageProductModal({
         {tabValue === 1 && (
           <UpdateHistoryTab
             updates={product.updates ?? []}
+            productName={product.product?.label || ""}
+            productVersion={
+              typeof product.version === "string"
+                ? product.version
+                : product.version?.label || ""
+            }
             isLoading={false}
             onSaveUpdates={handleSaveUpdates}
           />
