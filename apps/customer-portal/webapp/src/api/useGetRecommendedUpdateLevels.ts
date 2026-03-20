@@ -22,9 +22,9 @@ import { ApiQueryKeys } from "@constants/apiConstants";
 import type { RecommendedUpdateLevelItem } from "@models/responses";
 
 /**
- * Custom hook to fetch recommended update levels.
+ * Fetches recommended update levels from GET /updates/recommended-update-levels.
  *
- * @returns {UseQueryResult<RecommendedUpdateLevelItem[], Error>} The query result object.
+ * @returns {UseQueryResult<RecommendedUpdateLevelItem[], Error>} The query result.
  */
 export function useGetRecommendedUpdateLevels(): UseQueryResult<
   RecommendedUpdateLevelItem[],

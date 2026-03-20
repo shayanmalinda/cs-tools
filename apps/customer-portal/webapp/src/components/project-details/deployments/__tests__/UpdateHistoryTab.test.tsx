@@ -34,15 +34,16 @@ describe("UpdateHistoryTab", () => {
     },
   ];
 
+  const defaultProps = {
+    updates: mockUpdates,
+    productName: "wso2am",
+    productVersion: "2.1.0",
+    isLoading: false,
+    onSaveUpdates: vi.fn(),
+  };
+
   it("renders update history timeline", () => {
-    const mockSave = vi.fn();
-    render(
-      <UpdateHistoryTab
-        updates={mockUpdates}
-        isLoading={false}
-        onSaveUpdates={mockSave}
-      />,
-    );
+    render(<UpdateHistoryTab {...defaultProps} />);
 
     expect(screen.getByText(/U18/i)).toBeInTheDocument();
     expect(screen.getByText(/U15/i)).toBeInTheDocument();
@@ -52,28 +53,14 @@ describe("UpdateHistoryTab", () => {
   });
 
   it("displays current update level", () => {
-    const mockSave = vi.fn();
-    render(
-      <UpdateHistoryTab
-        updates={mockUpdates}
-        isLoading={false}
-        onSaveUpdates={mockSave}
-      />,
-    );
+    render(<UpdateHistoryTab {...defaultProps} />);
 
     expect(screen.getByText(/Current Update Level:/i)).toBeInTheDocument();
     expect(screen.getByText(/U18/i)).toBeInTheDocument();
   });
 
   it("shows add update form", () => {
-    const mockSave = vi.fn();
-    render(
-      <UpdateHistoryTab
-        updates={mockUpdates}
-        isLoading={false}
-        onSaveUpdates={mockSave}
-      />,
-    );
+    render(<UpdateHistoryTab {...defaultProps} />);
 
     expect(screen.getByLabelText(/Update Level \*/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Applied On \*/i)).toBeInTheDocument();
@@ -84,19 +71,13 @@ describe("UpdateHistoryTab", () => {
   it("calls onSaveUpdates when adding a new update", async () => {
     const user = userEvent.setup();
     const mockSave = vi.fn().mockResolvedValue(undefined);
-    render(
-      <UpdateHistoryTab
-        updates={mockUpdates}
-        isLoading={false}
-        onSaveUpdates={mockSave}
-      />,
-    );
+    render(<UpdateHistoryTab {...defaultProps} onSaveUpdates={mockSave} />);
 
     const updateLevelInput = screen.getByLabelText(/Update Level \*/i);
     const dateInput = screen.getByLabelText(/Applied On \*/i);
     const addButton = screen.getByRole("button", { name: /Add Update/i });
 
-    await user.type(updateLevelInput, "20");
+    await user.selectOptions(updateLevelInput, "20");
     await user.type(dateInput, "2026-03-20");
     await user.click(addButton);
 
@@ -113,28 +94,14 @@ describe("UpdateHistoryTab", () => {
   });
 
   it("shows loading skeleton when isLoading is true", () => {
-    const mockSave = vi.fn();
-    render(
-      <UpdateHistoryTab
-        updates={[]}
-        isLoading={true}
-        onSaveUpdates={mockSave}
-      />,
-    );
+    render(<UpdateHistoryTab {...defaultProps} isLoading={true} />);
 
     const skeletons = screen.getAllByTestId("skeleton");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it("displays 'No update history available' when updates array is empty", () => {
-    const mockSave = vi.fn();
-    render(
-      <UpdateHistoryTab
-        updates={[]}
-        isLoading={false}
-        onSaveUpdates={mockSave}
-      />,
-    );
+    render(<UpdateHistoryTab {...defaultProps} updates={[]} />);
 
     expect(
       screen.getByText(/No update history available/i),

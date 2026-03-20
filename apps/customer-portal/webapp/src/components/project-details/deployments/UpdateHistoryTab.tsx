@@ -35,7 +35,7 @@ import {
 } from "react";
 import type { ProductUpdate } from "@models/responses";
 import { useGetRecommendedUpdateLevels } from "@api/useGetRecommendedUpdateLevels";
-import { useSearchUpdateLevels } from "@api/useSearchUpdateLevels";
+import { usePostUpdateLevelsSearch } from "@api/usePostUpdateLevelsSearch";
 
 export interface UpdateHistoryTabProps {
   updates: ProductUpdate[];
@@ -89,19 +89,23 @@ export default function UpdateHistoryTab({
     );
   }, [productName, productVersion, recommendedUpdateLevels]);
 
-  const shouldFetchUpdateLevels =
-    !!productName && !!productVersion && !isLoadingRecommended;
+  const searchParams = useMemo(() => {
+    if (!productName || !productVersion || !matchedRecommendation) {
+      return null;
+    }
+
+    return {
+      productName,
+      productVersion,
+      startingUpdateLevel: matchedRecommendation.startingUpdateLevel,
+      endingUpdateLevel: matchedRecommendation.endingUpdateLevel,
+    };
+  }, [productName, productVersion, matchedRecommendation]);
 
   const {
     data: updateLevelsData,
     isLoading: isLoadingUpdateLevels,
-  } = useSearchUpdateLevels(
-    {
-      productName,
-      productVersion,
-    },
-    shouldFetchUpdateLevels,
-  );
+  } = usePostUpdateLevelsSearch(searchParams);
 
   const availableUpdateLevels = useMemo(() => {
     if (!updateLevelsData) return [];
@@ -346,7 +350,7 @@ export default function UpdateHistoryTab({
             </MenuItem>
             {availableUpdateLevels.map((level) => (
               <MenuItem key={level} value={level}>
-                U{level}
+                {level}
               </MenuItem>
             ))}
           </TextField>
@@ -364,7 +368,7 @@ export default function UpdateHistoryTab({
         </Box>
         <TextField
           id="new-update-description"
-          label="Description"
+          label="Description (Optional)"
           placeholder="Brief description about the update..."
           value={form.details}
           onChange={handleFormChange("details")}
@@ -390,7 +394,24 @@ export default function UpdateHistoryTab({
             </Typography>
           </Box>
         )}
-        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 1,
+            pt: 1,
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setForm(INITIAL_FORM);
+            }}
+            disabled={isSaving}
+            sx={{ minWidth: 100 }}
+          >
+            Clear
+          </Button>
           <Button
             variant="contained"
             color="primary"
@@ -537,7 +558,7 @@ function TimelineItem({
                 </MenuItem>
                 {availableUpdateLevels.map((level) => (
                   <MenuItem key={level} value={level}>
-                    U{level}
+                    {level}
                   </MenuItem>
                 ))}
               </TextField>
