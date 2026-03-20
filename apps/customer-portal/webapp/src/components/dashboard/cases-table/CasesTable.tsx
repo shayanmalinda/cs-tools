@@ -36,11 +36,13 @@ const OUTSTANDING_STATUS_IDS = [1, 10, 18, 1003, 1006] as const;
 interface CasesTableProps {
   projectId: string;
   excludeS0?: boolean;
+  hasAgent?: boolean;
 }
 
 const CasesTable = ({
   projectId,
   excludeS0 = false,
+  hasAgent = false,
 }: CasesTableProps): JSX.Element => {
   const navigate = useNavigate();
   const { isLoading: isAuthLoading } = useAsgardeo();
@@ -77,9 +79,9 @@ const CasesTable = ({
                     (item: { label: string }) =>
                       !isS0SeverityLabel(item.label),
                   )
-                : def.metadataKey === "caseStates" || def.metadataKey === "statuses"
+                : def.metadataKey === "caseStates"
                 ? (metadataOptions as any[]).filter(
-                    (s) => s.label?.toLowerCase() !== "closed"
+                    (s) => s.label?.toLowerCase()?.trim() !== "closed"
                   )
                 : metadataOptions;
             return filtered.map((item: { label: string; id: string }) => ({
@@ -101,20 +103,31 @@ const CasesTable = ({
   }, [filtersMetadata, deploymentsData, excludeS0]);
 
   const caseSearchRequest = useMemo(
-    () => ({
-      filters: {
-        statusIds: filters.statusId ? [Number(filters.statusId)] : [...OUTSTANDING_STATUS_IDS],
-        caseTypes: filters.caseTypeId ? [filters.caseTypeId] : [CaseType.DEFAULT_CASE],
-        severityId: filters.severityId ? Number(filters.severityId) : undefined,
-        issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
-        deploymentId: filters.deploymentId || undefined,
-      },
-      sortBy: {
-        field: "createdOn",
-        order: "desc" as const,
-      },
-    }),
-    [filters],
+    () => {
+      // If no status filter is applied, use all statuses except Closed (id: 3)
+      const defaultStatusIds = filtersMetadata?.caseStates
+        ?.filter((status) => status.label?.toLowerCase() !== "closed")
+        .map((status) => Number(status.id)) || [];
+      
+      return {
+        filters: {
+          statusIds: filters.statusId 
+            ? [Number(filters.statusId)] 
+            : defaultStatusIds.length > 0 
+              ? defaultStatusIds 
+              : [...OUTSTANDING_STATUS_IDS],
+          caseTypes: filters.caseTypeId ? [filters.caseTypeId] : [CaseType.DEFAULT_CASE],
+          severityId: filters.severityId ? Number(filters.severityId) : undefined,
+          issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
+          deploymentId: filters.deploymentId || undefined,
+        },
+        sortBy: {
+          field: "createdOn",
+          order: "desc" as const,
+        },
+      };
+    },
+    [filters, filtersMetadata],
   );
 
   const offset = page * rowsPerPage;
@@ -157,9 +170,8 @@ const CasesTable = ({
       }
       const rawCases = infiniteQuery.data.pages.flatMap((p) => p.cases ?? []);
       const cases = filterS0(rawCases);
-      const totalRecords = excludeS0
-        ? cases.length
-        : (infiniteQuery.data.pages[0]?.totalRecords ?? cases.length);
+      // For showAll mode, use the original total records from API
+      const totalRecords = infiniteQuery.data.pages[0]?.totalRecords ?? 0;
       return {
         cases,
         totalRecords,
@@ -170,9 +182,8 @@ const CasesTable = ({
     const pageData = pageQuery.data;
     const rawCases = (pageData?.cases ?? []) as CaseListItem[];
     const cases = filterS0(rawCases);
-    const totalRecords = excludeS0
-      ? cases.length
-      : (pageData?.totalRecords ?? 0);
+    // For paginated mode, use the original total records from API
+    const totalRecords = pageData?.totalRecords ?? 0;
     return { cases, totalRecords, offset, limit };
   }, [showAll, infiniteQuery.data, pageQuery.data, offset, limit, excludeS0]);
 
@@ -225,6 +236,7 @@ const CasesTable = ({
             setIsFilterOpen(!isFilterOpen);
           }
         }}
+        hasAgent={hasAgent}
       />
 
       {/* Filter dropdowns section */}

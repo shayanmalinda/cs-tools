@@ -243,7 +243,7 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     icon: FileText,
     iconColor: "error",
     key: "ongoingCases",
-    label: "Ongoing Cases",
+    label: "Active Cases",
     secondaryIcon: TrendingUp,
   },
   {

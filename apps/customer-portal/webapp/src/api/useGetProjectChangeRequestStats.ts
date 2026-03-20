@@ -68,14 +68,18 @@ function mapChangeRequestStats(
  * Custom hook to fetch project change request statistics.
  *
  * @param {string} projectId - The ID of the project.
+ * @param {object} options - Query options including enabled flag.
  * @returns {UseQueryResult<ChangeRequestStats, Error>} The query result object.
  */
 export function useGetProjectChangeRequestStats(
   projectId: string,
+  options?: { enabled?: boolean },
 ): UseQueryResult<ChangeRequestStats, Error> {
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
+
+  const enabled = (options?.enabled ?? true) && !!projectId && isSignedIn && !isAuthLoading;
 
   return useQuery<ChangeRequestStats, Error>({
     queryKey: [ApiQueryKeys.CHANGE_REQUEST_STATS, projectId],
@@ -107,7 +111,7 @@ export function useGetProjectChangeRequestStats(
         }
 
         const data: ChangeRequestStatsResponse = await response.json();
-        logger.debug("[useGetProjectChangeRequestStats] Data received:", data);
+        logger.debug("[useGetProjectChangeRequestStats] Raw API data:", data);
 
         // Map the API response to the expected stats format
         const mappedStats = mapChangeRequestStats(data);
@@ -122,8 +126,11 @@ export function useGetProjectChangeRequestStats(
         throw error;
       }
     },
-    enabled: !!projectId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    enabled,
+    staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

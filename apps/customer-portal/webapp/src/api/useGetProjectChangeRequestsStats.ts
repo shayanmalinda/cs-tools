@@ -39,7 +39,7 @@ export function useGetProjectChangeRequestsStats(
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
-  const { enabled = true } = options ?? {};
+  const enabled = (options?.enabled ?? true) && !!id && isSignedIn && !isAuthLoading;
 
   return useQuery<ChangeRequestStatsResponse, Error>({
     queryKey: [ApiQueryKeys.CHANGE_REQUEST_STATS, id],
@@ -90,10 +90,10 @@ export function useGetProjectChangeRequestsStats(
         throw error;
       }
     },
-    enabled: !!id && isSignedIn && !isAuthLoading && enabled,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnMount: false,
+    enabled,
+    staleTime: enabled ? 5 * 60 * 1000 : 0,
+    gcTime: enabled ? 10 * 60 * 1000 : 0,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });

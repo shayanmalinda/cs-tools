@@ -18,7 +18,7 @@ import { useCallback, useMemo, type JSX } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Box } from "@wso2/oxygen-ui";
 import { Siren, Package } from "@wso2/oxygen-ui-icons-react";
-//import SecurityStats from "@components/security/SecurityStats";
+import SecurityStats from "@components/security/SecurityStats";
 import TabBar from "@components/common/tab-bar/TabBar";
 import ProductVulnerabilitiesTable from "@components/security/ProductVulnerabilitiesTable";
 import SecurityReportAnalysis from "@/components/security/SecurityReportAnalysis";
@@ -96,7 +96,7 @@ const SecurityPage = (): JSX.Element => {
 
   return (
     <Box>
-      {/* <SecurityStats /> */}
+      <SecurityStats />
 
       <Box>
         <TabBar

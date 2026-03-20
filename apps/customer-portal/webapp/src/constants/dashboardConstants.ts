@@ -72,7 +72,7 @@ export const DASHBOARD_STATS: StatConfigItem[] = [
   },
   {
     id: "resolvedCases",
-    label: "Support Cases (Last 30d)",
+    label: "Resolved Support Cases (Last 30d)",
     icon: CheckCircle,
     iconColor: "success",
     tooltipText: "Successfully closed and resolved cases",

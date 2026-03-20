@@ -18,25 +18,24 @@ import { Box, Typography, Button } from "@wso2/oxygen-ui";
 import { ListFilter, RotateCcw, ChevronDown, ChevronUp, Plus } from "@wso2/oxygen-ui-icons-react";
 import { type JSX, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
-import useGetProjectDetails from "@api/useGetProjectDetails";
 
 interface CasesTableHeaderProps {
   activeFiltersCount: number;
   isFiltersOpen: boolean;
   onFilterToggle: () => void;
+  hasAgent?: boolean;
 }
 
 const CasesTableHeader = ({
   activeFiltersCount,
   isFiltersOpen,
   onFilterToggle,
+  hasAgent = false,
 }: CasesTableHeaderProps): JSX.Element => {
   const navigate = useNavigate();
   const { projectId: rawProjectId } = useParams<{ projectId?: string }>();
   const projectId = rawProjectId ?? "";
   const hasActiveFilters = activeFiltersCount > 0;
-  const { data: projectDetails } = useGetProjectDetails(projectId);
-  const hasAgent = projectDetails?.hasAgent ?? projectDetails?.account?.hasAgent ?? false;
 
   const handleCreateCase = useCallback(() => {
     if (hasAgent) {
