@@ -30,7 +30,7 @@ public isolated function processLicenseDownload(LicenseDownloadPayload payload) 
     string? applicationName = statusRes.result.name;
     string? applicationDescription = statusRes.result.description;
 
-    // CREATE APPLICATION
+    // Create application
     if status == STATUS_PENDING {
         if applicationName is () || applicationDescription is () {
             return error("Application name and description are required for application creation.");
