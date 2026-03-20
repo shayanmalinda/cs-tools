@@ -19,7 +19,7 @@
 # + payload - Project status request containing email, deploymentId, and projectId
 # + return - License details or error
 public isolated function downloadLicense(LicenseDownloadPayload payload) returns License|error {
-    // 1. Get current status
+    // Get current status
     Result statusRes = check productConsumptionClient->/projects/[payload.projectId]/consumption/status.post({
         email: payload.email,
         deploymentId: payload.deploymentId
@@ -48,7 +48,7 @@ public isolated function downloadLicense(LicenseDownloadPayload payload) returns
     if applicationId is () {
         return error("Application ID is required.");
     }
-
+    // SUBSCRIBE APPLICATION 
     if status == STATUS_CREATED {
         ApplicationSubscriptionResponse _ = check productConsumptionClient->/applications/[applicationId]/subscribe
             .post(applicationId);
