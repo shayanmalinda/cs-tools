@@ -79,6 +79,11 @@ export default function ManageProductModal({
   const [cores, setCores] = useState("");
   const [tps, setTps] = useState("");
   const [description, setDescription] = useState("");
+  const [addUpdateState, setAddUpdateState] = useState<{
+    canAdd: boolean;
+    isSaving: boolean;
+    handleAdd: () => void;
+  } | null>(null);
 
   const patchProduct = usePatchDeploymentProduct();
   const isSubmitting = patchProduct.isPending;
@@ -308,7 +313,7 @@ export default function ManageProductModal({
             }
             isLoading={false}
             onSaveUpdates={handleSaveUpdates}
-            onClose={handleClose}
+            onFormStateChange={setAddUpdateState}
           />
         )}
       </DialogContent>
@@ -319,7 +324,7 @@ export default function ManageProductModal({
         <Button
           variant="outlined"
           onClick={handleClose}
-          disabled={isSubmitting}
+          disabled={isSubmitting || addUpdateState?.isSaving}
         >
           Close
         </Button>
@@ -343,6 +348,28 @@ export default function ManageProductModal({
               Save Changes
             </Button>
           ))}
+        {tabValue === 1 && addUpdateState && (
+          addUpdateState.isSaving ? (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<CircularProgress color="inherit" size={16} />}
+              disabled
+            >
+              Adding...
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              onClick={addUpdateState.handleAdd}
+              disabled={!addUpdateState.canAdd}
+            >
+              Add Update
+            </Button>
+          )
+        )}
       </DialogActions>
     </Dialog>
   );
