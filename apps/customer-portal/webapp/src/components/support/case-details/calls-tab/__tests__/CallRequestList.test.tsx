@@ -55,15 +55,15 @@ describe("CallRequestList", () => {
     expect(screen.getAllByText(/Scheduled/i).length).toBeGreaterThan(0);
   });
 
-  it("should call onEditClick with the request when edit button is clicked", () => {
+  it("should call onEditClick with the request when Reschedule button is clicked", () => {
     const onEditClick = vi.fn();
     render(
       <CallRequestList requests={mockRequests} onEditClick={onEditClick} />,
     );
-    const editButtons = screen.getAllByRole("button", {
-      name: /Edit call request/i,
+    const rescheduleButtons = screen.getAllByRole("button", {
+      name: /Reschedule/i,
     });
-    fireEvent.click(editButtons[0]);
+    fireEvent.click(rescheduleButtons[0]);
     expect(onEditClick).toHaveBeenCalledTimes(1);
     expect(onEditClick).toHaveBeenCalledWith(mockRequests[0]);
   });

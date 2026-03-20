@@ -69,6 +69,7 @@ export interface RequestCallModalProps {
   onError?: (message: string) => void;
   /** When provided, modal opens in edit mode with pre-filled values. */
   editCall?: CallRequest;
+  userTimeZone?: string;
 }
 
 /**
@@ -110,6 +111,7 @@ export default function RequestCallModal({
   onSuccess,
   onError,
   editCall,
+  userTimeZone,
 }: RequestCallModalProps): JSX.Element {
   const postCallRequest = usePostCallRequest(projectId, caseId);
   const patchCallRequest = usePatchCallRequest(projectId, caseId);
@@ -317,9 +319,14 @@ export default function RequestCallModal({
           inputProps={{
             min: minDatetimeLocal,
           }}
-          sx={{ mt: 4, mb: 2 }}
+          sx={{ mt: 4, mb: userTimeZone ? 0.5 : 2 }}
           disabled={isPending}
         />
+        {userTimeZone && (
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: "block" }}>
+            Your current time zone is {userTimeZone}
+          </Typography>
+        )}
 
         {!isEdit && (
           <FormControl fullWidth size="small" sx={{ mb: 2 }}>

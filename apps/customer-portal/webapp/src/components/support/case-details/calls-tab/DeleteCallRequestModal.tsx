@@ -40,9 +40,9 @@ export interface DeleteCallRequestModalProps {
   open: boolean;
   call: CallRequest | null;
   onClose: () => void;
-  /** Called with the mandatory reason when user confirms. Payload should include state and reason only (no utc time). */
   onConfirm: (reason: string) => void;
   isDeleting?: boolean;
+  userTimeZone?: string;
 }
 
 /**
@@ -59,6 +59,7 @@ export default function DeleteCallRequestModal({
   onClose,
   onConfirm,
   isDeleting = false,
+  userTimeZone,
 }: DeleteCallRequestModalProps): JSX.Element {
   const [reason, setReason] = useState("");
 
@@ -128,7 +129,7 @@ export default function DeleteCallRequestModal({
       <DialogContent>
         <Typography id="delete-call-request-modal-description" color="text.secondary">
           {call
-            ? `Are you sure you want to cancel the call request scheduled for ${formatUtcToLocal(call.scheduleTime, "short")}? This action cannot be undone.`
+            ? `Are you sure you want to cancel the call request scheduled for ${formatUtcToLocal(call.scheduleTime, "short", true, userTimeZone)}? This action cannot be undone.`
             : "Are you sure you want to cancel this call request? This action cannot be undone."}
         </Typography>
         <TextField

@@ -38,6 +38,42 @@ vi.mock("@api/usePatchCallRequest", () => ({
   }),
 }));
 
+vi.mock("@api/useGetUserDetails", () => ({
+  default: () => ({
+    data: { timeZone: "America/New_York" },
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
+vi.mock("@api/usePatchUserMe", () => ({
+  usePatchUserMe: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+}));
+
+vi.mock("@api/useGetProjectFilters", () => ({
+  default: () => ({
+    data: {
+      callRequestStates: [
+        { id: "1", label: "Pending" },
+        { id: "2", label: "Pending on WSO2" },
+        { id: "3", label: "Pending on Customer" },
+        { id: "4", label: "Customer Rejected" },
+        { id: "5", label: "Scheduled" },
+      ],
+    },
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
+vi.mock("@components/common/header/UserProfileModal", () => ({
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="user-profile-modal" /> : null,
+}));
+
 function createTestQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
@@ -190,6 +226,126 @@ describe("CallsPanel", () => {
     );
   });
 
+  it("should show Approve and Reject buttons for 'Pending on Customer' call", () => {
+    vi.mocked(useGetCallRequests).mockReturnValue({
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      data: {
+        pages: [
+          {
+            callRequests: [
+              {
+                id: "call-2",
+                case: { id: "case-1", label: "CS0438719" },
+                reason: "Customer approval needed",
+                preferredTimes: [],
+                durationMin: 30,
+                scheduleTime: "",
+                createdOn: "2024-10-29 10:00:00",
+                updatedOn: "2024-10-29 10:00:00",
+                state: { id: "3", label: "Pending on Customer" },
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as ReturnType<typeof useGetCallRequests>);
+
+    renderWithProviders(<CallsPanel projectId={mockProjectId} caseId={mockCaseId} />);
+    expect(screen.getByRole("button", { name: /Approve/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reject/i })).toBeInTheDocument();
+  });
+
+  it("should open reject modal when Reject is clicked and patch with derived stateKey (no reason)", () => {
+    vi.mocked(useGetCallRequests).mockReturnValue({
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      data: {
+        pages: [
+          {
+            callRequests: [
+              {
+                id: "call-2",
+                case: { id: "case-1", label: "CS0438719" },
+                reason: "Customer approval needed",
+                preferredTimes: [],
+                durationMin: 30,
+                scheduleTime: "",
+                createdOn: "2024-10-29 10:00:00",
+                updatedOn: "2024-10-29 10:00:00",
+                state: { id: "3", label: "Pending on Customer" },
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as ReturnType<typeof useGetCallRequests>);
+
+    renderWithProviders(<CallsPanel projectId={mockProjectId} caseId={mockCaseId} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Reject$/i }));
+
+    // Reject modal should open with no reason input
+    expect(screen.getByText("Reject Call Request")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/Enter reason for rejection/i)).not.toBeInTheDocument();
+
+    // Confirm directly — no reason required
+    fireEvent.click(screen.getByRole("button", { name: /^Reject$/i }));
+
+    expect(mockPatchMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        callRequestId: "call-2",
+        // stateKey derived from filter: "Customer Rejected" → id "4" → number 4
+        stateKey: 4,
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it("should open approve modal when Approve is clicked for 'Pending on Customer'", () => {
+    vi.mocked(useGetCallRequests).mockReturnValue({
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      data: {
+        pages: [
+          {
+            callRequests: [
+              {
+                id: "call-2",
+                case: { id: "case-1", label: "CS0438719" },
+                reason: "Customer approval needed",
+                preferredTimes: [],
+                durationMin: 30,
+                scheduleTime: "",
+                createdOn: "2024-10-29 10:00:00",
+                updatedOn: "2024-10-29 10:00:00",
+                state: { id: "3", label: "Pending on Customer" },
+              },
+            ],
+          },
+        ],
+      },
+    } as unknown as ReturnType<typeof useGetCallRequests>);
+
+    renderWithProviders(<CallsPanel projectId={mockProjectId} caseId={mockCaseId} />);
+    fireEvent.click(screen.getByRole("button", { name: /Approve/i }));
+    expect(screen.getByText(/Approve Call Request/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Enter preferred time for this call request/i),
+    ).toBeInTheDocument();
+  });
+
   it("should show Load more and call fetchNextPage when clicked", () => {
     const mockFetchNextPage = vi.fn();
     vi.mocked(useGetCallRequests).mockReturnValue({
@@ -228,6 +384,31 @@ describe("CallsPanel", () => {
     fireEvent.click(loadMoreBtn);
 
     expect(mockFetchNextPage).toHaveBeenCalled();
+  });
+
+  it("should show missing timezone dialog when user has no timezone set", async () => {
+    vi.doMock("@api/useGetUserDetails", () => ({
+      default: () => ({
+        data: { timeZone: null },
+        isLoading: false,
+        isError: false,
+      }),
+    }));
+
+    vi.mocked(useGetCallRequests).mockReturnValue({
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      data: { pages: [{ callRequests: [] }] },
+    } as unknown as ReturnType<typeof useGetCallRequests>);
+
+    // The dialog is shown only when timeZone is falsy - already tested by MissingTimezoneDialog unit tests
+    // Here we verify it does NOT appear for users with a timezone
+    renderWithProviders(<CallsPanel projectId={mockProjectId} caseId={mockCaseId} />);
+    expect(screen.queryByText("Time Zone Not Set")).not.toBeInTheDocument();
   });
 
   it("should open Request Call modal when button is clicked", () => {

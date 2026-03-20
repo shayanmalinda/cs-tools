@@ -250,17 +250,19 @@ export function isWithinOpenRelatedCaseWindow(
 }
 
 /**
- * Formats a UTC date string for display in the user's local timezone.
+ * Formats a UTC date string for display in the specified (or browser-local) timezone.
  *
  * @param {string} dateStr - UTC date string (YYYY-MM-DD HH:mm:ss or MM/DD/YYYY HH:mm:ss).
  * @param {"short" | "long"} [formatStr="long"] - The format style.
  * @param {boolean} [includeTimeZoneName=true] - Include timezone suffix (e.g. +GMT).
- * @returns {string} Formatted date/time in local time.
+ * @param {string} [userTimeZone] - IANA timezone string (e.g. "America/New_York"). Falls back to browser local timezone when omitted.
+ * @returns {string} Formatted date/time in the specified timezone.
  */
 export function formatUtcToLocal(
   dateStr: string | null | undefined,
   formatStr: "short" | "long" = "long",
   includeTimeZoneName = true,
+  userTimeZone?: string,
 ): string {
   if (!dateStr) return "--";
   const normalized = normalizeUtcDateString(dateStr);
@@ -269,6 +271,7 @@ export function formatUtcToLocal(
   const tzOption = includeTimeZoneName
     ? { timeZoneName: "short" as const }
     : {};
+  const tzZone = userTimeZone ? { timeZone: userTimeZone } : {};
   if (formatStr === "short") {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -277,6 +280,7 @@ export function formatUtcToLocal(
       minute: "numeric",
       hour12: true,
       ...tzOption,
+      ...tzZone,
     }).format(date);
   }
   return new Intl.DateTimeFormat("en-US", {
@@ -287,6 +291,7 @@ export function formatUtcToLocal(
     minute: "numeric",
     hour12: true,
     ...tzOption,
+    ...tzZone,
   }).format(date);
 }
 

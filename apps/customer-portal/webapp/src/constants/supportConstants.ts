@@ -107,12 +107,19 @@ export const CallRequestStatus = {
   CANCELED: "Canceled",
   COMPLETED: "Completed",
   PENDING: "Pending",
+  PENDING_ON_CUSTOMER: "Pending on Customer",
   REJECTED: "Rejected",
   SCHEDULED: "Scheduled",
 } as const;
 
 export type CallRequestStatus =
   (typeof CallRequestStatus)[keyof typeof CallRequestStatus];
+
+/** API stateKey: customer has rejected the proposed time (PATCH). */
+export const CALL_REQUEST_STATE_CUSTOMER_REJECTED = 4;
+
+/** API stateKey: rescheduled back to WSO2 with new preferred times (PATCH). */
+export const CALL_REQUEST_STATE_PENDING_ON_WSO2 = 2;
 
 /** API stateKey value for cancelling a call request (PATCH). */
 export const CALL_REQUEST_STATE_CANCELLED = 6;

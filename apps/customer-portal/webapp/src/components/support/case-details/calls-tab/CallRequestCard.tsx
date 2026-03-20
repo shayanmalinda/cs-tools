@@ -38,15 +38,21 @@ import { CallRequestStatus } from "@constants/supportConstants";
 
 export interface CallRequestCardProps {
   call: CallRequest;
+  userTimeZone?: string;
   onEditClick?: (call: CallRequest) => void;
   onDeleteClick?: (call: CallRequest) => void;
+  onApproveClick?: (call: CallRequest) => void;
+  onRejectClick?: (call: CallRequest) => void;
 }
 
-/** Renders preferred times (UTC) converted to local. */
-function formatPreferredTimes(times: string[] | undefined): string {
+/** Renders preferred times (UTC) converted to user's timezone. */
+function formatPreferredTimes(
+  times: string[] | undefined,
+  userTimeZone?: string,
+): string {
   if (!times?.length) return "--";
   const formatted = times
-    .map((t) => formatUtcToLocal(t, "short"))
+    .map((t) => formatUtcToLocal(t, "short", true, userTimeZone))
     .filter((s) => s !== "--");
   return formatted.length > 0 ? formatted.join(", ") : "--";
 }
@@ -59,8 +65,11 @@ function formatPreferredTimes(times: string[] | undefined): string {
  */
 export default function CallRequestCard({
   call,
+  userTimeZone,
   onEditClick,
   onDeleteClick,
+  onApproveClick,
+  onRejectClick,
 }: CallRequestCardProps): JSX.Element {
   const theme = useTheme();
   const statusLabel = call.state?.label ?? "--";
@@ -69,6 +78,8 @@ export default function CallRequestCard({
     statusLower === "cancelled" || statusLower === "canceled";
   const isTerminal =
     isCancelled || statusLabel === CallRequestStatus.COMPLETED;
+  const isPendingOnCustomer =
+    statusLabel === CallRequestStatus.PENDING_ON_CUSTOMER;
   const colorPath = getCallRequestStatusColor(statusLabel);
   const resolvedColor = isCancelled
     ? theme.palette.error.main
@@ -148,42 +159,76 @@ export default function CallRequestCard({
                 />
               </Stack>
               <Typography variant="caption" color="text.secondary">
-                Requested on {formatUtcToLocal(call.createdOn, "short")}
+                Requested on {formatUtcToLocal(call.createdOn, "short", true, userTimeZone)}
               </Typography>
             </Box>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={() => onEditClick?.(call)}
-              disabled={isTerminal}
-              sx={{
-                minWidth: "auto",
-                px: 1,
-                py: 0.3,
-                fontSize: "0.7rem",
-                height: 24,
-              }}
-            >
-              Reschedule
-            </Button>
-
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => onDeleteClick?.(call)}
-              disabled={isTerminal}
-              sx={{
-                minWidth: "auto",
-                px: 1,
-                py: 0.3,
-                fontSize: "0.7rem",
-                height: 24,
-              }}
-            >
-              Cancel
-            </Button>
+            {isPendingOnCustomer ? (
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => onApproveClick?.(call)}
+                  sx={{
+                    minWidth: "auto",
+                    px: 1,
+                    py: 0.3,
+                    fontSize: "0.7rem",
+                    height: 24,
+                  }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => onRejectClick?.(call)}
+                  sx={{
+                    minWidth: "auto",
+                    px: 1,
+                    py: 0.3,
+                    fontSize: "0.7rem",
+                    height: 24,
+                  }}
+                >
+                  Reject
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  onClick={() => onEditClick?.(call)}
+                  disabled={isTerminal}
+                  sx={{
+                    minWidth: "auto",
+                    px: 1,
+                    py: 0.3,
+                    fontSize: "0.7rem",
+                    height: 24,
+                  }}
+                >
+                  Reschedule
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => onDeleteClick?.(call)}
+                  disabled={isTerminal}
+                  sx={{
+                    minWidth: "auto",
+                    px: 1,
+                    py: 0.3,
+                    fontSize: "0.7rem",
+                    height: 24,
+                  }}
+                >
+                  Cancel
+                </Button>
+              </>
+            )}
           </Stack>
         </Stack>
 
@@ -204,7 +249,7 @@ export default function CallRequestCard({
               Preferred Times
             </Typography>
             <Typography variant="body2">
-              {formatPreferredTimes(call.preferredTimes)}
+              {formatPreferredTimes(call.preferredTimes, userTimeZone)}
             </Typography>
           </Box>
           <Box>

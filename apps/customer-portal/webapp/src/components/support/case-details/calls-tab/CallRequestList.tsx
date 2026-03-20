@@ -21,8 +21,11 @@ import CallRequestCard from "@case-details-calls/CallRequestCard";
 
 export interface CallRequestListProps {
   requests: CallRequest[];
+  userTimeZone?: string;
   onEditClick?: (call: CallRequest) => void;
   onDeleteClick?: (call: CallRequest) => void;
+  onApproveClick?: (call: CallRequest) => void;
+  onRejectClick?: (call: CallRequest) => void;
 }
 
 /**
@@ -33,8 +36,11 @@ export interface CallRequestListProps {
  */
 export default function CallRequestList({
   requests,
+  userTimeZone,
   onEditClick,
   onDeleteClick,
+  onApproveClick,
+  onRejectClick,
 }: CallRequestListProps): JSX.Element {
   return (
     <Stack spacing={2}>
@@ -42,8 +48,11 @@ export default function CallRequestList({
         <CallRequestCard
           key={call.id}
           call={call}
+          userTimeZone={userTimeZone}
           onEditClick={onEditClick}
           onDeleteClick={onDeleteClick}
+          onApproveClick={onApproveClick}
+          onRejectClick={onRejectClick}
         />
       ))}
     </Stack>
