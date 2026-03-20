@@ -56,9 +56,11 @@ export function usePatchCallRequest(
     ): Promise<CallRequestResponse> => {
       const { callRequestId, ...rest } = payload;
       const body: PatchCallRequest = {
-        reason: rest.reason,
         stateKey: rest.stateKey,
       };
+      if (rest.reason != null) {
+        body.reason = rest.reason;
+      }
       if (rest.utcTimes != null && rest.utcTimes.length > 0) {
         body.utcTimes = rest.utcTimes;
       }

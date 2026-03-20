@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import type { CallRequest } from "@models/responses";
 import CallRequestCard from "@case-details-calls/CallRequestCard";
 
@@ -44,6 +44,56 @@ describe("CallRequestCard", () => {
   it("should format createdOn date correctly", () => {
     render(<CallRequestCard call={mockCall} />);
     expect(screen.getByText(/Requested on Oct 29/i)).toBeInTheDocument();
+  });
+
+  it("should show Reschedule and Cancel buttons for non-pending-on-customer state", () => {
+    render(<CallRequestCard call={mockCall} />);
+    expect(screen.getByRole("button", { name: /Reschedule/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Approve/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Reject/i })).not.toBeInTheDocument();
+  });
+
+  it("should show Approve and Reject buttons for 'Pending on Customer' state", () => {
+    const pendingOnCustomerCall: CallRequest = {
+      ...mockCall,
+      state: { id: "3", label: "Pending on Customer" },
+    };
+    const onApproveClick = vi.fn();
+    const onRejectClick = vi.fn();
+    render(
+      <CallRequestCard
+        call={pendingOnCustomerCall}
+        onApproveClick={onApproveClick}
+        onRejectClick={onRejectClick}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /Approve/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reject/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Reschedule/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Cancel/i })).not.toBeInTheDocument();
+  });
+
+  it("should call onApproveClick when Approve is clicked for 'Pending on Customer'", () => {
+    const pendingOnCustomerCall: CallRequest = {
+      ...mockCall,
+      state: { id: "3", label: "Pending on Customer" },
+    };
+    const onApproveClick = vi.fn();
+    render(<CallRequestCard call={pendingOnCustomerCall} onApproveClick={onApproveClick} />);
+    fireEvent.click(screen.getByRole("button", { name: /Approve/i }));
+    expect(onApproveClick).toHaveBeenCalledWith(pendingOnCustomerCall);
+  });
+
+  it("should call onRejectClick when Reject is clicked for 'Pending on Customer'", () => {
+    const pendingOnCustomerCall: CallRequest = {
+      ...mockCall,
+      state: { id: "3", label: "Pending on Customer" },
+    };
+    const onRejectClick = vi.fn();
+    render(<CallRequestCard call={pendingOnCustomerCall} onRejectClick={onRejectClick} />);
+    fireEvent.click(screen.getByRole("button", { name: /Reject/i }));
+    expect(onRejectClick).toHaveBeenCalledWith(pendingOnCustomerCall);
   });
 
   it("should display '--' for missing or nullish values", () => {
