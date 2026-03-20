@@ -96,13 +96,12 @@ public isolated function downloadLicense(LicenseDownloadPayload payload) returns
 
     // DOWNLOAD LICENSE
     if status == 5 {
-        LicenseResponse license =
-            check productConsumptionClient->/projects/[payload.projectId]/deployments/[payload.deploymentId]/license
-                .post(
-                    {
-                        email: payload.email
-                    }
-                    );
+       LicenseResponse license =
+        check productConsumptionClient->/projects/[payload.projectId]/deployments/[payload.deploymentId]/license.post(
+            {
+                email: payload.email
+            }
+        );
 
         License licenseData = license.result.license;
         return licenseData;
