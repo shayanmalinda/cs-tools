@@ -14,6 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+# Get metadata information.
+#
+# + idToken - ID token for authorization
+# + return - Metadata response containing metadata information or error
+public isolated function getMetadata(string idToken) returns MetadataResponse|error {
+    return csEntityClient->/metadata.get(generateHeaders(idToken));
+}
+
 # Get logged-in user information.
 #
 # + email - Email of the user
@@ -153,7 +161,7 @@ public isolated function searchCases(string idToken, CaseSearchPayload payload) 
 # + projectId - Unique ID of the project
 # + return - Project metadata response or error
 public isolated function getProjectMetadata(string idToken, string projectId) returns ProjectMetadataResponse|error {
-    return csEntityClient->/projects/[projectId]/meta\-data.get(generateHeaders(idToken));
+    return csEntityClient->/projects/[projectId]/metadata.get(generateHeaders(idToken));
 }
 
 # Search comments.
@@ -472,7 +480,9 @@ public isolated function getProjectTimeCardStats(string idToken, string projectI
 # + idToken - ID token for authorization
 # + changeRequestId - Unique ID of the change request to be retrieved
 # + return - Change request response containing details of the retrieved change request or error
-public isolated function getChangeRequestDetails(string idToken, string changeRequestId) returns ChangeRequestResponse|error {
+public isolated function getChangeRequestDetails(string idToken, string changeRequestId)
+    returns ChangeRequestResponse|error {
+
     return csEntityClient->/change\-requests/[changeRequestId].get(generateHeaders(idToken));
 }
 

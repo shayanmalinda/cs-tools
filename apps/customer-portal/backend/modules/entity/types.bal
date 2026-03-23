@@ -49,6 +49,13 @@ public type Pagination record {|
     json...;
 |};
 
+# Metadata.
+public type MetadataResponse record {|
+    # List of available time zones
+    ChoiceListItem[] timeZones;
+    json...;
+|};
+
 # User data.
 public type UserResponse record {|
     # ID
@@ -532,8 +539,6 @@ public type SortBy record {|
 public type ProjectMetadataResponse record {|
     # List of available case states (eg: Open, Closed, etc.)
     ChoiceListItem[] caseStates;
-    # List of available time zones (eg: UTC, GMT, etc.)
-    ChoiceListItem[] timeZones;
     # List of available case severities (eg: S0, S1, etc.)
     ChoiceListItem[] severities;
     # List of available issue types (eg: Error, Total Outage, etc.)

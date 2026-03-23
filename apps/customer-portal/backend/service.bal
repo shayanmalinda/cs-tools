@@ -83,6 +83,42 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         log:printInfo("Customer Portal backend started.");
     }
 
+    # Fetch metadata information for the customer portal.
+    #
+    # + return - Metadata information or error response
+    resource function get metadata(http:RequestContext ctx)
+        returns types:MetadataResponse|http:Unauthorized|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+        entity:MetadataResponse|error metadataResponse = entity:getMetadata(userInfo.idToken);
+        if metadataResponse is error {
+            if getStatusCode(metadataResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve metadata information.";
+            log:printError(customError, metadataResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        return mapMetadataResponse(metadataResponse);
+    }
+
     # Fetch user information of the logged in user.
     #
     # + return - User info object or error response

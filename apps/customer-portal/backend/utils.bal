@@ -105,8 +105,6 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
 
     types:ReferenceItem[] caseStates = from entity:ChoiceListItem item in projectMetadata.caseStates
         select {id: item.id.toString(), label: item.label};
-    types:ReferenceItem[] timeZones = from entity:ChoiceListItem item in projectMetadata.timeZones
-        select {id: item.id.toString(), label: item.label};
     types:ReferenceItem[] severities = from entity:ChoiceListItem item in projectMetadata.severities
         select {id: item.id.toString(), label: item.label};
     types:ReferenceItem[] issueTypes = from entity:ChoiceListItem item in projectMetadata.issueTypes
@@ -132,7 +130,6 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
 
     return {
         caseStates,
-        timeZones,
         severities,
         issueTypes,
         deploymentTypes,
@@ -901,3 +898,12 @@ public isolated function mapProjectResponse(entity:ProjectResponse response) ret
     onboardingStatus: response.onboardingStatus
 };
 
+# Map metadata response to the desired structure.
+# 
+# + response - Metadata response from the entity service
+# + return - Mapped metadata response
+public isolated function mapMetadataResponse(entity:MetadataResponse response) returns types:MetadataResponse {
+    types:ReferenceItem[] timeZones = from entity:ChoiceListItem item in response.timeZones
+        select {id: item.id.toString(), label: item.label};
+    return {timeZones};
+}

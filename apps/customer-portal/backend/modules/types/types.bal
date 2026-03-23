@@ -20,6 +20,12 @@ import ballerina/constraint;
 
 public const PHONE_PATTERN_STRING = "^\\+\\d{10,14}$";
 
+# Metadata.
+public type MetadataResponse record {|
+    # List of available time zones
+    ReferenceItem[] timeZones;
+|};
+
 # Cache configuration record.
 public type CacheConfig record {|
     # Maximum number of entries in cache
@@ -232,8 +238,6 @@ public type UpdatedUser record {|
 public type ProjectFilterOptions record {|
     # List of case states
     ReferenceItem[] caseStates;
-    # List of available time zones (eg: UTC, GMT, etc.)
-    ReferenceItem[] timeZones;
     # List of case severities
     ReferenceItem[] severities;
     # List of issue types
