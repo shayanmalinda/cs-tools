@@ -57,7 +57,7 @@ export default function OutstandingChangeRequestsList({
   if (changeRequests.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No change requests.
+        No change requests. Try adjusting your filters or search query.
       </Typography>
     );
   }

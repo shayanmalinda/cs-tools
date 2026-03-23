@@ -101,7 +101,7 @@ const CasesList = ({
             ) : data?.cases.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  No cases found. Try adjusting your filters or search query.
+                  Try adjusting your filters or search query.
                 </TableCell>
               </TableRow>
             ) : (

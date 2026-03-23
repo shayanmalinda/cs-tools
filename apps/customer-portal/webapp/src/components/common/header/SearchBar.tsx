@@ -196,7 +196,7 @@ export default function SearchBar({
             style={{ width: 200, height: "auto", marginBottom: 16 }}
           />
           <Typography variant="body2" color="text.secondary">
-            No cases found , Try adjusting your filters or search query.
+            No cases found. Try adjusting your filters or search query.
           </Typography>
         </Box>
       ) : (
