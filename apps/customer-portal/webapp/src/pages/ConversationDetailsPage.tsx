@@ -41,6 +41,7 @@ import type { Message } from "@pages/NoveraChatPage";
 import ChatMessageBubble from "@components/support/novera-ai-assistant/novera-chat-page/ChatMessageBubble";
 import { alpha, useTheme } from "@wso2/oxygen-ui";
 import { formatDateOnly, normalizeUtcDateString } from "@utils/support";
+import { navigateToPreviousPage } from "@/constants/commonConstants";
 
 /**
  * ConversationDetailsPage displays the message history for a single conversation.
@@ -113,7 +114,7 @@ export default function ConversationDetailsPage(): JSX.Element {
 
   const handleBack = () => {
     if (window.history.length > 1) {
-      navigate(-1);
+      navigate(navigateToPreviousPage);
     } else if (projectId) {
       navigate(`/projects/${projectId}/support/conversations`);
     } else {

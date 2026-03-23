@@ -66,6 +66,7 @@ import { PROJECT_TYPE_LABELS } from "@constants/projectDetailsConstants";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import { escapeHtml, htmlToPlainText } from "@utils/richTextEditor";
 import UploadAttachmentModal from "@components/support/case-details/attachments-tab/UploadAttachmentModal";
+import { navigateToPreviousPage } from "@/constants/commonConstants";
 
 const DEFAULT_CASE_TITLE = "Support case";
 const DEFAULT_CASE_DESCRIPTION = "Please describe your issue here.";
@@ -565,7 +566,7 @@ export default function CreateCasePage(): JSX.Element {
 
   const handleBack = () => {
     if (window.history.length > 1) {
-      navigate(-1);
+      navigate(navigateToPreviousPage);
     } else if (projectId) {
       navigate(`/projects/${projectId}/support/cases`);
     } else {

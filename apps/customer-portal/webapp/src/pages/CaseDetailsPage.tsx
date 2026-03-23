@@ -22,6 +22,7 @@ import useGetCaseDetails from "@api/useGetCaseDetails";
 import CaseDetailsContent from "@case-details-details/CaseDetailsContent";
 import { isSecurityReportAnalysisType } from "@utils/support";
 import { SecurityTab } from "@constants/securityConstants";
+import { navigateToPreviousPage } from "@/constants/commonConstants";
 
 /**
  * CaseDetailsPage displays details for a single support case.
@@ -100,7 +101,7 @@ export default function CaseDetailsPage(): JSX.Element {
         `/projects/${projectId}/security-center?tab=${SecurityTab.VULNERABILITIES}`,
       );
     } else {
-      navigate(-1);
+      navigate(navigateToPreviousPage);
     }
   };
 
