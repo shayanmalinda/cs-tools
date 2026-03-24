@@ -25,7 +25,6 @@ import HomePage from "@pages/HomePage";
 import SupportPage from "@pages/SupportPage";
 import UsersPage from "@pages/UsersPage";
 import ProfilePage from "@pages/ProfilePage";
-import NotificationsPage from "@pages/NotificationsPage";
 import ChatPage from "@pages/ChatPage";
 import CreateCasePage from "@pages/CreateCasePage";
 import AllItemsPage from "@pages/AllItemsPage";
@@ -73,7 +72,6 @@ const App: React.FC = () => {
                 <Route element={<ProfilePage />} index />
                 <Route path="update" element={<UpdateProfileSettingsPage />} />
               </Route>
-              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/create" element={<CreateCasePage />} />
               <Route path="/cases">

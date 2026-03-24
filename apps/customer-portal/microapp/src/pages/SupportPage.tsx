@@ -137,8 +137,8 @@ function ItemsListContent({ tab }: { tab: ItemCardProps["type"] }) {
   switch (tab) {
     case "case":
       return (
-        <ErrorBoundary fallback={<ItemsListContentSkeleton tab="case" />}>
-          <Suspense fallback={<ItemsListContentSkeleton tab="case" />}>
+        <ErrorBoundary fallback={<ItemsListContentSkeleton />}>
+          <Suspense fallback={<ItemsListContentSkeleton />}>
             <CaseItemListContent />
           </Suspense>
         </ErrorBoundary>
@@ -146,8 +146,8 @@ function ItemsListContent({ tab }: { tab: ItemCardProps["type"] }) {
 
     case "chat":
       return (
-        <ErrorBoundary fallback={<ItemsListContentSkeleton tab="chat" />}>
-          <Suspense fallback={<ItemsListContentSkeleton tab="chat" />}>
+        <ErrorBoundary fallback={<ItemsListContentSkeleton />}>
+          <Suspense fallback={<ItemsListContentSkeleton />}>
             <ChatItemListContent />
           </Suspense>
         </ErrorBoundary>
@@ -155,8 +155,8 @@ function ItemsListContent({ tab }: { tab: ItemCardProps["type"] }) {
 
     case "service":
       return (
-        <ErrorBoundary fallback={<ItemsListContentSkeleton tab="service" />}>
-          <Suspense fallback={<ItemsListContentSkeleton tab="service" />}>
+        <ErrorBoundary fallback={<ItemsListContentSkeleton />}>
+          <Suspense fallback={<ItemsListContentSkeleton />}>
             <ServiceRequestItemListContent />
           </Suspense>
         </ErrorBoundary>
@@ -164,8 +164,8 @@ function ItemsListContent({ tab }: { tab: ItemCardProps["type"] }) {
 
     case "change":
       return (
-        <ErrorBoundary fallback={<ItemsListContentSkeleton tab="change" />}>
-          <Suspense fallback={<ItemsListContentSkeleton tab="change" />}>
+        <ErrorBoundary fallback={<ItemsListContentSkeleton />}>
+          <Suspense fallback={<ItemsListContentSkeleton />}>
             <ChangeRequestItemListContent />
           </Suspense>
         </ErrorBoundary>
@@ -224,7 +224,7 @@ function ServiceRequestItemListContent() {
   );
 }
 
-function ItemsListContentSkeleton({ tab }: { tab: ItemCardProps["type"] }) {
+function ItemsListContentSkeleton() {
   return (
     <>
       {Array.from({ length: 3 }).map((_, index) => (

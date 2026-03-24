@@ -1,5 +1,5 @@
 import { Box, Card, Stack, Typography, useTheme, pxToRem, colors, Divider, Skeleton } from "@wso2/oxygen-ui";
-import { ArrowUpRight, Circle, CircleCheck, CircleDot, Clock4, Paperclip } from "@wso2/oxygen-ui-icons-react";
+import { ArrowUpRight, Circle, CircleCheck, CircleDot, Paperclip } from "@wso2/oxygen-ui-icons-react";
 import { TimelineConnector, TimelineContent, TimelineItem, TimelineSeparator } from "@mui/lab";
 import type { Attachment } from "@root/src/types";
 

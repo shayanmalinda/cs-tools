@@ -23,8 +23,6 @@ import { useProject } from "@context/project";
 import { changeRequests } from "../services/changes";
 import { overrideOrDefault } from "../utils/others";
 import { Fab } from "../components/core";
-import { useNotify } from "../context/snackbar";
-import { useEffect } from "react";
 
 const PROJECT_SEVERITY_PIE_COLORS: Record<string, string> = {
   "10": colors.red[500],

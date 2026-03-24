@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { SnackbarContext, type SnackbarQueueItem } from "./SnackbarContext";
 import { Snackbar } from "@components/core";
 

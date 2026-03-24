@@ -1,9 +1,3 @@
-export const MOCK_METRICS = [
-  { label: "Total Users", value: 12 },
-  { label: "Active", value: 4 },
-  { label: "Admins", value: 1 },
-];
-
 export const MOCK_ROLES = [
   {
     name: "Admin",

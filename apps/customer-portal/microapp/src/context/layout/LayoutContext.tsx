@@ -20,7 +20,7 @@ export type AppBarVariant = "minimal" | "default" | "extended" | "notifications"
 
 export type LayoutContextType = {
   /* AppBar Properties */
-  title: string;
+  title: string | ReactNode;
   showAppBar: boolean;
   hasBackAction: boolean;
   appBarVariant: AppBarVariant;

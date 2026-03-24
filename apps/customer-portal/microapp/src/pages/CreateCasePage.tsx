@@ -16,7 +16,7 @@
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { Folder } from "@wso2/oxygen-ui-icons-react";
-import { Button, Stack, Typography, InputAdornment, pxToRem, Backdrop, CircularProgress } from "@wso2/oxygen-ui";
+import { Button, Stack, Typography, InputAdornment, pxToRem, CircularProgress } from "@wso2/oxygen-ui";
 import { SelectField, TextField, ConversationSummary } from "@components/features/create";
 import { useFormik } from "formik";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";

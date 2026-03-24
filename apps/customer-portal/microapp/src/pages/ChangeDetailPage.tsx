@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Chip, Grid, Skeleton, Stack, stepClasses, Typography } from "@wso2/oxygen-ui";
+import { Chip, Grid, Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
 import {
-  ActivityTimelineEntrySkeleton,
   InfoField,
   OverlineSlot,
   ProgressTimelineEntrySkeleton,
