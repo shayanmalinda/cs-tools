@@ -16,6 +16,7 @@
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar_collapsed";
 const LAST_SELECTED_PROJECT_ID_KEY = "last_selected_project_id";
+const NOVERA_CHAT_ENABLED_KEY = "novera_chat_enabled";
 
 
 /**
@@ -42,7 +43,9 @@ export function getSidebarCollapsed(): boolean {
 export function setSidebarCollapsed(collapsed: boolean): void {
   try {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
-  } catch {}
+  } catch {
+    return;
+  }
 }
 
 /**
@@ -66,5 +69,33 @@ export function getLastSelectedProjectId(): string | null {
 export function setLastSelectedProjectId(projectId: string): void {
   try {
     localStorage.setItem(LAST_SELECTED_PROJECT_ID_KEY, projectId);
-  } catch {}
+  } catch {
+    return;
+  }
+}
+
+/**
+ * Reads whether Novera chat is enabled from localStorage.
+ *
+ * @returns {boolean} True when enabled, false otherwise.
+ */
+export function getNoveraChatEnabled(): boolean {
+  try {
+    return localStorage.getItem(NOVERA_CHAT_ENABLED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Persists whether Novera chat is enabled to localStorage.
+ *
+ * @param {boolean} enabled - Whether Novera chat is enabled.
+ */
+export function setNoveraChatEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(NOVERA_CHAT_ENABLED_KEY, String(enabled));
+  } catch {
+    return;
+  }
 }
