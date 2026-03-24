@@ -21,6 +21,7 @@ import useInfiniteProjects, {
   flattenProjectPages,
   getTotalRecords,
 } from "@api/useGetProjects";
+import useGetMetadata from "@api/useGetMetadata";
 import { useLogger } from "@hooks/useLogger";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useDebouncedValue } from "@hooks/useDebouncedValue";
@@ -42,6 +43,7 @@ export default function ProjectHub(): JSX.Element {
   const navigate = useNavigate();
   const { showLoader, hideLoader } = useLoader();
   const { isLoading: isAuthLoading } = useAsgardeo();
+  useGetMetadata();
   const [searchQuery, setSearchQuery] = useState<string>("");
   // Use debounce hook
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
