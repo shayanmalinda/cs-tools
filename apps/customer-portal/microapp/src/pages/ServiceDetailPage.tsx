@@ -12,6 +12,9 @@ import { serviceRequests } from "../services/services";
 import { cases } from "@src/services/cases";
 import { stripHtmlTags } from "@utils/others";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function ServiceDetailPage() {
   const layout = useLayout();
