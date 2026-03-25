@@ -46,10 +46,7 @@ export function useGetCaseAttachments(caseId: string) {
     number
   >({
     queryKey: [ApiQueryKeys.CASE_ATTACHMENTS, caseId, "infinite"],
-    queryFn: async ({
-      pageParam,
-      signal,
-    }): Promise<CaseAttachmentsResponse> => {
+    queryFn: async ({ pageParam }): Promise<CaseAttachmentsResponse> => {
       logger.debug(
         `[useGetCaseAttachments] Fetching attachments for case ${caseId}, offset: ${pageParam}`,
       );
@@ -68,7 +65,6 @@ export function useGetCaseAttachments(caseId: string) {
         const requestUrl = `${baseUrl}/cases/${encodedCaseId}/attachments?${params}`;
         const response = await authFetch(requestUrl, {
           method: "GET",
-          signal,
         });
 
         logger.debug(
