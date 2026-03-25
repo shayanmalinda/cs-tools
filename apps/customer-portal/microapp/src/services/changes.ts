@@ -71,6 +71,7 @@ function toChangeRequest(dto: ChangeRequestDTO): ChangeRequest {
     updatedOn: new Date(dto.updatedOn.replace(" ", "T")),
     createdBy: dto.createdBy,
     approvedOn: dto.approvedOn ? new Date(dto.approvedOn.replace(" ", "T")) : undefined,
+    approvedBy: dto.approvedBy ?? undefined,
     duration: dto.duration ?? undefined,
     hasCustomerApproved: dto.hasCustomerApproved,
     hasCustomerReviewed: dto.hasCustomerReviewed,
