@@ -875,6 +875,20 @@ export interface DeploymentProductItem {
   updates?: ProductUpdate[] | null;
 }
 
+// GET /attachments/:id — full payload with base64 or data URL in `content`.
+export interface AttachmentDownloadResponse {
+  content: string;
+  id: string;
+  referenceId?: string;
+  name: string;
+  type: string;
+  sizeBytes?: number;
+  createdBy?: string;
+  createdOn?: string;
+  downloadUrl?: string | null;
+  description?: string | null;
+}
+
 // Case attachment item (GET /cases/:id/attachments).
 export interface CaseAttachment {
   id: string;
@@ -885,6 +899,7 @@ export interface CaseAttachment {
   sizeBytes?: string;
   content?: string | null;
   downloadUrl: string;
+  downloadUrl?: string | null;
   createdOn: string;
   createdBy: string;
 }
