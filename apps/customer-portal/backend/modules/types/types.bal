@@ -108,7 +108,7 @@ public type CaseResponse record {|
     # Last updated date and time
     string updatedOn;
     # SLA response time
-    string slaResponseTime;
+    string? slaResponseTime;
     # Project
     ReferenceItem? project;
     # Case type information (eg: incident, service request, etc.)
