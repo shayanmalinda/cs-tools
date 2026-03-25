@@ -14,7 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, IconButton, Paper, Stack, Typography } from "@wso2/oxygen-ui";
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
+} from "@wso2/oxygen-ui";
 import {
   Download,
   File,
@@ -34,6 +41,8 @@ export interface AttachmentListItemProps {
   onDelete?: (attachment: CaseAttachment) => void;
   onEdit?: (attachment: CaseAttachment) => void;
   hideDescription?: boolean;
+  /** When true, the download action shows a spinner and is disabled. */
+  isDownloadLoading?: boolean;
 }
 
 // TODO: Use attachment category enum when introduced (see support.ts AttachmentFileCategory).
@@ -56,7 +65,7 @@ function getAttachmentIcon(att: CaseAttachment): JSX.Element {
 /**
  * Single attachment row with icon, name, meta, and download button.
  *
- * @param {AttachmentListItemProps} props - Attachment and download handler.
+ * @param {AttachmentListItemProps} props - Attachment, handlers, optional download loading.
  * @returns {JSX.Element} The attachment list item.
  */
 export default function AttachmentListItem({
@@ -65,6 +74,7 @@ export default function AttachmentListItem({
   onDelete,
   onEdit,
   hideDescription = false,
+  isDownloadLoading = false,
 }: AttachmentListItemProps): JSX.Element {
   return (
     <Paper
@@ -161,10 +171,16 @@ export default function AttachmentListItem({
         <IconButton
           size="small"
           aria-label={`Download ${attachment.name}`}
+          aria-busy={isDownloadLoading || undefined}
           sx={{ color: "text.secondary" }}
+          disabled={isDownloadLoading}
           onClick={() => onDownload(attachment)}
         >
-          <Download size={16} aria-hidden />
+          {isDownloadLoading ? (
+            <CircularProgress color="inherit" size={16} aria-hidden />
+          ) : (
+            <Download size={16} aria-hidden />
+          )}
         </IconButton>
       </Stack>
     </Paper>

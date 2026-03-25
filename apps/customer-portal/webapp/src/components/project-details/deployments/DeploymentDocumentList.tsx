@@ -24,6 +24,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   IconButton,
   Skeleton,
   Typography,
@@ -41,6 +42,7 @@ import {
 import { useState, useMemo, type JSX } from "react";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useDeleteAttachment } from "@api/useDeleteAttachment";
+import { useGetAttachment } from "@api/useGetAttachment";
 
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i;
 const ARCHIVE_EXT = /\.(zip|tar|gz|7z|rar|bz2)$/i;
@@ -265,6 +267,8 @@ function DocumentRow({
 }: DocumentRowProps): JSX.Element {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const { downloadAttachment, isDownloading, downloadingId } =
+    useGetAttachment();
   const deleteAttachment = useDeleteAttachment();
   const sizeBytes = doc.sizeBytes ?? doc.size ?? 0;
   const dateStr = formatProjectDate(doc.uploadedAt ?? doc.createdOn ?? "");
@@ -280,6 +284,22 @@ function DocumentRow({
     if (ARCHIVE_EXT.test(`.${ext}`)) return "archive";
     return "text";
   }, [name]);
+
+  const isDownloadLoading = isDownloading && downloadingId === doc.id;
+
+  const handleDownloadClick = async () => {
+    if (!doc.id) return;
+    try {
+      await downloadAttachment({
+        id: doc.id,
+        name: doc.name,
+        content: doc.content,
+        downloadUrl: doc.downloadUrl ?? null,
+      });
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Download failed");
+    }
+  };
 
   const handleConfirmDelete = () => {
     if (!doc.id) return;
@@ -392,35 +412,20 @@ function DocumentRow({
               >
                 <Trash2 size={16} aria-hidden />
               </IconButton>
-              {doc.content || doc.downloadUrl ? (
-                <IconButton
-                  size="small"
-                  aria-label={`Download ${name}`}
-                  sx={{ color: "text.secondary" }}
-                  onClick={() => {
-                    if (doc.content) {
-                      const isDataUrl = doc.content.startsWith("data:");
-                      const href = isDataUrl
-                        ? doc.content
-                        : `data:application/octet-stream;base64,${doc.content}`;
-                      const link = document.createElement("a");
-                      link.href = href;
-                      link.download = name || "document";
-                      link.target = "_blank";
-                      link.rel = "noopener noreferrer";
-                      link.click();
-                    } else if (doc.downloadUrl) {
-                      window.open(doc.downloadUrl, "_blank", "noopener,noreferrer");
-                    }
-                  }}
-                >
+              <IconButton
+                size="small"
+                aria-label={`Download ${name}`}
+                aria-busy={isDownloadLoading || undefined}
+                sx={{ color: "text.secondary" }}
+                disabled={!doc.id || isDownloadLoading}
+                onClick={() => void handleDownloadClick()}
+              >
+                {isDownloadLoading ? (
+                  <CircularProgress color="inherit" size={16} aria-hidden />
+                ) : (
                   <Download size={16} aria-hidden />
-                </IconButton>
-              ) : (
-                <IconButton size="small" aria-label={`Download ${name}`} disabled>
-                  <Download size={16} aria-hidden />
-                </IconButton>
-              )}
+                )}
+              </IconButton>
             </Box>
           </Box>
           {doc.description && (

@@ -62,6 +62,9 @@ export default function AllCasesPage(): JSX.Element {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<AllCasesFilterValues>({});
+  const [sortField, setSortField] = useState<
+    "createdOn" | "updatedOn" | "severity" | "state"
+  >("createdOn");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -103,11 +106,11 @@ export default function AllCasesPage(): JSX.Element {
         createdByMe: createdByMe || undefined,
       },
       sortBy: {
-        field: "createdOn",
+        field: sortField,
         order: sortOrder,
       },
     }),
-    [filters, searchTerm, sortOrder, createdByMe],
+    [filters, searchTerm, sortField, sortOrder, createdByMe],
   );
 
   // Fetch all cases using infinite query (runs in parallel with stats when projectId and auth are ready)
@@ -199,6 +202,13 @@ export default function AllCasesPage(): JSX.Element {
     setPage(1);
   };
 
+  const handleSortFieldChange = (
+    value: "createdOn" | "updatedOn" | "severity" | "state",
+  ) => {
+    setSortField(value);
+    setPage(1);
+  };
+
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setPage(1);
@@ -261,7 +271,38 @@ export default function AllCasesPage(): JSX.Element {
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel id="sort-label">Sort</InputLabel>
+            <InputLabel id="sort-by-label">Sort by</InputLabel>
+            <Select<"createdOn" | "updatedOn" | "severity" | "state">
+              labelId="sort-by-label"
+              id="sort-by"
+              value={sortField}
+              label="Sort by"
+              onChange={(e) =>
+                handleSortFieldChange(
+                  e.target.value as
+                    | "createdOn"
+                    | "updatedOn"
+                    | "severity"
+                    | "state",
+                )
+              }
+            >
+              <MenuItem value="createdOn">
+                <Typography variant="body2">Created date</Typography>
+              </MenuItem>
+              <MenuItem value="updatedOn">
+                <Typography variant="body2">Updated date</Typography>
+              </MenuItem>
+              <MenuItem value="severity">
+                <Typography variant="body2">Severity</Typography>
+              </MenuItem>
+              <MenuItem value="state">
+                <Typography variant="body2">State</Typography>
+              </MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="sort-label">Order By</InputLabel>
             <Select<"desc" | "asc">
               labelId="sort-label"
               id="sort"

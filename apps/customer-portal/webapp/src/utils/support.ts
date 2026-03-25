@@ -1096,9 +1096,55 @@ export interface InlineAttachment {
   url?: string;
 }
 
+/** DOMPurify: keep fallback URL for img error handler in ChatMessageCard. */
+export const INLINE_COMMENT_HTML_PURIFY: {
+  ADD_ATTR: string[];
+} = {
+  ADD_ATTR: ["data-inline-download-url"],
+};
+
+function escapeHtmlAttrValue(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Extracts ServiceNow-style attachment id from img src (relative /id.iix or absolute https://host/id.iix).
+ *
+ * @param src - Raw src attribute.
+ * @returns {string} Suspected attachment id/sys_id or empty string.
+ */
+export function extractInlineImageRefId(src: string): string {
+  const s = src.trim();
+  const fromPath = s.match(/\/([a-f0-9]{32})\.iix(?:\?|#|$)/i);
+  if (fromPath) {
+    return fromPath[1];
+  }
+  const tail = s.replace(/\.iix$/i, "").split("/").pop()?.trim() ?? "";
+  if (/^[a-f0-9]{32}$/i.test(tail)) {
+    return tail;
+  }
+  return s.replace(/^\//, "").replace(/\.iix$/i, "").trim();
+}
+
+function resolveInlineImageDisplaySrc(
+  attachment: InlineAttachment,
+  originalSrc: string,
+): string {
+  const id = attachment.id ?? attachment.sys_id;
+  const originMatch = originalSrc.match(/^(https?:\/\/[^/]+)/i);
+  if (originMatch && id) {
+    return `${originMatch[1]}/${id}.iix`;
+  }
+  return attachment.downloadUrl ?? attachment.url ?? originalSrc;
+}
+
 /**
  * Replaces inline image sources in HTML (e.g. /sys_id.iix or /id.iix) with URLs from attachments.
- * Matches by id or sys_id; uses downloadUrl or url for the replacement.
+ * Prefers same-origin `https://host/<id>.iix` when the HTML already used that host (matches ServiceNow inline images).
+ * Adds `data-inline-download-url` for ChatMessageCard fallback when .iix fails to load.
  * Sanitizes the result with DOMPurify to prevent XSS.
  *
  * @param html - HTML string with img tags.
@@ -1114,31 +1160,37 @@ export function replaceInlineImageSources(
   const normalizedHtml = html.replace(/\\\//g, "/");
 
   if (!inlineAttachments?.length) {
-    return DOMPurify.sanitize(normalizedHtml);
+    return String(DOMPurify.sanitize(normalizedHtml, INLINE_COMMENT_HTML_PURIFY));
   }
 
   const replaced = normalizedHtml.replace(
     /<img([^>]*?)\s+src\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))([^>]*)>/gi,
     (_match, before, doubleSrc, singleSrc, bareSrc, after) => {
       const src = (doubleSrc ?? singleSrc ?? bareSrc ?? "") as string;
-      const refId = src
-        .replace(/^\//, "")
-        .replace(/\.iix$/i, "")
-        .trim();
+      const refId = extractInlineImageRefId(src);
       const attachment = inlineAttachments.find(
         (a) =>
-          a.id === refId ||
-          a.sys_id === refId ||
-          (a?.id && src.includes(a.id)) ||
-          (a?.sys_id && src.includes(a.sys_id)),
+          (a.id && (a.id === refId || src.includes(a.id))) ||
+          (a.sys_id && (a.sys_id === refId || src.includes(a.sys_id))),
       );
-      const newSrc = attachment?.downloadUrl ?? attachment?.url ?? src;
       const quote =
         doubleSrc !== undefined ? '"' : singleSrc !== undefined ? "'" : '"';
-      return `<img${before} src=${quote}${newSrc}${quote}${after}>`;
+
+      if (!attachment) {
+        return `<img${before} src=${quote}${src}${quote}${after}>`;
+      }
+
+      const newSrc = resolveInlineImageDisplaySrc(attachment, src);
+      const fallback = attachment.downloadUrl ?? attachment.url ?? "";
+      const fallbackAttr =
+        fallback && fallback !== newSrc
+          ? ` data-inline-download-url="${escapeHtmlAttrValue(fallback)}"`
+          : "";
+
+      return `<img${before} src=${quote}${newSrc}${quote}${fallbackAttr}${after}>`;
     },
   );
-  return DOMPurify.sanitize(replaced);
+  return String(DOMPurify.sanitize(replaced, INLINE_COMMENT_HTML_PURIFY));
 }
 
 /**

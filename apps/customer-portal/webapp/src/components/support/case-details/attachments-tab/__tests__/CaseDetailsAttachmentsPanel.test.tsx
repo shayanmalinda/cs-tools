@@ -16,9 +16,12 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, createTheme } from "@wso2/oxygen-ui";
 import CaseDetailsAttachmentsPanel from "@case-details-attachments/CaseDetailsAttachmentsPanel";
 import type { CaseAttachment } from "@models/responses";
+import { ErrorBannerProvider } from "@context/error-banner/ErrorBannerContext";
+import LoggerProvider from "@context/logger/LoggerProvider";
 
 const mockCaseAttachments: CaseAttachment[] = [
   {
@@ -55,6 +58,10 @@ vi.mock("../UploadAttachmentModal", () => ({
   default: () => null,
 }));
 
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+
 vi.mock("@api/useGetCaseAttachments", () => ({
   useGetCaseAttachments: vi.fn(() => ({
     data: {
@@ -81,9 +88,15 @@ vi.mock("@api/useGetCaseAttachments", () => ({
 
 function renderPanel(caseId = "case-1") {
   return render(
-    <ThemeProvider theme={createTheme()}>
-      <CaseDetailsAttachmentsPanel caseId={caseId} />
-    </ThemeProvider>,
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={createTheme()}>
+        <LoggerProvider config={{ level: "ERROR", prefix: "Test" }}>
+          <ErrorBannerProvider>
+            <CaseDetailsAttachmentsPanel caseId={caseId} />
+          </ErrorBannerProvider>
+        </LoggerProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   );
 }
 

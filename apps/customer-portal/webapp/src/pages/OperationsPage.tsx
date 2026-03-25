@@ -44,7 +44,9 @@ import { PROJECT_TYPE_LABELS } from "@constants/projectDetailsConstants";
 export default function OperationsPage(): JSX.Element {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
-  const { data: project } = useGetProjectDetails(projectId || "");
+  const { data: project, isLoading: isProjectLoading } = useGetProjectDetails(
+    projectId || "",
+  );
   const projectTypeLabel = project?.type?.label;
 
   const isManagedCloudSubscription =
@@ -119,25 +121,27 @@ export default function OperationsPage(): JSX.Element {
   const srReady = !isServiceRequestEnabled || srStats !== undefined;
   const crReady = !isChangeRequestEnabled || crStats !== undefined;
 
-  // Only create stats object when all enabled sources have returned data
+  // Avoid an empty stats flash before project type is known (enables correct queries).
   const stats: Partial<Record<OperationsStatKey, number>> | undefined =
-    srReady && crReady
-      ? {
-          ...(isServiceRequestEnabled &&
-            activeServiceRequests !== undefined && {
-              activeServiceRequests,
-            }),
-          ...(isChangeRequestEnabled &&
-            activeChangeRequests !== undefined && {
-              activeChangeRequests,
-            }),
-          ...(completedThisMonth > 0 && { completedThisMonth }),
-          ...(isChangeRequestEnabled &&
-            scheduledCrCount > 0 && {
-              upcomingChanges: scheduledCrCount,
-            }),
-        }
-      : undefined;
+    isProjectLoading || !project
+      ? undefined
+      : srReady && crReady
+        ? {
+            ...(isServiceRequestEnabled &&
+              activeServiceRequests !== undefined && {
+                activeServiceRequests,
+              }),
+            ...(isChangeRequestEnabled &&
+              activeChangeRequests !== undefined && {
+                activeChangeRequests,
+              }),
+            ...(completedThisMonth > 0 && { completedThisMonth }),
+            ...(isChangeRequestEnabled &&
+              scheduledCrCount > 0 && {
+                upcomingChanges: scheduledCrCount,
+              }),
+          }
+        : undefined;
 
   const isError =
     (isServiceRequestEnabled && isSrStatsError) ||
@@ -166,7 +170,10 @@ export default function OperationsPage(): JSX.Element {
       <Box>
         <SupportStatGrid<OperationsStatKey>
           isLoading={
-            stats === undefined && (isSrStatsLoading || isCrStatsLoading)
+            isProjectLoading ||
+            (stats === undefined &&
+              ((isServiceRequestEnabled && isSrStatsLoading) ||
+                (isChangeRequestEnabled && isCrStatsLoading)))
           }
           isError={isError}
           entityName="operations"
@@ -211,7 +218,7 @@ export default function OperationsPage(): JSX.Element {
                 >
                   <OutstandingCasesList
                     cases={serviceRequests}
-                    isLoading={isSrLoading}
+                    isLoading={isProjectLoading || isSrLoading}
                     onCaseClick={
                       projectId
                         ? (c) =>
@@ -244,7 +251,7 @@ export default function OperationsPage(): JSX.Element {
                 >
                   <OutstandingChangeRequestsList
                     changeRequests={changeRequests}
-                    isLoading={isCrLoading}
+                    isLoading={isProjectLoading || isCrLoading}
                     onItemClick={
                       projectId
                         ? (cr) =>

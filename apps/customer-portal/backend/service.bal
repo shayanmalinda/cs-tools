@@ -4544,17 +4544,17 @@ isolated service / on new websocket:Listener(wsPort) {
         } else {
             // Fallback: extract x-user-id-token from Sec-WebSocket-Protocol header.
             // When routed through Choreo, the gateway consumes the auth token and forwards
-            // only the remaining subprotocol value (the x-user-id-token) as the header.
+            // only the remaining subprotocol values as the header.
+            // Format from client: "choreo-oauth2-token, <accessToken>, cs-customer-portal, <x-user-id-token>"
+            // After Choreo strips first two: "cs-customer-portal, <x-user-id-token>"
             string|error protocolHeader = req.getHeader("Sec-WebSocket-Protocol");
             if protocolHeader is error {
                 log:printError(string `No auth headers found for project: ${sessionId}`);
                 return error websocket:UpgradeError(ERR_MSG_USER_INFO_HEADER_NOT_FOUND);
             }
-            // Choreo forwards only the x-user-id-token as the raw header value.
-            // For direct connections (e.g., Postman), the format may be comma-separated:
-            // "choreo-oauth2-token, <accessToken>, <x-user-id-token>"
             string[] parts = re `,`.split(protocolHeader);
             userIdToken = parts[parts.length() - 1].trim();
+            log:printInfo(string `Extracted x-user-id-token from Sec-WebSocket-Protocol for project: ${sessionId}, parts count: ${parts.length()}`);
         }
         // Decode the user ID token to extract user info (email, userId)
         authorization:UserInfoPayload|error userInfo = authorization:getUserInfoFromTokens(userIdToken);
@@ -4562,7 +4562,7 @@ isolated service / on new websocket:Listener(wsPort) {
             log:printError(string `WebSocket auth failed for project: ${sessionId}`, userInfo);
             return error websocket:UpgradeError(ERR_MSG_UNAUTHORIZED_ACCESS);
         }
-        log:printInfo(string `WebSocket upgrade successful for project: ${sessionId}`);
+        log:printInfo(string `WebSocket upgrade successful for project: ${sessionId}, user: ${userInfo.email}`);
         return new WsProxyService(sessionId, userInfo);
     }
 }

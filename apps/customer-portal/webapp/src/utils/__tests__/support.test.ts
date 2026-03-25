@@ -52,6 +52,7 @@ import {
   trimLeadingBr,
   convertCodeTagsToHtml,
   replaceInlineImageSources,
+  extractInlineImageRefId,
   formatCommentDate,
   formatUtcToLocal,
   formatDateOnly,
@@ -651,6 +652,14 @@ describe("support utils", () => {
   });
 
   describe("replaceInlineImageSources", () => {
+    it("extractInlineImageRefId parses absolute ServiceNow .iix URLs", () => {
+      expect(
+        extractInlineImageRefId(
+          "https://wso2sndev.wso2.com/a133c8cc1bff76900bb3da47b04bcb67.iix",
+        ),
+      ).toBe("a133c8cc1bff76900bb3da47b04bcb67");
+    });
+
     it("should return empty string for empty html", () => {
       expect(replaceInlineImageSources("")).toBe("");
     });
@@ -684,7 +693,7 @@ describe("support utils", () => {
       expect(result).toContain("https://cdn.example.com/att.png");
     });
 
-    it("should preserve absolute .iix src even when matching attachment exists", () => {
+    it("should use same-origin .iix as img src and keep download URL as fallback attr", () => {
       const html =
         '<img src="https://wso2sndev.wso2.com/att456.iix" alt="inline">';
       const attachments = [
@@ -694,8 +703,9 @@ describe("support utils", () => {
         },
       ];
       const result = replaceInlineImageSources(html, attachments);
-      expect(result).toContain("https://wso2sndev.wso2.com/att456.iix");
-      expect(result).not.toContain("sys_attachment.do");
+      expect(result).toContain('src="https://wso2sndev.wso2.com/att456.iix"');
+      expect(result).toContain("data-inline-download-url=");
+      expect(result).toContain("sys_attachment.do");
     });
 
     it("should handle single-quoted src", () => {
