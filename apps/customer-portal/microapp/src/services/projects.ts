@@ -174,8 +174,9 @@ export const projects = {
       initialPageParam: 0,
       getNextPageParam: (lastPage) => {
         const { offset, limit, totalRecords } = lastPage.pagination;
-        const maxOffset = Math.ceil(totalRecords / limit);
-        return offset >= maxOffset ? undefined : offset + 1;
+        const nextOffset = offset + 1;
+        const totalPages = Math.ceil(totalRecords / limit);
+        return nextOffset >= totalPages ? undefined : nextOffset;
       },
     }),
 
@@ -192,8 +193,9 @@ export const projects = {
       initialPageParam: 0,
       getNextPageParam: (lastPage) => {
         const { offset, limit, totalRecords } = lastPage.pagination;
-        const maxOffset = Math.ceil(totalRecords / limit);
-        return offset >= maxOffset ? undefined : offset + 1;
+        const nextOffset = offset + 1;
+        const totalPages = Math.ceil(totalRecords / limit);
+        return nextOffset >= totalPages ? undefined : nextOffset;
       },
     }),
 };
