@@ -4523,6 +4523,9 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
 }
 
 # WebSocket service to proxy messages between the browser and the upstream Python AI chat agent for real-time communication in chat sessions.
+@websocket:ServiceConfig {
+    subProtocols: ["cs-customer-portal"]
+}
 isolated service / on new websocket:Listener(wsPort) {
 
     # Upgrade an HTTP request to WebSocket for a given chat session.
