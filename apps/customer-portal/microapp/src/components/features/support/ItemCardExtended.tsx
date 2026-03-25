@@ -136,10 +136,6 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
               <Typography variant="caption" color="text.secondary">
                 {(() => {
                   switch (type) {
-                    case "case":
-                      return "Created";
-                    case "chat":
-                      return "Started";
                     case "service":
                       return "Assignee";
                     case "change":
@@ -150,10 +146,6 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
               <Typography variant="caption">
                 {(() => {
                   switch (type) {
-                    case "case":
-                      return dayjs(props.createdOn).fromNow();
-                    case "chat":
-                      return dayjs(props.createdOn).fromNow();
                     case "service":
                       return props.assignee ?? "N/A";
                     case "change":
@@ -164,15 +156,14 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
             </Stack>
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            Updated &nbsp;
             {(() => {
               switch (type) {
                 case "case":
                 case "chat":
                 case "service":
-                  return dayjs(props.createdOn).fromNow();
+                  return `Created ${dayjs(props.createdOn).fromNow()}`;
                 case "change":
-                  return dayjs(props.updatedOn).fromNow();
+                  return `Updated ${dayjs(props.updatedOn).fromNow()}`;
               }
             })()}
           </Typography>
