@@ -63,8 +63,8 @@ export default function CreateCasePage() {
     validationSchema: createCaseValidationSchema,
     validateOnBlur: true,
     validateOnChange: true,
-    onSubmit: (values) => {
-      mutation.mutate({
+    onSubmit: async (values) => {
+      mutation.mutateAsync({
         type: "default_case",
         projectId: values.project,
         deploymentId: values.deployment,
@@ -331,7 +331,9 @@ export default function CreateCasePage() {
           <Button
             type="submit"
             variant="contained"
-            startIcon={formik.isSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined}
+            startIcon={
+              formik.isSubmitting || mutation.isPending ? <CircularProgress size={16} color="inherit" /> : undefined
+            }
             sx={{ textTransform: "initial" }}
           >
             {formik.isSubmitting ? "Saving..." : "Create Case"}
