@@ -19,11 +19,10 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Stack,
   Typography,
 } from "@wso2/oxygen-ui";
-import { ArrowLeft, Send, PlusCircle } from "@wso2/oxygen-ui-icons-react";
+import { ArrowLeft, Send } from "@wso2/oxygen-ui-icons-react";
 import { useState, useRef, useCallback, useMemo, type JSX } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import Editor from "@components/common/rich-text-editor/Editor";
@@ -111,15 +110,7 @@ export default function DescribeIssuePage(): JSX.Element {
     showError,
   ]);
 
-  const handleCreateCase = useCallback(() => {
-    if (!projectId) return;
-    navigate(`/projects/${projectId}/support/chat/create-case`, {
-      state: { skipChat: true },
-    });
-  }, [projectId, navigate]);
-
-  const isSubmitDisabled =
-    !projectId || !plainText.trim();
+  const isSubmitDisabled = !projectId || !plainText.trim();
 
   return (
     <Box
@@ -212,27 +203,14 @@ export default function DescribeIssuePage(): JSX.Element {
             >
               <Button
                 variant="contained"
-                color="primary"
-                startIcon={<PlusCircle size={18} />}
-                onClick={handleCreateCase}
-                disabled={!projectId}
-              >
-                Create Case
-              </Button>
-              <Button
-                variant="contained"
                 color="warning"
-                startIcon={
-                  isLoadingAfterClick ? (
-                    <CircularProgress color="inherit" size={18} />
-                  ) : (
-                    <Send size={18} />
-                  )
-                }
+                startIcon={<Send size={18} />}
                 onClick={handleSubmit}
+                loading={isLoadingAfterClick}
+                loadingPosition="start"
                 disabled={isSubmitDisabled}
               >
-                {isLoadingAfterClick ? "Getting help…" : "Submit & Get Help"}
+                Submit & Get Help
               </Button>
             </Box>
           </Stack>

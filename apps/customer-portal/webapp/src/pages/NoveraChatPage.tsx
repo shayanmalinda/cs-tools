@@ -105,6 +105,7 @@ export default function NoveraChatPage(): JSX.Element {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch: refetchMessages,
   } = useGetConversationMessages(urlConversationId || "", { pageSize: 10 });
   const [isCreateCaseLoading, setIsCreateCaseLoading] = useState(false);
   const [isWaitingForClassification, setIsWaitingForClassification] =
@@ -180,6 +181,22 @@ export default function NoveraChatPage(): JSX.Element {
 
     setMessages(convertedMessages);
   }, [urlConversationId, conversationHistory, messages.length]);
+
+  // Refetch messages when user returns from create-case page (detects navigate back)
+  useEffect(() => {
+    if (!urlConversationId) return;
+
+    const handleRefetch = () => {
+      refetchMessages();
+    };
+
+    // Listen for visibility changes (when user returns to tab)
+    document.addEventListener("visibilitychange", handleRefetch);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleRefetch);
+    };
+  }, [urlConversationId, refetchMessages]);
 
   // Update URL with conversationId from describe-issue flow
   useEffect(() => {
