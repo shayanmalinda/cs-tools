@@ -55,57 +55,7 @@ import ChatInput from "@components/support/novera-ai-assistant/novera-chat-page/
 import ChatMessageList from "@components/support/novera-ai-assistant/novera-chat-page/ChatMessageList";
 import ChatSkeleton from "@components/support/novera-ai-assistant/novera-chat-page/ChatSkeleton";
 import { ROUTE_PREVIOUS_PAGE } from "@/constants/commonConstants";
-
-// Split long server `token` payloads so each tick appends a small, readable slice.
-function splitTokenForTyping(text: string, maxCharsPerTick: number): string[] {
-  const cap = Math.max(1, maxCharsPerTick);
-  if (text.length <= cap) return [text];
-  const parts: string[] = [];
-  for (let i = 0; i < text.length; i += cap) {
-    parts.push(text.slice(i, i + cap));
-  }
-  return parts;
-}
-
-// Remove `description` key noise from streamed token chunks (partial JSON fragments).
-function sanitizeStreamToken(token: string): string {
-  return token
-    .replace(/"description"\s*:\s*"((?:\\.|[^"\\])*)"\s*,?\s*/gi, "")
-    .replace(/'description'\s*:\s*'((?:\\.|[^'\\])*)'\s*,?\s*/gi, "")
-    .replace(/\{\s*"description"\s*:\s*"((?:\\.|[^"\\])*)"\s*,\s*/gi, "{")
-    .replace(/\{description\s*:\s*/gi, "")
-    .replace(/\bdescription\s*:\s*/gi, "")
-    .replace(/\*\*/g, "")
-    .replace(/\n{3,}/g, "\n\n");
-}
-
-// REST conversation history sometimes stores bot content as JSON; show `message` only.
-function displayTextFromConversationContent(
-  raw: string,
-  isBot: boolean,
-): string {
-  if (!isBot) return raw;
-  const trimmed = raw.trim();
-  if (!trimmed.startsWith("{")) return raw;
-  try {
-    const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-    const onlyMessage = getFinalMessageFromPayload(parsed);
-    return onlyMessage || "";
-  } catch {
-    return raw;
-  }
-}
-
-// Use only assistant `message` for the completed turn; ignore `description`.
-function getFinalMessageFromPayload(payload: Record<string, unknown>): string {
-  const raw = payload.message;
-  if (typeof raw === "string") return raw;
-  if (raw != null && typeof raw === "object" && "message" in raw) {
-    const inner = (raw as { message?: unknown }).message;
-    if (typeof inner === "string") return inner;
-  }
-  return "";
-}
+import { displayTextFromConversationContent, getFinalMessageFromPayload, sanitizeStreamToken, splitTokenForTyping } from "@/utils/chat";
 
 /**
  * NoveraChatPage component to provide AI-powered support assistance.
