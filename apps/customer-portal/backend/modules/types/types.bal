@@ -290,6 +290,8 @@ public type Project record {|
     ReferenceItem 'type;
     # Novera agent enabled status for the project
     boolean hasAgent;
+    # Knowledge base references enabled status for the project
+    boolean hasKbReferences;
     # Active cases count
     int activeCasesCount;
     # Active chats/conversations count
@@ -326,6 +328,8 @@ public type ProjectResponse record {|
         entity:IdString id;
         # Indicates whether the agent is enabled for the account
         boolean hasAgent;
+        # Indicates whether the account enabled knowledge base references
+        boolean hasKbReferences;
         # Name of the account
         string? name;
         # Activation date

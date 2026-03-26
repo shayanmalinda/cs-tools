@@ -114,6 +114,8 @@ public type Project record {|
     ReferenceTableItem 'type;
     # Agent enabled status for the project
     boolean hasAgent;
+    # Knowledge base references enabled status for the project
+    boolean hasKbReferences;
     # Active cases count
     int activeCasesCount;
     # Active chats/conversations count
@@ -197,6 +199,8 @@ public type Account record {|
     IdString id;
     # Indicates whether the agent is enabled for the account
     boolean hasAgent;
+    # Indicates whether the account enabled knowledge base references
+    boolean hasKbReferences;
     # Name of the account
     string? name;
     # Activation date
@@ -217,7 +221,9 @@ public type Account record {|
 # Payload for updating a project.
 public type ProjectUpdatePayload record {|
     # Indicates whether the agent is enabled for the project
-    boolean hasAgent;
+    boolean hasAgent?;
+    # Indicates whether the project enabled knowledge base references
+    boolean hasKbReferences?;
 |};
 
 # Response from updating a project.

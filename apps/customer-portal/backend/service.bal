@@ -392,6 +392,16 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
+        string? validateProjectUpdatePayload = entity:validateProjectUpdatePayload(payload);
+        if validateProjectUpdatePayload is string {
+            log:printWarn(validateProjectUpdatePayload);
+            return <http:BadRequest>{
+                body: {
+                    message: validateProjectUpdatePayload
+                }
+            };
+        }
+
         entity:ProjectUpdateResponse|error response = entity:updateProject(userInfo.idToken, id, payload);
         if response is error {
             if getStatusCode(response) == http:STATUS_FORBIDDEN {

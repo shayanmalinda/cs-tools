@@ -836,6 +836,7 @@ public isolated function mapProjectsResponse(entity:ProjectsResponse response) r
             createdOn: project.createdOn,
             'type: {id: project.'type.id, label: project.'type.name},
             hasAgent: project.hasAgent,
+            hasKbReferences: project.hasKbReferences,
             activeCasesCount: project.activeCasesCount,
             activeChatsCount: project.activeChatsCount,
             slaStatus: project.slaStatus
@@ -862,6 +863,7 @@ public isolated function mapProjectResponse(entity:ProjectResponse response) ret
     account: {
         id: response.account.id,
         hasAgent: response.account.hasAgent,
+        hasKbReferences: response.account.hasKbReferences,
         name: response.account.name,
         activationDate: response.account.activationDate,
         deactivationDate: response.account.deactivationDate,

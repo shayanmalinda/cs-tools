@@ -2310,12 +2310,10 @@ components:
           type: string
           description: Allowed domain list of the account
           nullable: true
-          default: ""
         classification:
           type: string
           description: Account classification
           nullable: true
-          default: ""
         isPartner:
           type: boolean
           description: Whether the account is a partner or not
@@ -3952,6 +3950,16 @@ components:
           type: string
         method:
           type: string
+    FeatureFlags:
+      required:
+      - usageMetricsEnabled
+      type: object
+      properties:
+        usageMetricsEnabled:
+          type: boolean
+          description: Indicates if the usage and metrics page is enabled or not
+      additionalProperties: false
+      description: "[Configurable] Feature flags."
     IdString:
       pattern: "^[A-Fa-f0-9]{32}$"
       type: string
@@ -4044,6 +4052,7 @@ components:
       description: Payload for updating membership security flag.
     MetadataResponse:
       required:
+      - featureFlags
       - timeZones
       type: object
       properties:
@@ -4052,6 +4061,8 @@ components:
           description: List of available time zones
           items:
             $ref: '#/components/schemas/ReferenceItem'
+        featureFlags:
+          $ref: '#/components/schemas/FeatureFlags'
       additionalProperties: false
       description: Metadata.
     Pagination:
@@ -4523,6 +4534,7 @@ components:
           - activationDate
           - deactivationDate
           - hasAgent
+          - hasKbReferences
           - id
           - name
           - ownerEmail
@@ -4536,6 +4548,9 @@ components:
             hasAgent:
               type: boolean
               description: Indicates whether the agent is enabled for the account
+            hasKbReferences:
+              type: boolean
+              description: Indicates whether the account enabled knowledge base references
             name:
               type: string
               description: Name of the account
@@ -4706,13 +4721,14 @@ components:
           format: double
       description: Project time cards statistics response.
     ProjectUpdatePayload:
-      required:
-      - hasAgent
       type: object
       properties:
         hasAgent:
           type: boolean
           description: Indicates whether the agent is enabled for the project
+        hasKbReferences:
+          type: boolean
+          description: Indicates whether the project enabled knowledge base references
       additionalProperties: false
       description: Payload for updating a project.
     RecentActivity:

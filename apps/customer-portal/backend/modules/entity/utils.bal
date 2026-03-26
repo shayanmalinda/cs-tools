@@ -309,3 +309,14 @@ public isolated function validateChangeRequestUpdatePayload(ChangeRequestUpdateP
     }
     return;
 }
+
+# Validate project update payload.
+#
+# + payload - Project update payload
+# + return - Validation error message or null if valid
+public isolated function validateProjectUpdatePayload(ProjectUpdatePayload payload) returns string? {
+    if payload.keys().length() == 0 || payload.keys().length() > 1 {
+        return "Only one field can be updated at a time.";
+    }
+    return;
+}
