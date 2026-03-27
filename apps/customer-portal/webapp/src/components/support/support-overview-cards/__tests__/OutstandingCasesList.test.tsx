@@ -19,6 +19,11 @@ import { describe, expect, it, vi } from "vitest";
 import OutstandingCasesList from "@components/support/support-overview-cards/OutstandingCasesList";
 import type { CaseListItem } from "@models/responses";
 
+vi.mock("@utils/support", () => ({
+  formatRelativeTime: vi.fn(() => "2 hours ago"),
+  stripHtml: vi.fn((html) => html),
+}));
+
 const mockCases: CaseListItem[] = [
   {
     id: "1",
@@ -27,7 +32,7 @@ const mockCases: CaseListItem[] = [
     createdOn: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     title: "API Gateway timeout issues",
     description: "",
-    assignedEngineer: "Sarah Chen",
+    assignedEngineer: { id: "eng-1", label: "Sarah Chen" },
     project: { id: "p1", label: "Project 1" },
     issueType: null,
     deployedProduct: null,
@@ -74,6 +79,5 @@ describe("OutstandingCasesList", () => {
     render(<OutstandingCasesList cases={mockCases} />);
     expect(screen.getByText("API Gateway timeout issues")).toBeInTheDocument();
     fireEvent.click(screen.getByText("API Gateway timeout issues"));
-    // No crash; behavior is just no navigation
   });
 });

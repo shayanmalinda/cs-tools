@@ -17,7 +17,23 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import Header from "@components/common/header/Header";
-import { mockProjects } from "@models/mockData";
+
+const mockProjects = [
+  {
+    id: "1",
+    name: "Project A",
+    key: "PA",
+    createdOn: "2025-01-01",
+    description: "Desc A",
+  },
+  {
+    id: "2",
+    name: "Project B",
+    key: "PB",
+    createdOn: "2025-01-02",
+    description: "Desc B",
+  },
+];
 
 // Mock @wso2/oxygen-ui
 vi.mock("@wso2/oxygen-ui", () => ({
@@ -117,16 +133,20 @@ vi.mock("@/hooks/useLogger", () => ({
 
 const mockUseSearchProjects = vi.fn(() => ({
   data: {
-    projects: mockProjects,
+    pages: [{ projects: mockProjects, totalRecords: mockProjects.length }],
   },
   isLoading: false,
   isError: false,
 })) as any;
 
-vi.mock("@/api/useGetProjects", () => ({
-  default: (searchData: any, fetchAll: any) =>
-    mockUseSearchProjects(searchData, fetchAll),
-}));
+vi.mock("@api/useGetProjects", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@api/useGetProjects")>();
+  return {
+    ...actual,
+    default: (searchData: unknown, fetchAll: unknown) =>
+      mockUseSearchProjects(searchData, fetchAll),
+  };
+});
 
 // Mock sub-components
 vi.mock("../Brand", () => ({
@@ -193,7 +213,7 @@ describe("Header", () => {
     mockParams.projectId = "";
     mockUseSearchProjects.mockReturnValue({
       data: {
-        projects: mockProjects,
+        pages: [{ projects: mockProjects, totalRecords: mockProjects.length }],
       },
       isLoading: false,
       isError: false,
@@ -212,7 +232,7 @@ describe("Header", () => {
   });
 
   it("should render toggle and switcher on a project page", () => {
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
 
     render(<Header onToggleSidebar={mockOnToggleSidebar} />);
@@ -222,7 +242,7 @@ describe("Header", () => {
   });
 
   it("should call onToggleSidebar when toggle is clicked", () => {
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
 
     render(<Header onToggleSidebar={mockOnToggleSidebar} />);
@@ -232,7 +252,7 @@ describe("Header", () => {
   });
 
   it("should navigate when a different project is selected", () => {
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
 
     render(<Header onToggleSidebar={mockOnToggleSidebar} />);
@@ -241,7 +261,7 @@ describe("Header", () => {
     fireEvent.change(select, { target: { value: mockProjects[1].id } });
 
     expect(mockNavigate).toHaveBeenCalledWith(
-      `/${mockProjects[1].id}/dashboard`,
+      `/projects/${mockProjects[1].id}/dashboard`,
     );
     expect(mockLogger.debug).toHaveBeenCalledWith(
       expect.stringContaining("Switching to project"),
@@ -271,7 +291,7 @@ describe("Header", () => {
   });
 
   it("should clear selection when projectId is invalid", () => {
-    mockLocation.pathname = "/invalid-project/dashboard";
+    mockLocation.pathname = "/projects/invalid-project/dashboard";
     mockParams.projectId = "invalid-project";
 
     render(<Header onToggleSidebar={mockOnToggleSidebar} />);
@@ -299,10 +319,12 @@ describe("Header", () => {
   });
 
   it("should pass isLoading to ProjectSwitcher", () => {
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
     mockUseSearchProjects.mockReturnValue({
-      data: { projects: mockProjects },
+      data: {
+        pages: [{ projects: mockProjects, totalRecords: mockProjects.length }],
+      },
       isLoading: true,
       isError: false,
     });
@@ -314,7 +336,7 @@ describe("Header", () => {
   });
 
   it("should pass isAuthLoading as isLoading into ProjectSwitcher", () => {
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
     mockUseAsgardeo.mockReturnValue({ isLoading: true });
 
@@ -325,7 +347,7 @@ describe("Header", () => {
   });
 
   it("should pass isError to ProjectSwitcher", () => {
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
     mockUseSearchProjects.mockReturnValue({
       data: null,

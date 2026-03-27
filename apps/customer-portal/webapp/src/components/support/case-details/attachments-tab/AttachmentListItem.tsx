@@ -14,13 +14,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Paper, Stack, Typography } from "@wso2/oxygen-ui";
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Paper,
+  Stack,
+  Typography,
+} from "@wso2/oxygen-ui";
 import {
   Download,
   File,
   FileArchive,
   FileText,
   Image,
+  PencilLine,
+  Trash2,
 } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
 import type { CaseAttachment } from "@models/responses";
@@ -29,6 +38,11 @@ import { formatFileSize, getAttachmentFileCategory } from "@utils/support";
 export interface AttachmentListItemProps {
   attachment: CaseAttachment;
   onDownload: (attachment: CaseAttachment) => void;
+  onDelete?: (attachment: CaseAttachment) => void;
+  onEdit?: (attachment: CaseAttachment) => void;
+  hideDescription?: boolean;
+  /** When true, the download action shows a spinner and is disabled. */
+  isDownloadLoading?: boolean;
 }
 
 // TODO: Use attachment category enum when introduced (see support.ts AttachmentFileCategory).
@@ -51,12 +65,16 @@ function getAttachmentIcon(att: CaseAttachment): JSX.Element {
 /**
  * Single attachment row with icon, name, meta, and download button.
  *
- * @param {AttachmentListItemProps} props - Attachment and download handler.
+ * @param {AttachmentListItemProps} props - Attachment, handlers, optional download loading.
  * @returns {JSX.Element} The attachment list item.
  */
 export default function AttachmentListItem({
   attachment,
   onDownload,
+  onDelete,
+  onEdit,
+  hideDescription = false,
+  isDownloadLoading = false,
 }: AttachmentListItemProps): JSX.Element {
   return (
     <Paper
@@ -90,6 +108,21 @@ export default function AttachmentListItem({
         <Typography variant="body2" color="text.primary" noWrap>
           {attachment.name}
         </Typography>
+        {!hideDescription && attachment.description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              mt: 0.25,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {attachment.description}
+          </Typography>
+        )}
         <Stack
           direction="row"
           spacing={1}
@@ -114,14 +147,42 @@ export default function AttachmentListItem({
           </Typography>
         </Stack>
       </Box>
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<Download size={16} aria-hidden />}
-        onClick={() => onDownload(attachment)}
-      >
-        Download
-      </Button>
+      <Stack direction="row" spacing={0.25}>
+        {onEdit && (
+          <IconButton
+            size="small"
+            aria-label={`Edit ${attachment.name}`}
+            sx={{ color: "text.secondary" }}
+            onClick={() => onEdit(attachment)}
+          >
+            <PencilLine size={16} aria-hidden />
+          </IconButton>
+        )}
+        {onDelete && (
+          <IconButton
+            size="small"
+            aria-label={`Delete ${attachment.name}`}
+            sx={{ color: "text.secondary" }}
+            onClick={() => onDelete(attachment)}
+          >
+            <Trash2 size={16} aria-hidden />
+          </IconButton>
+        )}
+        <IconButton
+          size="small"
+          aria-label={`Download ${attachment.name}`}
+          aria-busy={isDownloadLoading || undefined}
+          sx={{ color: "text.secondary" }}
+          disabled={isDownloadLoading}
+          onClick={() => onDownload(attachment)}
+        >
+          {isDownloadLoading ? (
+            <CircularProgress color="inherit" size={16} aria-hidden />
+          ) : (
+            <Download size={16} aria-hidden />
+          )}
+        </IconButton>
+      </Stack>
     </Paper>
   );
 }

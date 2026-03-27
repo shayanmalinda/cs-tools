@@ -14,19 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Paper, alpha, useTheme } from "@wso2/oxygen-ui";
+import { Box, Paper, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
 import { useMemo, useState, type JSX } from "react";
+import { useLocation } from "react-router";
 import type { CaseDetails } from "@models/responses";
-import useGetCaseAttachments from "@api/useGetCaseAttachments";
-import { getStatusColor } from "@utils/casesTable";
+import { useGetCaseAttachments } from "@api/useGetCaseAttachments";
+import { useGetCallRequests } from "@api/useGetCallRequests";
+import useGetProjectFilters from "@api/useGetProjectFilters";
 import {
+  getStatusColor,
   resolveColorFromTheme,
   getStatusIconElement,
   getInitials,
+  isSecurityReportAnalysisType,
 } from "@utils/support";
+import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import CaseDetailsBackButton from "@case-details/CaseDetailsBackButton";
 import CaseDetailsHeader from "@case-details/CaseDetailsHeader";
 import CaseDetailsActionRow from "@case-details/CaseDetailsActionRow";
+import SecurityReportAnalysisHeader from "@case-details/SecurityReportAnalysisHeader";
 import CaseDetailsTabs from "@case-details/CaseDetailsTabs";
 import CaseDetailsTabPanels from "@case-details/CaseDetailsTabPanels";
 import CaseDetailsSkeleton from "@case-details/CaseDetailsSkeleton";
@@ -37,6 +43,10 @@ export interface CaseDetailsContentProps {
   isError: boolean;
   caseId: string;
   onBack: () => void;
+  onOpenRelatedCase?: () => void;
+  projectId?: string;
+  hideActionRow?: boolean;
+  showEngineerOnly?: boolean;
 }
 
 /**
@@ -51,12 +61,19 @@ export default function CaseDetailsContent({
   isError,
   caseId,
   onBack,
+  onOpenRelatedCase,
+  projectId = "",
+  hideActionRow = false,
+  showEngineerOnly = false,
 }: CaseDetailsContentProps): JSX.Element {
   const theme = useTheme();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState(0);
   const [focusMode, setFocusMode] = useState(false);
 
-  const statusLabel = data?.state?.label;
+  const isEngagementRoute = location.pathname.includes("/engagements/");
+
+  const statusLabel = data?.status?.label;
   const severityLabel = data?.severity?.label;
   const statusColorPath = getStatusColor(statusLabel ?? undefined);
   const resolvedStatusColor = resolveColorFromTheme(statusColorPath, theme);
@@ -82,10 +99,30 @@ export default function CaseDetailsContent({
   );
 
   const attachmentsQuery = useGetCaseAttachments(caseId);
-  const attachmentCount = attachmentsQuery.data?.totalRecords;
+  const attachmentCount = attachmentsQuery.data?.pages?.[0]?.totalRecords;
+
+  const resolvedProjectId = data?.project?.id ?? projectId;
+
+  // Derive state keys from filters so the queryKey matches CallsPanel exactly —
+  // React Query deduplicates the network call when both components are mounted.
+  const { data: projectFilters } = useGetProjectFilters(resolvedProjectId);
+  const callRequestStateKeys = useMemo<number[] | undefined>(() => {
+    if (!projectFilters?.callRequestStates) return undefined;
+    return projectFilters.callRequestStates
+      .map((s) => Number(s.id))
+      .filter((n) => !Number.isNaN(n));
+  }, [projectFilters]);
+
+  const callsQuery = useGetCallRequests(resolvedProjectId, caseId, callRequestStateKeys);
+  const callCount =
+    callsQuery.data?.pages?.[0]?.totalRecords ??
+    callsQuery.data?.pages?.flatMap((p) => p.callRequests ?? []).length ??
+    undefined;
 
   const assignedEngineer = data?.assignedEngineer;
   const engineerInitials = getInitials(assignedEngineer);
+
+  const isSecurityReportAnalysis = isSecurityReportAnalysisType(data?.type);
 
   if (isLoading) {
     return (
@@ -95,7 +132,10 @@ export default function CaseDetailsContent({
             onClick={onBack}
             sx={{ mb: 2, ml: -0.5, alignSelf: "flex-start" }}
           />
-          <CaseDetailsSkeleton />
+          <CaseDetailsSkeleton
+            hideActionRow={hideActionRow}
+            showEngineerOnly={showEngineerOnly}
+          />
         </Paper>
       </Box>
     );
@@ -115,34 +155,67 @@ export default function CaseDetailsContent({
       <Paper
         variant="outlined"
         sx={{
-          p: 2,
+          p: focusMode ? 0 : 2,
           flexShrink: 0,
           zIndex: 10,
           borderRadius: 0,
         }}
       >
-        <CaseDetailsBackButton onClick={onBack} />
+        {!focusMode && <CaseDetailsBackButton onClick={onBack} />}
 
-        {!focusMode && (
-          <>
-            <CaseDetailsHeader
-              caseNumber={data?.number}
-              title={data?.title}
-              severityLabel={severityLabel}
-              statusLabel={statusLabel}
-              statusChipIcon={statusChipIcon}
-              statusChipSx={statusChipSx}
-              isError={isError}
-              isLoading={isLoading}
-            />
+        {isError ? (
+          <Box
+            sx={{
+              mt: 2,
+              mb: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              py: 2,
+            }}
+          >
+            <ErrorIndicator entityName="case details" size="medium" />
+            <Box>
+              <Typography variant="body1" color="error" fontWeight={500}>
+                Failed to load case details
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Something went wrong while fetching the information.
+              </Typography>
+            </Box>
+          </Box>
+        ) : (
+          !focusMode && (
+            <>
+              <CaseDetailsHeader
+                caseNumber={data?.number}
+                title={data?.title}
+                severityLabel={severityLabel ?? undefined}
+                statusLabel={statusLabel}
+                statusChipIcon={statusChipIcon}
+                statusChipSx={statusChipSx}
+                isLoading={isLoading}
+              />
 
-            <CaseDetailsActionRow
-              assignedEngineer={assignedEngineer}
-              engineerInitials={engineerInitials}
-              isError={isError}
-              isLoading={isLoading}
-            />
-          </>
+              {isSecurityReportAnalysis ? (
+                <SecurityReportAnalysisHeader data={data} />
+              ) : (
+                (!hideActionRow || showEngineerOnly) && (
+                  <CaseDetailsActionRow
+                    assignedEngineer={assignedEngineer}
+                    engineerInitials={engineerInitials}
+                    statusLabel={statusLabel}
+                    closedOn={data?.closedOn}
+                    onOpenRelatedCase={onOpenRelatedCase}
+                    projectId={resolvedProjectId}
+                    caseId={caseId}
+                    isLoading={isLoading}
+                    showOnlyEngineer={showEngineerOnly}
+                  />
+                )
+              )}
+            </>
+          )
         )}
 
         <CaseDetailsTabs
@@ -151,6 +224,7 @@ export default function CaseDetailsContent({
           onChange={(_e, newValue) => setActiveTab(newValue)}
           onFocusModeToggle={() => setFocusMode((prev) => !prev)}
           attachmentCount={attachmentCount}
+          callCount={callCount}
         />
       </Paper>
 
@@ -173,6 +247,9 @@ export default function CaseDetailsContent({
           caseId={caseId}
           data={data}
           isError={isError}
+          projectId={projectId}
+          focusMode={focusMode}
+          isEngagement={isEngagementRoute}
         />
       </Box>
     </Box>

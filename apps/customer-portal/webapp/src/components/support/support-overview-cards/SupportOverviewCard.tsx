@@ -28,6 +28,7 @@ import {
 import { ArrowRight } from "@wso2/oxygen-ui-icons-react";
 import type { ComponentType } from "react";
 import type { JSX } from "react";
+import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 
 export interface SupportOverviewCardProps {
   title: string;
@@ -35,9 +36,18 @@ export interface SupportOverviewCardProps {
   icon: ComponentType<{ size?: number; color?: string }>;
   iconVariant?: "orange" | "blue";
   children: React.ReactNode;
-  footerButtonLabel: string;
-  onFooterClick: () => void;
+  footerButtonLabel?: string;
+  onFooterClick?: () => void;
+  footerButtons?: Array<{
+    label: string;
+    onClick?: () => void;
+  }>;
   sx?: SxProps<Theme>;
+  isError?: boolean;
+  headerAction?: {
+    label: string;
+    onClick?: () => void;
+  };
 }
 
 /**
@@ -54,7 +64,10 @@ export default function SupportOverviewCard({
   children,
   footerButtonLabel,
   onFooterClick,
+  footerButtons,
   sx,
+  isError,
+  headerAction,
 }: SupportOverviewCardProps): JSX.Element {
   const theme = useTheme();
   const paletteKey = iconVariant === "blue" ? "info" : "warning";
@@ -90,7 +103,7 @@ export default function SupportOverviewCard({
         >
           <Icon size={20} color={iconColor} />
         </Paper>
-        <Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="h6" color="text.primary">
             {title}
           </Typography>
@@ -98,6 +111,16 @@ export default function SupportOverviewCard({
             {subtitle}
           </Typography>
         </Box>
+        {headerAction && (
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={headerAction.onClick}
+            sx={{textTransform: "none", flexShrink: 0 }}
+          >
+            {headerAction.label}
+          </Button>
+        )}
       </Box>
 
       <Box
@@ -107,9 +130,15 @@ export default function SupportOverviewCard({
           gap: 1.5,
           flex: 1,
           width: "100%",
+          justifyContent: isError ? "center" : "flex-start",
+          alignItems: isError ? "center" : "stretch",
         }}
       >
-        {children}
+        {isError ? (
+          <ErrorIndicator entityName={title.toLowerCase()} size="medium" />
+        ) : (
+          children
+        )}
       </Box>
 
       <Box
@@ -120,20 +149,57 @@ export default function SupportOverviewCard({
           mt: 1,
         }}
       />
-      <Button
-        fullWidth
-        variant="text"
-        color="warning"
-        onClick={onFooterClick}
-        endIcon={<ArrowRight size={16} />}
-        sx={{
-          justifyContent: "space-between",
-          textTransform: "none",
-          fontWeight: 500,
-        }}
-      >
-        {footerButtonLabel}
-      </Button>
+      {footerButtons && footerButtons.length > 0 ? (
+        <Box
+          sx={{
+            display: "flex",
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 1,
+            overflow: "hidden",
+          }}
+        >
+          {footerButtons.map((btn, index) => (
+            <Button
+              key={index}
+              fullWidth
+              variant="text"
+              color="warning"
+              onClick={btn.onClick}
+              endIcon={<ArrowRight size={16} />}
+              sx={{
+                flex: 1,
+                justifyContent: "flex-start",
+                textTransform: "none",
+                fontWeight: 500,
+                borderRadius: 0,
+                borderRight: index < footerButtons.length - 1 ? 1 : 0,
+                borderColor: "divider",
+                "&:hover": {
+                  bgcolor: alpha(colors.orange[50], 0.5),
+                },
+              }}
+            >
+              {btn.label}
+            </Button>
+          ))}
+        </Box>
+      ) : (
+        <Button
+          fullWidth
+          variant="text"
+          color="warning"
+          onClick={onFooterClick}
+          endIcon={<ArrowRight size={16} />}
+          sx={{
+            justifyContent: "flex-start",
+            textTransform: "none",
+            fontWeight: 500,
+          }}
+        >
+          {footerButtonLabel}
+        </Button>
+      )}
     </Paper>
   );
 }

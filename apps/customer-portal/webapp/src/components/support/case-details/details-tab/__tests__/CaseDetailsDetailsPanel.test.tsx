@@ -17,8 +17,36 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import CaseDetailsDetailsPanel from "@case-details-details/CaseDetailsDetailsPanel";
-import { mockCaseDetails } from "@models/mockData";
 import { ThemeProvider, createTheme } from "@wso2/oxygen-ui";
+import type { CaseDetails } from "@models/responses";
+
+const mockCaseDetails: Partial<CaseDetails> = {
+  id: "case-001",
+  internalId: "INT-1",
+  number: "CS0001001",
+  createdOn: "2026-01-31 10:45:12",
+  updatedOn: "2026-02-10 23:47:57",
+  title: "Test case",
+  description: "Desc",
+  slaResponseTime: "129671000",
+  product: null,
+  account: { type: null, id: "acc-1", label: "Account" },
+  csManager: null,
+  assignedEngineer: null,
+  project: { id: "p1", label: "Project" },
+  type: { id: "1", label: "Incident" },
+  deployment: { id: "d1", label: "Production" },
+  deployedProduct: null,
+  parentCase: null,
+  conversation: null,
+  issueType: null,
+  severity: { id: "60", label: "S0" },
+  status: { id: "1", label: "Open" },
+  closedOn: null,
+  closedBy: null,
+  closeNotes: null,
+  hasAutoClosed: null,
+};
 
 vi.mock("@utils/casesTable", () => ({
   getStatusColor: () => "warning.main",
@@ -26,13 +54,13 @@ vi.mock("@utils/casesTable", () => ({
 }));
 
 function renderDetailsPanel(props: {
-  data?: typeof mockCaseDetails;
+  data?: Partial<CaseDetails>;
   isError?: boolean;
 } = {}) {
   return render(
     <ThemeProvider theme={createTheme()}>
       <CaseDetailsDetailsPanel
-        data={props.data ?? mockCaseDetails}
+        data={(props.data ?? mockCaseDetails) as CaseDetails}
         isError={props.isError ?? false}
       />
     </ThemeProvider>,
@@ -57,7 +85,7 @@ describe("CaseDetailsDetailsPanel", () => {
     expect(screen.getAllByText("--").length).toBeGreaterThan(0);
   });
 
-  it("should render case overview dates and SLA and assigned engineer", () => {
+  it("should render case overview dates and SLA", () => {
     renderDetailsPanel();
     expect(screen.getByText("Created Date")).toBeInTheDocument();
     expect(screen.getByText("2026-01-31 10:45:12")).toBeInTheDocument();
@@ -69,7 +97,6 @@ describe("CaseDetailsDetailsPanel", () => {
         /\d+\s+(?:hour|minute|day|second)s?/.test(content),
       ),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Assigned Engineer").length).toBeGreaterThan(0);
     expect(screen.getAllByText("--").length).toBeGreaterThan(0);
   });
 
@@ -86,14 +113,36 @@ describe("CaseDetailsDetailsPanel", () => {
     renderDetailsPanel();
     expect(screen.getByText("Customer Information")).toBeInTheDocument();
     expect(screen.getByText("Organization")).toBeInTheDocument();
-    expect(screen.getByText("Customer 3i")).toBeInTheDocument();
+    expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Account Type")).toBeInTheDocument();
-    expect(screen.getByText("Project")).toBeInTheDocument();
-    expect(screen.getByText("Customer Portal – Subscription")).toBeInTheDocument();
     expect(screen.getByText("CS Manager")).toBeInTheDocument();
+    expect(screen.getAllByText("Project").length).toBeGreaterThan(0);
   });
 
-  it("should display -- for null or undefined values", () => {
+  it("should render Closed Case Details section when case is closed", () => {
+    renderDetailsPanel({
+      data: {
+        ...mockCaseDetails,
+        status: { id: "3", label: "Closed" },
+        closedOn: "2026-02-20 01:34:44",
+        closedBy: { id: "bcc4881f", name: "Anuradha Basnayake" },
+        closeNotes: "Resolved successfully",
+      },
+    });
+    expect(screen.getByText("Closed Case Details")).toBeInTheDocument();
+    expect(screen.getByText("Closed On")).toBeInTheDocument();
+    expect(screen.getByText("Closed By")).toBeInTheDocument();
+    expect(screen.getByText("Close Notes")).toBeInTheDocument();
+    expect(screen.getByText("Anuradha Basnayake")).toBeInTheDocument();
+    expect(screen.getByText("Resolved successfully")).toBeInTheDocument();
+  });
+
+  it("should not render Closed Case Details when case is not closed", () => {
+    renderDetailsPanel();
+    expect(screen.queryByText("Closed Case Details")).not.toBeInTheDocument();
+  });
+
+  it("should display -- for null or undefined values and hide Assigned Engineer when null", () => {
     renderDetailsPanel({
       data: {
         ...mockCaseDetails,
@@ -106,6 +155,7 @@ describe("CaseDetailsDetailsPanel", () => {
     });
     const dashes = screen.getAllByText("--");
     expect(dashes.length).toBeGreaterThan(0);
+    expect(screen.queryByText("Assigned Engineer")).not.toBeInTheDocument();
   });
 
   it("should show ErrorStateIcon and error message when isError is true", () => {

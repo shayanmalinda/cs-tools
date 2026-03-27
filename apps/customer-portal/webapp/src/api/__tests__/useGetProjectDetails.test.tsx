@@ -18,34 +18,35 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import useGetProjectDetails from "@api/useGetProjectDetails";
-import { mockProjectDetails } from "@models/mockData";
 import type { ReactNode } from "react";
 
-vi.mock("@/constants/apiConstants", async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    API_MOCK_DELAY: 0,
-  };
-});
+const mockProjectDetail = {
+  type: "Subscription",
+  sfId: "a0dE200000CMR4HIAX",
+  account: {
+    id: "9460f8a91bfaa694a002c9d3604bcbbb",
+    name: "Customer Portal Account",
+    activationDate: "2025-08-25",
+    deactivationDate: "2030-01-01",
+    supportTier: "Enterprise",
+    region: "Asia",
+  },
+  id: "1890347890",
+  name: "WSO2 Con App",
+  key: "CON2026",
+  createdOn: "2025-07-17 09:06:14",
+  description: "Official conference management app",
+  hasSR: false,
+};
 
-// Mock @asgardeo/react
 vi.mock("@asgardeo/react", () => ({
   useAsgardeo: () => ({
-    getIdToken: vi.fn(),
+    getIdToken: vi.fn().mockResolvedValue("mock-token"),
     isSignedIn: true,
     isLoading: false,
   }),
 }));
 
-// Mock MockConfigProvider
-vi.mock("@/providers/MockConfigProvider", () => ({
-  useMockConfig: () => ({
-    isMockEnabled: true,
-  }),
-}));
-
-// Mock useLogger
 vi.mock("@/hooks/useLogger", () => ({
   useLogger: () => ({
     debug: vi.fn(),
@@ -71,10 +72,17 @@ const createWrapper = () => {
 describe("useGetProjectDetails", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (
+      window as unknown as {
+        config?: { CUSTOMER_PORTAL_BACKEND_BASE_URL?: string };
+      }
+    ).config = {
+      CUSTOMER_PORTAL_BACKEND_BASE_URL: "https://api.test",
+    };
   });
 
   it("should return project details for a valid project ID", async () => {
-    const validProjectId = mockProjectDetails[0].id;
+    const validProjectId = mockProjectDetail.id;
 
     const { result } = renderHook(() => useGetProjectDetails(validProjectId), {
       wrapper: createWrapper(),
@@ -85,7 +93,7 @@ describe("useGetProjectDetails", () => {
     const response = result.current.data;
     expect(response).toBeDefined();
     expect(response?.id).toBe(validProjectId);
-    expect(response?.name).toBe(mockProjectDetails[0].name);
+    expect(response?.name).toBe(mockProjectDetail.name);
   });
 
   it("should error for an invalid project ID", async () => {

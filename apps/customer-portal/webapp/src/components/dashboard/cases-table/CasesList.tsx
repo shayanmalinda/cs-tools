@@ -24,15 +24,20 @@ import {
   TableRow,
   Typography,
   Chip,
-  IconButton,
   Paper,
   Avatar,
   TablePagination,
+  alpha,
 } from "@wso2/oxygen-ui";
-import { ExternalLink, MoreVertical } from "@wso2/oxygen-ui-icons-react";
 import { type JSX, type ChangeEvent } from "react";
 import type { CaseSearchResponse, CaseListItem } from "@models/responses";
-import { getSeverityColor, getStatusColor } from "@utils/casesTable";
+import {
+  formatValue,
+  getInitials,
+  getStatusColor,
+  mapSeverityToDisplay,
+} from "@utils/support";
+import { getSeverityLegendColor } from "@constants/dashboardConstants";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import CasesTableSkeleton from "@components/dashboard/cases-table/CasesTableSkeleton";
 
@@ -44,8 +49,8 @@ interface CasesListProps {
   rowsPerPage: number;
   onPageChange: (event: unknown, newPage: number) => void;
   onRowsPerPageChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  /** When provided, case title is clickable and navigates to case details. */
   onCaseClick?: (caseItem: CaseListItem) => void;
+  showPagination?: boolean;
 }
 
 const CasesList = ({
@@ -57,6 +62,7 @@ const CasesList = ({
   onPageChange,
   onRowsPerPageChange,
   onCaseClick,
+  showPagination = true,
 }: CasesListProps): JSX.Element => {
   return (
     <>
@@ -65,12 +71,10 @@ const CasesList = ({
           <TableHead>
             <TableRow>
               <TableCell>Created</TableCell>
-              <TableCell>Case</TableCell>
-              <TableCell>Contact</TableCell>
+              <TableCell>Details</TableCell>
+              <TableCell>Severity</TableCell>
               <TableCell>Assigned to</TableCell>
-              <TableCell>Priority</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell align="right"></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -78,7 +82,7 @@ const CasesList = ({
               <CasesTableSkeleton rowsPerPage={rowsPerPage} />
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={5} align="center">
                   <Box
                     sx={{
                       display: "flex",
@@ -96,13 +100,20 @@ const CasesList = ({
               </TableRow>
             ) : data?.cases.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  No cases found.
+                <TableCell colSpan={5} align="center">
+                  No cases found. Try adjusting your filters or search query.
                 </TableCell>
               </TableRow>
             ) : (
               data?.cases.map((row) => (
-                <TableRow key={row.id} hover>
+                <TableRow
+                  key={row.id}
+                  hover
+                  onClick={onCaseClick ? () => onCaseClick(row) : undefined}
+                  sx={{
+                    cursor: onCaseClick ? "pointer" : "default",
+                  }}
+                >
                   <TableCell>
                     <Box>
                       <Typography variant="body2" color="text.primary">
@@ -121,43 +132,8 @@ const CasesList = ({
                         gap: 0.25,
                       }}
                     >
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.primary"
-                        role={onCaseClick ? "button" : undefined}
-                        tabIndex={onCaseClick ? 0 : undefined}
-                        onKeyDown={
-                          onCaseClick
-                            ? (e) => {
-                                if (
-                                  e.key === "Enter" ||
-                                  e.key === " "
-                                ) {
-                                  e.preventDefault();
-                                  onCaseClick(row);
-                                }
-                              }
-                            : undefined
-                        }
-                        onClick={
-                          onCaseClick
-                            ? () => onCaseClick(row)
-                            : undefined
-                        }
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          cursor: onCaseClick ? "pointer" : "default",
-                          fontWeight: 500,
-                          "&:hover": onCaseClick
-                            ? { color: "primary.main" }
-                            : undefined,
-                        }}
-                      >
+                      <Typography variant="body2" color="text.primary">
                         {row.title || "--"}
-                        <ExternalLink size={12} style={{ opacity: 0.5 }} />
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         ID: {row.number}
@@ -165,39 +141,41 @@ const CasesList = ({
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      --
-                    </Typography>
+                    {(() => {
+                      const severityColor = getSeverityLegendColor(
+                        row.severity?.label,
+                      );
+                      return (
+                        <Chip
+                          label={mapSeverityToDisplay(row.severity?.label)}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            bgcolor: alpha(severityColor, 0.1),
+                            color: severityColor,
+                            borderColor: alpha(severityColor, 0.3),
+                            fontWeight: 500,
+                            px: 0,
+                            height: 20,
+                            fontSize: "0.75rem",
+                            "& .MuiChip-label": {
+                              pl: "6px",
+                              pr: "6px",
+                            },
+                          }}
+                        />
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
-                        {typeof row.assignedEngineer === "string"
-                          ? row.assignedEngineer
-                              .split("-")
-                              .map((s) => s[0].toUpperCase())
-                              .slice(0, 2)
-                              .join("")
-                          : "?"}
+                        {getInitials(row.assignedEngineer)}
                       </Avatar>
                       <Typography variant="body2" color="text.primary">
-                        {typeof row.assignedEngineer === "string"
-                          ? row.assignedEngineer
-                          : "--"}
+                        {formatValue(row.assignedEngineer)}
                       </Typography>
                     </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={row.severity?.label || "--"}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        color: getSeverityColor(row.severity?.label),
-                        borderColor: getSeverityColor(row.severity?.label),
-                        fontWeight: 500,
-                      }}
-                    />
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -216,26 +194,23 @@ const CasesList = ({
                       </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell align="right">
-                    <IconButton size="small">
-                      <MoreVertical size={16} />
-                    </IconButton>
-                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        component="div"
-        count={data?.totalRecords || 0}
-        page={page}
-        onPageChange={onPageChange}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={onRowsPerPageChange}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-      />
+      {showPagination && (
+        <TablePagination
+          component="div"
+          count={data?.totalRecords || 0}
+          page={page}
+          onPageChange={onPageChange}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={onRowsPerPageChange}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+        />
+      )}
     </>
   );
 };

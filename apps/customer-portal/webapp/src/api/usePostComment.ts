@@ -20,13 +20,14 @@ import {
   type UseMutationResult,
 } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { addApiHeaders } from "@utils/apiUtils";
-import { ApiQueryKeys } from "@constants/apiConstants";
+import { ApiQueryKeys, ApiMutationKeys } from "@constants/apiConstants";
+import { CommentType } from "@constants/supportConstants";
 
 export interface PostCommentRequest {
   content: string;
+  type: CommentType;
 }
 
 export interface PostCommentVariables {
@@ -47,21 +48,19 @@ export function usePostComment(): UseMutationResult<
 > {
   const logger = useLogger();
   const queryClient = useQueryClient();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useMutation<void, Error, PostCommentVariables>({
+    mutationKey: ApiMutationKeys.POST_COMMENT,
     mutationFn: async ({
       caseId,
       body,
     }: PostCommentVariables): Promise<void> => {
-      logger.debug("[usePostComment] Request:", { caseId, contentLength: body.content?.length ?? 0 });
-
-      if (isMockEnabled) {
-        throw new Error(
-          "Post comment is not available when mock is enabled. Disable mock to post a comment.",
-        );
-      }
+      logger.debug("[usePostComment] Request:", {
+        caseId,
+        contentLength: body.content?.length ?? 0,
+      });
 
       if (!isSignedIn || isAuthLoading) {
         throw new Error("User must be signed in to post a comment");
@@ -72,12 +71,14 @@ export function usePostComment(): UseMutationResult<
         throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
       }
 
-      const idToken = await getIdToken();
       const requestUrl = `${baseUrl}/cases/${caseId}/comments`;
-      const response = await fetch(requestUrl, {
+      const response = await authFetch(requestUrl, {
         method: "POST",
-        headers: addApiHeaders(idToken),
-        body: JSON.stringify({ content: body.content }),
+
+        body: JSON.stringify({
+          content: body.content,
+          type: body.type,
+        }),
       });
 
       logger.debug("[usePostComment] Response status:", response.status);

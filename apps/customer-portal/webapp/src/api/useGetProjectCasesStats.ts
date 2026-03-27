@@ -16,60 +16,72 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
-import { getMockProjectCasesStats } from "@models/mockFunctions";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { ProjectCasesStats } from "@models/responses";
+import { CaseType } from "@constants/supportConstants";
+
+export { DASHBOARD_CASE_TYPE_LABELS } from "@constants/dashboardConstants";
+
+export interface UseGetProjectCasesStatsOptions {
+  incidentId?: string;
+  queryId?: string;
+  caseTypes?: Array<`${(typeof CaseType)[keyof typeof CaseType]}` | string>;
+  enabled?: boolean;
+}
 
 /**
  * Custom hook to fetch project case statistics by ID.
+ * API expects ?caseTypes=queryId&caseTypes=incidentId (both required for filtered stats).
  *
  * @param {string} id - The ID of the project.
+ * @param {UseGetProjectCasesStatsOptions} [options] - incidentId, queryId, enabled.
  * @returns {UseQueryResult<ProjectCasesStats, Error>} The query result object.
  */
 export function useGetProjectCasesStats(
   id: string,
+  options?: UseGetProjectCasesStatsOptions,
 ): UseQueryResult<ProjectCasesStats, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
+  const { incidentId, queryId, caseTypes, enabled = true } = options ?? {};
 
   return useQuery<ProjectCasesStats, Error>({
-    queryKey: [ApiQueryKeys.CASES_STATS, id, isMockEnabled],
+    queryKey: [ApiQueryKeys.CASES_STATS, id, incidentId, queryId, caseTypes],
     queryFn: async (): Promise<ProjectCasesStats> => {
-      logger.debug(
-        `Fetching case stats for project ID: ${id}, mock: ${isMockEnabled}`,
-      );
-
-      if (isMockEnabled) {
-        // Mock behavior: simulate network latency for the in-memory mock data.
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-
-        const stats: ProjectCasesStats = getMockProjectCasesStats();
-
-        logger.debug(
-          `Case stats fetched successfully for project ID: ${id} (mock)`,
-          stats,
-        );
-
-        return stats;
-      }
+      logger.debug(`Fetching case stats for project ID: ${id}`);
 
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const requestUrl = `${baseUrl}/projects/${id}/stats/cases`;
+        let requestUrl = `${baseUrl}/projects/${id}/stats/cases`;
 
-        const response = await fetch(requestUrl, {
+        const params = new URLSearchParams();
+
+        if (Array.isArray(caseTypes) && caseTypes.length > 0) {
+          caseTypes.forEach((type) => {
+            if (type) {
+              params.append("caseTypes", type);
+            }
+          });
+        } else if (incidentId && queryId) {
+          params.append("caseTypes", queryId);
+          params.append("caseTypes", incidentId);
+        }
+
+        const queryString = params.toString();
+        if (queryString) {
+          requestUrl += `?${queryString}`;
+        }
+
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         logger.debug(
@@ -80,7 +92,30 @@ export function useGetProjectCasesStats(
           throw new Error(`Error fetching case stats: ${response.statusText}`);
         }
 
-        const data: ProjectCasesStats = await response.json();
+        const raw = (await response.json()) as any;
+
+        const data: ProjectCasesStats = {
+          totalCases: raw?.totalCases ?? raw?.totalCount ?? 0,
+          totalCount: raw?.totalCount,
+          activeCount: raw?.activeCount,
+          outstandingCount: raw?.outstandingCount,
+          averageResponseTime: raw?.averageResponseTime ?? 0,
+          resolvedCases: {
+            total: raw?.resolvedCases?.total ?? 0,
+            currentMonth: raw?.resolvedCases?.currentMonth ?? 0,
+            pastThirtyDays: raw?.resolvedCases?.pastThirtyDays,
+          },
+          changeRate: raw?.changeRate,
+          stateCount: raw?.stateCount ?? [],
+          severityCount: raw?.severityCount ?? [],
+          outstandingSeverityCount: raw?.outstandingSeverityCount ?? [],
+          caseTypeCount: raw?.caseTypeCount ?? [],
+          casesTrend: raw?.casesTrend ?? [],
+          engagementTypeCount: raw?.engagementTypeCount ?? [],
+          outstandingEngagementTypeCount:
+            raw?.outstandingEngagementTypeCount ?? [],
+        };
+
         logger.debug("[useGetProjectCasesStats] Data received:", data);
         return data;
       } catch (error) {
@@ -88,7 +123,11 @@ export function useGetProjectCasesStats(
         throw error;
       }
     },
-    enabled: !!id && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!id && isSignedIn && !isAuthLoading && enabled,
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

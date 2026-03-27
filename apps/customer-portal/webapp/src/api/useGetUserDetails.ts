@@ -16,11 +16,9 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
-import { mockUserDetails } from "@models/mockData";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { type UserDetails } from "@models/responses";
 import { useLogger } from "@hooks/useLogger";
-import { addApiHeaders } from "@utils/apiUtils";
 
 /**
  * Hook to get user details.
@@ -28,22 +26,16 @@ import { addApiHeaders } from "@utils/apiUtils";
  * @returns {UseQueryResult<UserDetails, Error>} The user details.
  */
 const useGetUserDetails = (): UseQueryResult<UserDetails, Error> => {
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
   const logger = useLogger();
 
   return useQuery({
-    queryKey: ["userDetails", isMockEnabled],
+    queryKey: ["userDetails"],
     queryFn: async (): Promise<UserDetails> => {
       logger.debug("[useGetUserDetails] Fetching user details...");
 
-      if (isMockEnabled) {
-        logger.debug("[useGetUserDetails] Mock enabled, returning mock data.");
-        return Promise.resolve(mockUserDetails);
-      }
-
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
@@ -53,9 +45,8 @@ const useGetUserDetails = (): UseQueryResult<UserDetails, Error> => {
 
         logger.debug(`[useGetUserDetails] URL: ${requestUrl}`);
 
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         logger.debug(`[useGetUserDetails] Response status: ${response.status}`);
@@ -74,7 +65,10 @@ const useGetUserDetails = (): UseQueryResult<UserDetails, Error> => {
         throw error;
       }
     },
-    enabled: isMockEnabled || (isSignedIn && !isAuthLoading),
+    enabled: isSignedIn && !isAuthLoading,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 };
 

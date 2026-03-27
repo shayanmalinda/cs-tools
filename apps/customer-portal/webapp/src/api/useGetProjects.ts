@@ -14,72 +14,61 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  type UseInfiniteQueryResult,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { mockProjects } from "@models/mockData";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
+import type {
+  SearchProjectsResponse,
+  ProjectListItem,
+} from "@models/responses";
 import type { SearchProjectsRequest } from "@models/requests";
-import type { SearchProjectsResponse } from "@models/responses";
+
+interface UseInfiniteProjectsParams {
+  searchQuery?: string;
+  pageSize?: number;
+  enabled?: boolean;
+}
 
 /**
- * Custom hook to search projects.
- * This hook uses a standard query to fetch projects.
+ * Custom hook to fetch projects with infinite scroll/pagination support.
  *
- * @param {SearchProjectsRequest} searchData - The search and pagination parameters.
- * @param {boolean} fetchAll - If true, treats this as a shared "all projects" query.
- * @returns {UseQueryResult<SearchProjectsResponse, Error>} The query result object.
+ * @param {UseInfiniteProjectsParams} params - Search query and page size.
+ * @returns {UseInfiniteQueryResult} The infinite query result object with projects data.
  */
-export default function useGetProjects(
-  searchData?: SearchProjectsRequest,
-  fetchAll: boolean = false,
-): UseQueryResult<SearchProjectsResponse, Error> {
+export default function useInfiniteProjects({
+  searchQuery,
+  pageSize = 20,
+  enabled = true,
+}: UseInfiniteProjectsParams = {}): UseInfiniteQueryResult<
+  InfiniteData<SearchProjectsResponse>,
+  Error
+> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
-  const limit = fetchAll ? 100 : searchData?.pagination?.limit || 10;
-  const offset = searchData?.pagination?.offset || 0;
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
-  // A stable key for the "all projects" query ensures cache sharing
-  const queryKey = fetchAll
-    ? [ApiQueryKeys.PROJECTS, "all", isMockEnabled]
-    : [ApiQueryKeys.PROJECTS, searchData ?? "default", isMockEnabled];
+  const normalizedSearchQuery = searchQuery?.trim() || undefined;
 
-  return useQuery<SearchProjectsResponse, Error>({
-    queryKey,
-    queryFn: async (): Promise<SearchProjectsResponse> => {
+  return useInfiniteQuery<SearchProjectsResponse, Error>({
+    queryKey: [
+      ApiQueryKeys.PROJECTS,
+      "infinite",
+      normalizedSearchQuery,
+      pageSize,
+    ],
+    enabled: enabled && isSignedIn && !isAuthLoading,
+    queryFn: async ({ pageParam = 0 }): Promise<SearchProjectsResponse> => {
       logger.debug(
-        `Fetching projects... offset: ${offset}, limit: ${limit}, fetchAll: ${fetchAll}, mock: ${isMockEnabled}`,
+        `[useInfiniteProjects] Fetching projects... offset: ${pageParam}, limit: ${pageSize}, searchQuery: ${normalizedSearchQuery || "none"}`,
       );
 
-      if (isMockEnabled) {
-        // Mock behavior: simulate network latency for the in-memory `mockProjects` data.
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-
-        const results: SearchProjectsResponse = {
-          limit,
-          offset,
-          projects: mockProjects
-            .slice(offset, offset + limit)
-            .map((project) => ({
-              createdOn: project.createdOn,
-              description: project.description,
-              id: project.id,
-              key: project.key,
-              name: project.name,
-            })),
-          totalRecords: mockProjects.length,
-        };
-
-        logger.debug("Projects fetched successfully (mock)", results);
-
-        return results;
-      }
-
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
@@ -87,29 +76,80 @@ export default function useGetProjects(
         }
 
         const requestUrl = `${baseUrl}/projects/search`;
-        const body = {};
+        const body: SearchProjectsRequest = {
+          pagination: { offset: pageParam as number, limit: pageSize },
+        };
 
-        const response = await fetch(requestUrl, {
+        if (normalizedSearchQuery) {
+          body.filters = { searchQuery: normalizedSearchQuery };
+        }
+
+        const response = await authFetch(requestUrl, {
           method: "POST",
-          headers: addApiHeaders(idToken),
           body: JSON.stringify(body),
         });
 
-        logger.debug(`[useGetProjects] Response status: ${response.status}`);
+        logger.debug(
+          `[useInfiniteProjects] Response status: ${response.status}`,
+        );
 
         if (!response.ok) {
           throw new Error(`Error fetching projects: ${response.statusText}`);
         }
 
         const data: SearchProjectsResponse = await response.json();
-        logger.debug("[useGetProjects] Data received:", data);
+        logger.debug("[useInfiniteProjects] Data received:", data);
         return data;
       } catch (error) {
-        logger.error("[useGetProjects] Error:", error);
+        logger.error("[useInfiniteProjects] Error:", error);
         throw error;
       }
     },
-    staleTime: Infinity,
-    enabled: isMockEnabled || (isSignedIn && !isAuthLoading),
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.projects.length === 0) {
+        return undefined;
+      }
+
+      const totalFetched = allPages.reduce(
+        (sum, page) => sum + page.projects.length,
+        0,
+      );
+
+      // If we've fetched all available projects, return undefined to stop
+      if (totalFetched >= lastPage.totalRecords) {
+        return undefined;
+      }
+
+      // Otherwise, return the next offset
+      return totalFetched;
+    },
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+}
+
+/**
+ * Helper function to flatten paginated project data into a single array.
+ *
+ * @param {InfiniteData<SearchProjectsResponse> | undefined} data - The infinite query data.
+ * @returns {ProjectListItem[]} Flattened array of all projects.
+ */
+export function flattenProjectPages(
+  data: InfiniteData<SearchProjectsResponse> | undefined,
+): ProjectListItem[] {
+  if (!data) return [];
+  return data.pages.flatMap((page) => page.projects);
+}
+
+/**
+ * Helper function to get total records count from infinite query data.
+ *
+ * @param {InfiniteData<SearchProjectsResponse> | undefined} data - The infinite query data.
+ * @returns {number} Total number of records available.
+ */
+export function getTotalRecords(
+  data: InfiniteData<SearchProjectsResponse> | undefined,
+): number {
+  if (!data || data.pages.length === 0) return 0;
+  return data.pages[0].totalRecords;
 }

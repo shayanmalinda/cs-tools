@@ -14,11 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  type UseMutationResult,
+} from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { addApiHeaders } from "@utils/apiUtils";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import type { PostCaseAttachmentRequest } from "@models/requests";
 
@@ -29,7 +32,6 @@ export interface PostAttachmentsVariables {
 
 /**
  * Posts an attachment to a case (POST /cases/:caseId/attachments).
- * When mock is enabled, the mutation throws; the upload modal should disable the Save button.
  * On success, invalidates case-attachments queries so the list refetches.
  *
  * @returns {UseMutationResult<void, Error, PostAttachmentsVariables>} Mutation result.
@@ -41,8 +43,8 @@ export function usePostAttachments(): UseMutationResult<
 > {
   const logger = useLogger();
   const queryClient = useQueryClient();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useMutation<void, Error, PostAttachmentsVariables>({
     mutationFn: async ({
@@ -57,12 +59,6 @@ export function usePostAttachments(): UseMutationResult<
           contentLength: body.content?.length ?? 0,
         });
 
-        if (isMockEnabled) {
-          throw new Error(
-            "Upload attachment is not available when mock is enabled. Disable mock to upload.",
-          );
-        }
-
         if (!isSignedIn || isAuthLoading) {
           throw new Error("User must be signed in to upload an attachment");
         }
@@ -72,11 +68,10 @@ export function usePostAttachments(): UseMutationResult<
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const idToken = await getIdToken();
         const requestUrl = `${baseUrl}/cases/${caseId}/attachments`;
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "POST",
-          headers: addApiHeaders(idToken),
+
           body: JSON.stringify(body),
         });
 

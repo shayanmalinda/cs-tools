@@ -16,7 +16,6 @@
 
 import {
   Box,
-  Card,
   Divider,
   Form,
   Skeleton,
@@ -32,20 +31,25 @@ import { type JSX } from "react";
  */
 const ProjectCardSkeleton = (): JSX.Element => {
   return (
-    <Card
+    <Form.CardButton
       sx={{
         alignItems: "stretch",
         display: "flex",
         flexDirection: "column",
-        height: "100%",
         width: "100%",
+        minHeight: 320,
       }}
     >
-      {/* project card badges skeleton */}
+      {/* project card badges skeleton (project key + SLA status chips) */}
       <Form.CardContent sx={{ width: "100%", pt: 2, pb: 0 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={1}
+        >
           <Skeleton variant="rounded" width={80} height={24} />
-          <Skeleton variant="rounded" width={60} height={24} />
+          <Skeleton variant="rounded" width={80} height={24} />
         </Box>
       </Form.CardContent>
 
@@ -53,22 +57,25 @@ const ProjectCardSkeleton = (): JSX.Element => {
       <Form.CardHeader
         sx={{ pt: 1.5 }}
         title={
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            <Skeleton variant="text" width="80%" height={32} />
-          </Typography>
+          <Box sx={{ height: "3.2rem", overflow: "hidden" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              <Skeleton variant="text" width="80%" height={32} />
+            </Typography>
+          </Box>
         }
         subheader={
-          <Typography
-            variant="body2"
-            sx={{
-              minHeight: "5rem",
-              display: "block",
-            }}
-          >
-            <Skeleton variant="text" width="100%" />
-            <Skeleton variant="text" width="90%" />
-            <Skeleton variant="text" width="40%" />
-          </Typography>
+          <Box sx={{ height: "6rem", overflow: "hidden" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                display: "block",
+              }}
+            >
+              <Skeleton variant="text" width="100%" />
+              <Skeleton variant="text" width="90%" />
+              <Skeleton variant="text" width="40%" />
+            </Typography>
+          </Box>
         }
       />
 
@@ -132,7 +139,7 @@ const ProjectCardSkeleton = (): JSX.Element => {
           <Skeleton variant="rounded" width="100%" height={40} />
         </Stack>
       </Form.CardActions>
-    </Card>
+    </Form.CardButton>
   );
 };
 

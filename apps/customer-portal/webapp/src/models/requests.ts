@@ -22,6 +22,9 @@ export interface PaginationRequest {
 
 // Request body for searching projects.
 export interface SearchProjectsRequest {
+  filters?: {
+    searchQuery?: string;
+  };
   pagination?: PaginationRequest;
 }
 
@@ -32,6 +35,10 @@ export interface CaseSearchRequest {
     deploymentId?: string;
     severityId?: number;
     statusId?: number;
+    statusIds?: number[];
+    searchQuery?: string;
+    caseTypes?: string[];
+    createdByMe?: boolean;
   };
   pagination: PaginationRequest;
   sortBy?: {
@@ -40,30 +47,236 @@ export interface CaseSearchRequest {
   };
 }
 
-// Request body for case classification.
-export interface CaseClassificationRequest {
-  chatHistory: string;
-  environments: string[];
-  productDetails: string[];
+// Request body for POST /projects/:projectId/conversations/search.
+export interface ConversationSearchRequest {
+  filters?: {
+    searchQuery?: string;
+    stateKeys?: number[];
+    createdByMe?: boolean;
+  };
+  pagination: PaginationRequest;
+  sortBy?: {
+    field: string;
+    order: "asc" | "desc";
+  };
+}
+
+// Request body for searching change requests (POST /projects/:projectId/change-requests/search).
+export interface ChangeRequestSearchRequest {
+  filters?: {
+    impactKey?: number;
+    searchQuery?: string;
+    stateKeys?: number[];
+  };
+  pagination: PaginationRequest;
+}
+
+/** Shared env context for conversations and case classification APIs. */
+export interface SharedEnvContext {
+  envProducts: Record<string, string[]>;
   region: string;
   tier: string;
 }
 
-// Request body for creating a support case (POST /cases).
-export interface CreateCaseRequest {
-  deploymentId: string;
-  description: string;
-  issueTypeKey: number;
-  productId: string;
-  projectId: string;
-  severityKey: number;
-  title: string;
+// Request body for PATCH /users/me (partial update, only changed fields).
+export interface PatchUserMeRequest {
+  phoneNumber?: string;
+  timeZone?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
-// Request body for posting a case attachment (POST /cases/:caseId/attachments).
+// Request body for case classification.
+export interface CaseClassificationRequest extends SharedEnvContext {
+  chatHistory: string;
+}
+
+// Request body for POST /projects/:projectId/conversations (Novera chat).
+export interface ConversationRequest extends SharedEnvContext {
+  message: string;
+}
+
+// Request body for PATCH /cases/:caseId (update case state).
+export interface PatchCaseRequest {
+  stateKey: number;
+}
+
+// Request body for creating a support case (POST /cases).
+export interface CreateCaseRequest {
+  attachments?: Array<{ file: string; name: string }>;
+  type?: string;
+  deploymentId: string;
+  description: string;
+  issueTypeKey?: number;
+  deployedProductId: string;
+  projectId: string;
+  severityKey?: number;
+  title: string;
+  parentCaseId?: string;
+  conversationId?: string;
+}
+
+// Request body for creating a service request (POST /cases with type: "service_request").
+export interface CreateServiceRequestPayload {
+  type: "service_request";
+  projectId: string;
+  deploymentId: string;
+  deployedProductId: string;
+  catalogId: string;
+  catalogItemId: string;
+  variables: { id: string; value: string }[];
+  attachments?: Array<{ name: string; file: string }>;
+}
+
+// Request body for product vulnerabilities search.
+export interface ProductVulnerabilitiesSearchRequest {
+  filters?: {
+    searchQuery?: string;
+    severityId?: number;
+    statusId?: number;
+  };
+  pagination?: PaginationRequest;
+  sortBy?: {
+    field: string;
+    order: "asc" | "desc";
+  };
+}
+
+// Request body for posting a case attachment.
 export interface PostCaseAttachmentRequest {
-  referenceType: "case";
   name: string;
   type: string;
   content: string;
+  description?: string;
+  referenceType?: string;
+}
+
+// Request body for posting a deployment attachment (POST /deployments/:deploymentId/attachments).
+export interface PostDeploymentAttachmentRequest {
+  name: string;
+  type: string;
+  content: string;
+  description?: string;
+}
+
+// Request body for PATCHing an attachment (cases or deployments).
+export interface PatchAttachmentRequest {
+  name?: string;
+  description?: string;
+}
+
+// Request body for PATCH /deployments/:deploymentId/products/:productId.
+export interface PatchDeploymentProductRequest {
+  cores?: number;
+  tps?: number;
+  description?: string;
+  active?: boolean;
+  updates?: Array<{
+    date: string;
+    details?: string;
+    updateLevel: number;
+  }>;
+}
+
+// Request body for POST /deployments/:deploymentId/products.
+export interface PostDeploymentProductRequest {
+  productId: string;
+  versionId: string;
+  projectId: string;
+  cores?: number;
+  tps?: number;
+  description?: string;
+}
+
+// Request body for POST /products/:productId/versions/search.
+export interface ProductVersionsSearchRequest {
+  pagination?: { limit?: number; offset?: number };
+}
+
+// Request body for creating a deployment.
+export interface CreateDeploymentRequest {
+  deploymentTypeKey: number;
+  description: string;
+  name: string;
+}
+
+// Request body for PATCH /projects/:projectId/deployments/:deploymentId.
+export interface PatchDeploymentRequest {
+  active?: boolean;
+  description?: string;
+  name?: string;
+  typeKey?: number;
+}
+
+// Request body for creating a call request.
+export interface CreateCallRequest {
+  durationInMinutes: number;
+  reason: string;
+  utcTimes: string[];
+}
+
+// Request body for updating a call request (PATCH /cases/:caseId/call-requests/:id).
+export interface PatchCallRequest {
+  reason?: string;
+  cancellationReason?: string;
+  stateKey: number;
+  utcTimes?: string[];
+}
+
+// Request body for updating current user profile (PATCH /users/me).
+export interface PatchUserMeRequest {
+  phoneNumber?: string;
+  timeZone?: string;
+}
+
+// Request body for creating a project contact (POST /projects/:projectId/contacts).
+export interface CreateProjectContactRequest {
+  contactEmail: string;
+  contactFirstName: string;
+  contactLastName: string;
+  isCsIntegrationUser: boolean;
+  isSecurityContact: boolean;
+}
+
+// Request body for POST /updates/levels/search.
+export interface UpdateLevelsSearchRequest {
+  startingUpdateLevel: number;
+  endingUpdateLevel: number;
+  productName: string;
+  productVersion: string;
+}
+
+// Request body for project time cards search (POST /projects/:projectId/time-cards/search).
+export interface TimeCardSearchRequest {
+  filters?: {
+    startDate?: string;
+    endDate?: string;
+    states?: string[];
+  };
+  pagination?: {
+    limit?: number;
+    offset?: number;
+  };
+}
+
+// Request body for validating a project contact (POST /projects/:projectId/contacts/validate).
+export interface ValidateContactRequest {
+  contactEmail: string;
+}
+
+// Request body for PATCH /change-requests/:id (update planned start).
+export interface PatchChangeRequestRequest {
+  plannedStartOn: string;
+}
+
+// Request body for PATCH /projects/:id.
+export interface PatchProjectRequest {
+  hasAgent?: boolean;
+}
+
+// Request body for creating a registry token (POST /projects/:projectId/registry-tokens).
+export interface CreateRegistryTokenRequest {
+  robotName: string;
+  tokenType: "User" | "Service";
+  createdFor?: string;
 }

@@ -26,6 +26,10 @@ const testProjects = [
     name: "Project 1",
     description: "Description 1",
     createdOn: "2026-01-01 10:00:00",
+    hasAgent: true,
+    activeCasesCount: 3,
+    activeChatsCount: 4,
+    slaStatus: "Needs Attention",
   },
   {
     id: "project-2",
@@ -33,6 +37,10 @@ const testProjects = [
     name: "Project 2",
     description: "Description 2",
     createdOn: "2026-01-02 11:00:00",
+    hasAgent: true,
+    activeCasesCount: 15,
+    activeChatsCount: 5,
+    slaStatus: "Needs Attention",
   },
 ];
 
@@ -44,6 +52,7 @@ vi.mock("@wso2/oxygen-ui", () => ({
       {children}
     </div>
   ),
+  LinearProgress: () => <div data-testid="linear-progress" />,
   IconButton: ({ children }: any) => (
     <button data-testid="icon-button">{children}</button>
   ),
@@ -52,6 +61,7 @@ vi.mock("@wso2/oxygen-ui", () => ({
       {children}
     </div>
   ),
+  TextField: (props: any) => <input data-testid="text-field" {...props} />,
   colors: {
     blue: { 700: "#1D4ED8" },
     purple: { 400: "#A78BFA" },
@@ -108,9 +118,13 @@ vi.mock("@components/project-hub/project-card/ProjectCardSkeleton", () => ({
 
 // Mock hooks
 const mockUseGetProjects = vi.fn();
-vi.mock("@api/useGetProjects", () => ({
-  default: (...args: any[]) => mockUseGetProjects(...args),
-}));
+vi.mock("@api/useGetProjects", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@api/useGetProjects")>();
+  return {
+    ...actual,
+    default: (...args: unknown[]) => mockUseGetProjects(...args),
+  };
+});
 
 const mockLogger = {
   debug: vi.fn(),
@@ -134,13 +148,13 @@ describe("ProjectHub", () => {
     mockUseGetProjects.mockReturnValue({
       isLoading: false,
       data: {
-        projects: testProjects,
+        pages: [{ projects: testProjects, totalRecords: testProjects.length }],
       },
       isError: false,
     });
   });
 
-  it("should render loading skeletons when isLoading is true", () => {
+  it("should render loading state when isLoading is true", () => {
     mockUseGetProjects.mockReturnValue({
       isLoading: true,
       data: null,
@@ -158,7 +172,7 @@ describe("ProjectHub", () => {
     expect(screen.getByText(/Select Your Project/i)).toBeInTheDocument();
   });
 
-  it("should render loading skeletons when isAuthLoading is true", () => {
+  it("should render loading state when isAuthLoading is true", () => {
     mockUseAsgardeo.mockReturnValue({ isLoading: true });
     mockUseGetProjects.mockReturnValue({
       isLoading: false,
@@ -172,7 +186,7 @@ describe("ProjectHub", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getAllByTestId("project-skeleton")).toHaveLength(3);
+    expect(screen.queryAllByTestId("project-skeleton")).toHaveLength(0);
     expect(screen.queryByText("No Projects Yet")).not.toBeInTheDocument();
     expect(screen.getByText(/Select Your Project/i)).toBeInTheDocument();
   });
@@ -225,7 +239,7 @@ describe("ProjectHub", () => {
     mockUseGetProjects.mockReturnValue({
       isLoading: false,
       data: {
-        projects: [],
+        pages: [{ projects: [], totalRecords: 0 }],
       },
       isError: false,
     });

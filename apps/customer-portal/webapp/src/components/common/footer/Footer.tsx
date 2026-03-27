@@ -29,10 +29,14 @@ import type { JSX } from "react";
  */
 export default function Footer(): JSX.Element {
   return (
-    <FooterUI
-      companyName={COMPANY_NAME}
-      termsUrl={TERMS_OF_SERVICE_URL}
-      privacyUrl={PRIVACY_POLICY_URL}
-    />
+    <FooterUI>
+      <FooterUI.Copyright>
+        © {new Date().getFullYear()} {COMPANY_NAME}. All rights reserved.
+      </FooterUI.Copyright>
+      <FooterUI.Link href={TERMS_OF_SERVICE_URL}>
+        Terms & Conditions
+      </FooterUI.Link>
+      <FooterUI.Link href={PRIVACY_POLICY_URL}>Privacy Policy</FooterUI.Link>
+    </FooterUI>
   );
 }

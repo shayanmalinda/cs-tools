@@ -14,37 +14,74 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Divider, Paper } from "@wso2/oxygen-ui";
-import { ChevronDown } from "@wso2/oxygen-ui-icons-react";
+import { Box, Paper } from "@wso2/oxygen-ui";
+import { useCallback, useEffect, useRef } from "react";
 import type { JSX } from "react";
-
-// Line count threshold for showing expand button (approximately 4 lines).
-const COLLAPSE_CHAR_THRESHOLD = 200;
 
 export interface ChatMessageCardProps {
   htmlContent: string;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   isCurrentUser: boolean;
   primaryBg: string;
+  onImageClick?: (src: string) => void;
 }
 
 /**
- * Card-style chat message with collapsible long content and "Show more" button.
- * Uses Paper without border or border radius.
+ * Card-style chat message using Paper without border or border radius.
+ * Renders HTML message content with basic styling.
  *
- * @param {ChatMessageCardProps} props - Content, expand state, and styling.
+ * @param {ChatMessageCardProps} props - Content and styling props.
  * @returns {JSX.Element} The chat message card.
  */
 export default function ChatMessageCard({
   htmlContent,
-  isExpanded,
-  onToggleExpand,
   isCurrentUser,
   primaryBg,
+  onImageClick,
 }: ChatMessageCardProps): JSX.Element {
-  const plainLength = htmlContent.replace(/<[^>]+>/g, "").length;
-  const showExpandButton = plainLength > COLLAPSE_CHAR_THRESHOLD;
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleClick = useCallback(
+    (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "IMG" && target instanceof HTMLImageElement) {
+        const src = target.src || target.getAttribute("src");
+        if (src && onImageClick) {
+          e.preventDefault();
+          onImageClick(src);
+        }
+      }
+    },
+    [onImageClick],
+  );
+
+  const handleImageError = useCallback(
+    (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!(target instanceof HTMLImageElement)) return;
+
+      const currentSrc = target.currentSrc || target.src || "";
+      const fallback = target.getAttribute("data-inline-download-url") || "";
+      const alreadyTriedFallback =
+        target.getAttribute("data-inline-fallback-tried") === "true";
+
+      if (fallback && !alreadyTriedFallback && fallback !== currentSrc) {
+        target.setAttribute("data-inline-fallback-tried", "true");
+        target.src = fallback;
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    el.addEventListener("click", handleClick);
+    el.addEventListener("error", handleImageError, true);
+    return () => {
+      el.removeEventListener("click", handleClick);
+      el.removeEventListener("error", handleImageError, true);
+    };
+  }, [handleClick, handleImageError]);
 
   return (
     <Paper
@@ -52,21 +89,19 @@ export default function ChatMessageCard({
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 1.5,
-        p: 1.5,
-        maxWidth: "100%",
+        gap: 1,
+        p: 1.25,
+        width: "100%",
+        minHeight: "auto",
         bgcolor: isCurrentUser ? primaryBg : "background.paper",
-        border: "none",
-        borderRadius: 0,
-        boxShadow: "none",
       }}
     >
       <Box
         sx={{
-          fontSize: "0.75rem",
-          fontFamily: "monospace",
+          fontSize: "0.875rem",
+          lineHeight: 1.5,
           "& p": {
-            margin: "0 0 0.5em 0",
+            margin: "0 0 0.25em 0",
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
           },
@@ -81,47 +116,17 @@ export default function ChatMessageCard({
             mb: 0.5,
           },
           "& br": { display: "block", content: '""', marginTop: "0.25em" },
-          ...(!isExpanded &&
-            showExpandButton && {
-              display: "-webkit-box",
-              WebkitLineClamp: 4,
-              WebkitBoxOrient: "vertical" as const,
-              overflow: "hidden",
-            }),
+          "& code": {
+            fontFamily: "monospace",
+            fontSize: "inherit",
+            backgroundColor: "action.hover",
+            px: 0.5,
+            py: 0.25,
+          },
         }}
+        ref={contentRef}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
-      {showExpandButton && (
-        <>
-          <Divider sx={{ my: 0.25 }} />
-          <Button
-            size="small"
-            variant="text"
-            onClick={onToggleExpand}
-            endIcon={
-              <ChevronDown
-                size={14}
-                style={{
-                  transform: isExpanded ? "rotate(180deg)" : "none",
-                  transition: "transform 0.2s",
-                }}
-              />
-            }
-            sx={{
-              alignSelf: "stretch",
-              justifyContent: "center",
-              fontSize: "0.75rem",
-              color: "text.secondary",
-              "&:hover": {
-                color: "text.primary",
-                bgcolor: "action.hover",
-              },
-            }}
-          >
-            {isExpanded ? "Show less" : "Show more"}
-          </Button>
-        </>
-      )}
     </Paper>
   );
 }

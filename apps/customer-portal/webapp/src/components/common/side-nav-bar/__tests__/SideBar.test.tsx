@@ -18,6 +18,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import SideBar from "@components/common/side-nav-bar/SideBar";
 import { APP_SHELL_NAV_ITEMS } from "@constants/appLayoutConstants";
+import { PROJECT_TYPE_LABELS } from "@constants/projectDetailsConstants";
 
 // Mock @wso2/oxygen-ui
 vi.mock("@wso2/oxygen-ui", () => {
@@ -56,9 +57,17 @@ vi.mock("@wso2/oxygen-ui", () => {
     Typography,
     Paper,
     Button,
-    Link: ({ children, to }: { children: any; to: string }) => (
-      <a href={to}>{children}</a>
-    ),
+    Link: ({
+      children,
+      to,
+    }: {
+      children: any;
+      to: string;
+      component?: any;
+    }) => {
+      // Avoid nesting buttons/links. Render a simple `a` tag directly enclosing children.
+      return <a href={to}>{children}</a>;
+    },
     colors: {
       blue: { 700: "#1D4ED8" },
       purple: { 400: "#A78BFA" },
@@ -88,10 +97,17 @@ vi.mock("@wso2/oxygen-ui-icons-react", () => {
 });
 
 // Mock react-router
-const mockLocation = { pathname: "/project-1/dashboard" };
+const mockLocation = { pathname: "/projects/project-1/dashboard" };
 const mockParams: { projectId: string | undefined } = {
   projectId: "project-1",
 };
+
+let mockProjectTypeLabel: string = "Other";
+
+const createMockProjectsResponse = () => [{
+  id: "project-1",
+  type: { label: mockProjectTypeLabel },
+}];
 
 vi.mock("react-router", () => ({
   useLocation: () => mockLocation,
@@ -101,29 +117,55 @@ vi.mock("react-router", () => ({
   ),
 }));
 
-// Mock SubscriptionWidget (path must match: @components/common/side-nav-bar/SubscriptionWidget)
-vi.mock("@components/common/side-nav-bar/SubscriptionWidget", () => ({
-  default: () => <div data-testid="subscription-widget" />,
-}));
+vi.mock("@api/useGetProjects", () => {
+  return {
+    __esModule: true,
+    default: () => ({
+      data: {
+        pages: [
+          {
+            projects: createMockProjectsResponse(),
+            totalRecords: 1,
+          },
+        ],
+      },
+    }),
+    flattenProjectPages: (data: any) =>
+      data?.pages?.flatMap((page: any) => page.projects) ?? [],
+  };
+});
+
+vi.mock("@components/common/side-nav-bar/SubscriptionWidget", () => {
+  return {
+    __esModule: true,
+    default: () => <div data-testid="subscription-widget" />,
+  };
+});
 
 describe("SideBar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLocation.pathname = "/project-1/dashboard";
+    mockLocation.pathname = "/projects/project-1/dashboard";
     mockParams.projectId = "project-1";
+    mockProjectTypeLabel = "Other";
   });
 
-  it("should render all navigation items from APP_SHELL_NAV_ITEMS", () => {
+  it("should render all navigation items except Operations when the project type is not supported", () => {
+    mockProjectTypeLabel = "Other";
     render(<SideBar collapsed={false} />);
 
-    APP_SHELL_NAV_ITEMS.forEach((item) => {
+    APP_SHELL_NAV_ITEMS.filter((item) => item.id !== "operations").forEach((item) => {
       expect(screen.getByText(item.label)).toBeInTheDocument();
     });
+
+    expect(screen.queryByText("Operations")).not.toBeInTheDocument();
   });
 
-  it("should render the subscription widget", () => {
+  it("should render the Operations item when the project type supports it", () => {
+    mockProjectTypeLabel = PROJECT_TYPE_LABELS.MANAGED_CLOUD_SUBSCRIPTION;
     render(<SideBar collapsed={false} />);
-    expect(screen.getByTestId("subscription-widget")).toBeInTheDocument();
+
+    expect(screen.getByText("Operations")).toBeInTheDocument();
   });
 
   it("should render the settings item", () => {
@@ -136,19 +178,22 @@ describe("SideBar", () => {
     render(<SideBar collapsed={false} />);
 
     const dashboardLink = screen.getByRole("link", { name: /dashboard/i });
-    expect(dashboardLink).toHaveAttribute("href", "/project-1/dashboard");
+    expect(dashboardLink).toHaveAttribute(
+      "href",
+      "/projects/project-1/dashboard",
+    );
   });
 
   describe("activeItem computation", () => {
-    it("should set activeItem to 'dashboard' when path is exactly /{projectId}", () => {
-      mockLocation.pathname = "/project-1";
+    it("should set activeItem to 'dashboard' when path is exactly /projects/{projectId}", () => {
+      mockLocation.pathname = "/projects/project-1";
       render(<SideBar collapsed={false} />);
       const sidebar = screen.getByTestId("sidebar");
       expect(sidebar).toHaveAttribute("data-active-item", "dashboard");
     });
 
     it("should set activeItem to the segment after nested projectId", () => {
-      mockLocation.pathname = "/project-1/support/tickets";
+      mockLocation.pathname = "/projects/project-1/support/tickets";
       render(<SideBar collapsed={false} />);
       const sidebar = screen.getByTestId("sidebar");
       expect(sidebar).toHaveAttribute("data-active-item", "support");

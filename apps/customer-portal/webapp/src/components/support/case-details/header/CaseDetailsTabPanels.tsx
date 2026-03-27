@@ -20,12 +20,16 @@ import type { CaseDetails } from "@models/responses";
 import CaseDetailsActivityPanel from "@case-details-activity/CaseDetailsActivityPanel";
 import CaseDetailsAttachmentsPanel from "@case-details-attachments/CaseDetailsAttachmentsPanel";
 import CaseDetailsDetailsPanel from "@case-details-details/CaseDetailsDetailsPanel";
+import CallsPanel from "@case-details-calls/CallsPanel";
 
 export interface CaseDetailsTabPanelsProps {
   activeTab: number;
   caseId: string;
   data?: CaseDetails;
   isError?: boolean;
+  projectId?: string;
+  focusMode?: boolean;
+  isEngagement?: boolean;
 }
 
 /**
@@ -39,11 +43,14 @@ export default function CaseDetailsTabPanels({
   caseId,
   data,
   isError = false,
+  projectId = "",
+  focusMode = false,
+  isEngagement = false,
 }: CaseDetailsTabPanelsProps): JSX.Element | null {
   switch (activeTab) {
     case 0: {
-      const projectId = data?.project?.id ?? "";
-      if (!projectId) {
+      const resolvedProjectId = data?.project?.id ?? projectId;
+      if (!resolvedProjectId) {
         return (
           <Typography variant="body2" color="text.secondary">
             Activity timeline will appear here.
@@ -61,23 +68,52 @@ export default function CaseDetailsTabPanels({
           }}
         >
           <CaseDetailsActivityPanel
-            projectId={projectId}
+            projectId={resolvedProjectId}
             caseId={caseId}
             caseCreatedOn={data?.createdOn}
+            focusMode={focusMode}
+            caseStatus={data?.status?.label}
           />
         </Box>
       );
     }
     case 1:
-      return <CaseDetailsDetailsPanel data={data} isError={isError} />;
-    case 2:
-      return <CaseDetailsAttachmentsPanel caseId={caseId} />;
-    case 3:
       return (
-        <Typography variant="body2" color="text.secondary">
-          Calls will appear here.
-        </Typography>
+        <CaseDetailsDetailsPanel
+          data={data}
+          isError={isError}
+          isEngagement={isEngagement}
+        />
       );
+    case 2:
+      return (
+        <CaseDetailsAttachmentsPanel
+          caseId={caseId}
+          isCaseClosed={
+            !!data?.closedOn || data?.status?.label === "Closed"
+          }
+        />
+      );
+    case 3: {
+      const resolvedProjectId = data?.project?.id ?? projectId;
+      if (!resolvedProjectId) {
+        return (
+          <Typography variant="body2" color="text.secondary">
+            Call requests will appear here.
+          </Typography>
+        );
+      }
+      return (
+        <CallsPanel
+          projectId={resolvedProjectId}
+          caseId={caseId}
+          isCaseClosed={
+            !!data?.closedOn || data?.status?.label === "Closed"
+          }
+          caseStatusLabel={data?.status?.label}
+        />
+      );
+    }
     case 4:
       return (
         <Typography variant="body2" color="text.secondary">

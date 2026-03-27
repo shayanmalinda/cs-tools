@@ -16,11 +16,9 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { getMockChatHistory } from "@models/mockFunctions";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { ChatHistoryResponse } from "@models/responses";
 
 /**
@@ -33,28 +31,15 @@ export function useGetChatHistory(
   projectId: string,
 ): UseQueryResult<ChatHistoryResponse, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useQuery<ChatHistoryResponse, Error>({
-    queryKey: [ApiQueryKeys.CHAT_HISTORY, projectId, isMockEnabled],
+    queryKey: [ApiQueryKeys.CHAT_HISTORY, projectId],
     queryFn: async (): Promise<ChatHistoryResponse> => {
-      logger.debug(
-        `Fetching chat history for project ID: ${projectId}, mock: ${isMockEnabled}`,
-      );
-
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-        const data = getMockChatHistory();
-        logger.debug(
-          `Chat history fetched successfully for project ID: ${projectId} (mock)`,
-          data,
-        );
-        return data;
-      }
+      logger.debug(`Fetching chat history for project ID: ${projectId}`);
 
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
@@ -63,14 +48,11 @@ export function useGetChatHistory(
 
         const requestUrl = `${baseUrl}/projects/${projectId}/chat-history`;
 
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
-        logger.debug(
-          `[useGetChatHistory] Response status: ${response.status}`,
-        );
+        logger.debug(`[useGetChatHistory] Response status: ${response.status}`);
 
         if (!response.ok) {
           throw new Error(
@@ -86,7 +68,7 @@ export function useGetChatHistory(
         throw error;
       }
     },
-    enabled: !!projectId && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!projectId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000,
   });
 }

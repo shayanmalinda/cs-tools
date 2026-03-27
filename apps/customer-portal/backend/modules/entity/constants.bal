@@ -16,4 +16,15 @@
 
 # Default pagination values.
 const DEFAULT_OFFSET = 0;
-const DEFAULT_LIMIT = 20;
+const DEFAULT_LIMIT = 10;
+
+# Valid call request update state values.
+public const PENDING_ON_WSO2 = 2;
+const CUSTOMER_REJECTED = 4;
+public const CANCELED = 6;
+
+# Valid conversation state values
+public const ACTIVE = 2;
+public const RESOLVED = 3;
+
+public const CHAT_SENT_AGENT = "agent";

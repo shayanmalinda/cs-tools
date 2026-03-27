@@ -16,60 +16,62 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { getMockProjectSupportStats } from "@models/mockFunctions";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { ProjectSupportStats } from "@models/responses";
+import { CaseType } from "@constants/supportConstants";
+
+export interface UseGetProjectSupportStatsOptions {
+  caseTypes?: string[];
+  query?: string;
+}
 
 /**
  * Custom hook to fetch project support statistics by ID.
+ * Uses default_case for case types when not specified.
  *
  * @param {string} id - The ID of the project.
+ * @param {UseGetProjectSupportStatsOptions} options - Optional filters (caseTypes, query).
+ * @param {boolean} enabled - Whether to execute the query (default: true).
  * @returns {UseQueryResult<ProjectSupportStats, Error>} The query result object.
  */
 export function useGetProjectSupportStats(
   id: string,
+  options?: UseGetProjectSupportStatsOptions,
+  enabled: boolean = true,
 ): UseQueryResult<ProjectSupportStats, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
+
+  const { caseTypes = [CaseType.DEFAULT_CASE], query } = options ?? {};
 
   return useQuery<ProjectSupportStats, Error>({
-    queryKey: [ApiQueryKeys.SUPPORT_STATS, id, isMockEnabled],
+    queryKey: [ApiQueryKeys.SUPPORT_STATS, id, caseTypes, query],
     queryFn: async (): Promise<ProjectSupportStats> => {
-      logger.debug(
-        `Fetching support stats for project ID: ${id}, mock: ${isMockEnabled}`,
-      );
-
-      if (isMockEnabled) {
-        // Mock behavior: simulate network latency for the in-memory mock data.
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-
-        const stats: ProjectSupportStats = getMockProjectSupportStats();
-
-        logger.debug(
-          `Support stats fetched successfully for project ID: ${id} (mock)`,
-          stats,
-        );
-
-        return stats;
-      }
+      logger.debug(`Fetching support stats for project ID: ${id}`, options);
 
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const requestUrl = `${baseUrl}/projects/${id}/stats/support`;
+        const params = new URLSearchParams();
+        caseTypes.forEach((t) => {
+          if (t) params.append("caseTypes", t);
+        });
+        if (query) params.set("query", query);
 
-        const response = await fetch(requestUrl, {
+        const queryString = params.toString();
+        const requestUrl = `${baseUrl}/projects/${id}/stats/support${
+          queryString ? `?${queryString}` : ""
+        }`;
+
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         logger.debug(
@@ -82,7 +84,13 @@ export function useGetProjectSupportStats(
           );
         }
 
-        const data: ProjectSupportStats = await response.json();
+        const raw = (await response.json()) as any;
+        const data: ProjectSupportStats = {
+          ongoingCases: raw?.ongoingCases ?? 0,
+          resolvedPast30DaysCasesCount: raw?.resolvedPast30DaysCasesCount ?? 0,
+          resolvedChats: raw?.resolvedChats ?? 0,
+          activeChats: raw?.activeChats ?? 0,
+        };
         logger.debug("[useGetProjectSupportStats] Data received:", data);
         return data;
       } catch (error) {
@@ -90,7 +98,7 @@ export function useGetProjectSupportStats(
         throw error;
       }
     },
-    enabled: !!id && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!id && isSignedIn && !isAuthLoading && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -19,14 +19,53 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import AllCasesPage from "@pages/AllCasesPage";
 import { ThemeProvider, createTheme } from "@wso2/oxygen-ui";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { mockCaseMetadata, mockCases } from "@models/mockData";
 import { LoaderProvider } from "@context/linear-loader/LoaderContext";
+
+const mockCaseMetadata = {
+  caseStates: [{ id: "1", label: "Open" }],
+  severities: [{ id: "2", label: "High" }],
+  issueTypes: [{ id: "3", label: "Incident" }],
+  deploymentTypes: [{ id: "4", label: "Production" }],
+  caseTypes: [
+    { id: "id-incident", label: "Incident" },
+    { id: "id-query", label: "Query" },
+  ],
+};
+
+const mockCases = [
+  {
+    id: "case-1",
+    internalId: "INT-1",
+    number: "CS001",
+    createdOn: "2026-01-01",
+    title: "Case One",
+    description: "Desc",
+    assignedEngineer: null,
+    project: { id: "p1", label: "Project A" },
+    issueType: { id: "1", label: "Bug" },
+    state: { id: 1, label: "Open" },
+    severity: { id: 1, label: "High" },
+  },
+  {
+    id: "case-2",
+    internalId: "INT-2",
+    number: "CS002",
+    createdOn: "2026-01-02",
+    title: "Case Two",
+    description: "Desc",
+    assignedEngineer: null,
+    project: { id: "p1", label: "Project A" },
+    issueType: { id: "1", label: "Bug" },
+    state: { id: 1, label: "Open" },
+    severity: { id: 1, label: "High" },
+  },
+];
 
 // Mock API hooks
 vi.mock("@api/useGetProjectCasesStats", () => ({
   useGetProjectCasesStats: vi.fn(),
 }));
-vi.mock("@api/useGetCasesFilters", () => ({
+vi.mock("@api/useGetProjectFilters", () => ({
   default: vi.fn(),
 }));
 vi.mock("@api/useGetProjectCases", () => ({
@@ -34,7 +73,7 @@ vi.mock("@api/useGetProjectCases", () => ({
 }));
 
 import { useGetProjectCasesStats } from "@api/useGetProjectCasesStats";
-import useGetCasesFilters from "@api/useGetCasesFilters";
+import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
 
 // Mock Child Components to test props passing and interactions
@@ -102,7 +141,7 @@ describe("AllCasesPage", () => {
       isFetching: false,
       isError: false,
     });
-    (useGetCasesFilters as any).mockReturnValue({
+    (useGetProjectFilters as any).mockReturnValue({
       data: mockCaseMetadata,
       isFetching: false,
     });
@@ -151,32 +190,18 @@ describe("AllCasesPage", () => {
   });
 
   it("should filter cases by search term", async () => {
-    // console.log("Total mock cases:", mockCases.length);
     renderComponent();
-
-    // Pick the first case number to search
-    const targetCaseNumber = mockCases[0].number;
-    // console.log("Searching for:", targetCaseNumber);
-
-    // Initial count
-    // expect(screen.getByText(`Showing 10 cases`)).toBeInTheDocument();
 
     const searchInput = screen.getByTestId("search-input");
 
-    // Search
-    fireEvent.change(searchInput, { target: { value: targetCaseNumber } });
+    // Search triggers API refetch with searchQuery; mock returns same data
+    fireEvent.change(searchInput, { target: { value: "CS001" } });
 
-    // Should only show 1 case (total from API is mock totalRecords === mockCases.length; text may be split across nodes)
     await waitFor(() => {
-      const text = (content: string, el: Element | null) =>
-        el?.textContent?.replace(/\s+/g, " ").trim() === content;
-      expect(
-        screen.getByText((c, el) =>
-          text(`Showing 1 of ${mockCases.length} cases`, el),
-        ),
-      ).toBeInTheDocument();
-      expect(screen.getAllByText("Showing 1 cases")[0]).toBeInTheDocument();
+      expect(searchInput).toHaveValue("CS001");
     });
+    // API returns filtered results; mock returns same 2 cases regardless of search
+    expect(screen.getByText(/Showing 2 of 2 cases/)).toBeInTheDocument();
   });
 
   it("should filter cases by status", async () => {
@@ -193,7 +218,7 @@ describe("AllCasesPage", () => {
       const text = (content: string, el: Element | null) =>
         el?.textContent?.replace(/\s+/g, " ").trim() === content;
       expect(
-        screen.getByText((c, el) =>
+        screen.getByText((_, el) =>
           text(`Showing ${displayedCount} of ${totalCases} cases`, el),
         ),
       ).toBeInTheDocument();
@@ -232,41 +257,51 @@ describe("AllCasesPage", () => {
   });
 
   it("should handle pagination", async () => {
-    renderComponent();
+    const page1Cases = Array.from({ length: 10 }, (_, i) => ({
+      ...mockCases[0],
+      id: `case-${i}`,
+      number: `CS${String(i + 1).padStart(3, "0")}`,
+    }));
+    const page2Cases = Array.from({ length: 5 }, (_, i) => ({
+      ...mockCases[0],
+      id: `case-${i + 10}`,
+      number: `CS${String(i + 11).padStart(3, "0")}`,
+    }));
 
-    // Page size is 10.
-    // Check for "Showing 10 of X cases"
-    // We expect mockCases.length to be > 10 for this test to be meaningful.
-    const totalCases = mockCases.length;
-
-    await waitFor(() => {
-      const text = (content: string, el: Element | null) =>
-        el?.textContent?.replace(/\s+/g, " ").trim() === content;
-      expect(
-        screen.getByText((c, el) =>
-          text(`Showing 10 of ${totalCases} cases`, el),
-        ),
-      ).toBeInTheDocument();
+    (useGetProjectCases as any).mockReturnValue({
+      data: {
+        pages: [
+          {
+            cases: page1Cases,
+            totalRecords: 15,
+            offset: 0,
+            limit: 10,
+          },
+          {
+            cases: page2Cases,
+            totalRecords: 15,
+            offset: 10,
+            limit: 10,
+          },
+        ],
+        pageParams: [0, 10],
+      },
+      isFetching: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
     });
 
-    // Find pagination button for page 2
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Showing 10 of 15 cases/)).toBeInTheDocument();
+    });
+
     const page2Button = screen.getByRole("button", { name: /page 2/i });
     fireEvent.click(page2Button);
 
-    const expectedCountOnPage2 = Math.min(10, Math.max(0, totalCases - 10));
-
-    // Should show remaining cases (text may be split across nodes)
     await waitFor(() => {
-      const text = (content: string, el: Element | null) =>
-        el?.textContent?.replace(/\s+/g, " ").trim() === content;
-      expect(
-        screen.getByText((c, el) =>
-          text(
-            `Showing ${expectedCountOnPage2} of ${totalCases} cases`,
-            el,
-          ),
-        ),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Showing 5 of 15 cases/)).toBeInTheDocument();
     });
   });
 });

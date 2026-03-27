@@ -16,18 +16,22 @@
 
 import { Box, Typography, Grid } from "@wso2/oxygen-ui";
 import { useParams, useOutletContext } from "react-router";
-import { useState, useEffect, type JSX } from "react";
+import { useState, useEffect, useMemo, type JSX } from "react";
 import { useAsgardeo } from "@asgardeo/react";
 import TabBar from "@components/common/tab-bar/TabBar";
-import { PROJECT_DETAILS_TABS } from "@constants/projectDetailsConstants";
+import {
+  PROJECT_DETAILS_TABS,
+  PROJECT_TYPE_LABELS,
+} from "@constants/projectDetailsConstants";
 import ProjectInformationCard from "@components/project-details/project-overview/project-information/ProjectInformationCard";
 import ProjectStatisticsCard from "@components/project-details/project-overview/project-statistics/ProjectStatisticsCard";
 import ContactInfoCard from "@components/project-details/project-overview/contact-info/ContactInfoCard";
-import RecentActivityCard from "@components/project-details/project-overview/recent-activity/RecentActivityCard";
-import TimeTrackingStatCards from "@components/project-details/time-tracking/TimeTrackingStatCards";
+import ServiceHoursAllocationsCard from "@components/project-details/project-overview/service-hours-allocations/ServiceHoursAllocationsCard";
+import ProjectDeployments from "@components/project-details/deployments/ProjectDeployments";
+import ProjectTimeTracking from "@components/project-details/time-tracking/ProjectTimeTracking";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import { useGetProjectStat } from "@api/useGetProjectStat";
-import useGetProjectTimeTrackingStat from "@api/useGetProjectTimeTrackingStat";
+import useInfiniteProjects, { flattenProjectPages } from "@api/useGetProjects";
 import { useLogger } from "@hooks/useLogger";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 
@@ -39,6 +43,8 @@ import { useLoader } from "@context/linear-loader/LoaderContext";
 export default function ProjectDetails(): JSX.Element {
   const [activeTab, setActiveTab] = useState<string>("overview");
 
+  const { projectId } = useParams<{ projectId: string }>();
+
   const logger = useLogger();
   const { showLoader, hideLoader } = useLoader();
   const { isLoading: isAuthLoading } = useAsgardeo();
@@ -47,7 +53,13 @@ export default function ProjectDetails(): JSX.Element {
     sidebarCollapsed: boolean;
   }>() || { sidebarCollapsed: false };
 
-  const { projectId } = useParams<{ projectId: string }>();
+  const { data: projectsData } = useInfiniteProjects({ enabled: true });
+  const allProjects = flattenProjectPages(projectsData);
+  const currentProject = useMemo(
+    () => allProjects.find((p) => p.id === projectId),
+    [allProjects, projectId],
+  );
+  const projectTypeLabel = currentProject?.type?.label;
 
   const {
     data: project,
@@ -60,12 +72,6 @@ export default function ProjectDetails(): JSX.Element {
     isFetching: isStatsFetching,
     error: statsError,
   } = useGetProjectStat(projectId || "");
-
-  const {
-    data: timeTrackingStats,
-    isFetching: isTimeTrackingFetching,
-    error: timeTrackingError,
-  } = useGetProjectTimeTrackingStat(projectId || "");
 
   const isDetailsLoading =
     isAuthLoading ||
@@ -91,6 +97,29 @@ export default function ProjectDetails(): JSX.Element {
       logger.error("Error loading project stats:", statsError);
     }
   }, [projectError, statsError, logger]);
+
+  const hideDeploymentsAndTimeTracking =
+    projectTypeLabel === PROJECT_TYPE_LABELS.CLOUD_SUPPORT ||
+    projectTypeLabel === PROJECT_TYPE_LABELS.CLOUD_EVALUATION_SUPPORT;
+  const hideServiceHoursAllocations = hideDeploymentsAndTimeTracking;
+
+  const visibleTabs = useMemo(
+    () =>
+      PROJECT_DETAILS_TABS.filter((tab) => {
+        if (hideDeploymentsAndTimeTracking) {
+          return tab.id !== "deployments" && tab.id !== "time-tracking";
+        }
+        return true;
+      }),
+    [hideDeploymentsAndTimeTracking],
+  );
+
+  useEffect(() => {
+    const tabIds = visibleTabs.map((t) => t.id);
+    if (activeTab && !tabIds.includes(activeTab)) {
+      setActiveTab("overview");
+    }
+  }, [visibleTabs, activeTab]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -125,38 +154,38 @@ export default function ProjectDetails(): JSX.Element {
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <ContactInfoCard />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <RecentActivityCard
-                  activity={stats?.recentActivity}
-                  isLoading={(isDetailsLoading || !stats) && !statsError}
-                  isError={!!statsError}
+                <ContactInfoCard
+                  project={project}
+                  isLoading={(isDetailsLoading || !project) && !projectError}
+                  isError={!!projectError}
                 />
               </Grid>
+              {!hideServiceHoursAllocations && (
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <ServiceHoursAllocationsCard
+                    project={project}
+                    isLoading={(isDetailsLoading || !project) && !projectError}
+                    isError={!!projectError}
+                  />
+                </Grid>
+              )}
             </Grid>
           </Box>
         );
       case "deployments":
         return (
-          <Box sx={{ p: 3, textAlign: "center" }}>
-            <Typography variant="h6" color="text.secondary">
-              Deployments (Coming Soon)
-            </Typography>
+          <Box>
+            <ProjectDeployments projectId={projectId ?? ""} />
           </Box>
         );
       case "time-tracking":
         return (
-          <Box>
-            <TimeTrackingStatCards
-              stats={timeTrackingStats}
-              isLoading={
-                isTimeTrackingFetching ||
-                (!timeTrackingStats && !timeTrackingError)
-              }
-              isError={!!timeTrackingError}
-            />
-          </Box>
+          <ProjectTimeTracking
+            projectId={projectId || ""}
+            project={project}
+            isProjectLoading={(isDetailsLoading || !project) && !projectError}
+            isProjectError={!!projectError}
+          />
         );
       default:
         return null;
@@ -164,16 +193,16 @@ export default function ProjectDetails(): JSX.Element {
   };
 
   return (
-    <>
+    <Box>
       {/* project page tabs */}
       <TabBar
-        tabs={PROJECT_DETAILS_TABS}
+        tabs={visibleTabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
       {/* project page content */}
-      <Box sx={{ flex: 1 }}>{renderContent()}</Box>
-    </>
+      <Box>{renderContent()}</Box>
+    </Box>
   );
 }

@@ -49,22 +49,74 @@ export function normalizeProductLabel(label: string | undefined): string {
     .trim()
     .replace(/\s*-\s*/g, " ")
     .replace(/\s+/g, " ")
+    .toLowerCase()
     .trim();
 }
 
 /**
  * Builds the combined product label from case classification response.
  *
- * @param {CaseClassificationResponse["case_info"]} caseInfo - case_info from classification response.
+ * @param {Partial<Pick<CaseClassificationResponse["caseInfo"], "productName" | "productVersion">> | undefined} caseInfo - caseInfo (or subset) from classification response.
  * @returns {string} Combined label or empty string.
  */
 export function buildClassificationProductLabel(
-  caseInfo: CaseClassificationResponse["case_info"] | undefined,
+  caseInfo:
+    | Partial<
+        Pick<
+          CaseClassificationResponse["caseInfo"],
+          "productName" | "productVersion"
+        >
+      >
+    | undefined,
 ): string {
   if (!caseInfo?.productName?.trim()) return "";
   const name = caseInfo.productName.trim();
   const version = caseInfo.productVersion?.trim();
   return version ? `${name} ${version}` : name;
+}
+
+/**
+ * Finds a base deployment option matching the given label (case-insensitive).
+ * Returns the actual option string so form state uses the API's exact value.
+ *
+ * @param {string} deploymentLabel - Classification or selected deployment label.
+ * @param {string[]} baseDeploymentOptions - Deployment names from project deployments.
+ * @returns {string | undefined} Matching option or undefined.
+ */
+export function findMatchingDeploymentLabel(
+  deploymentLabel: string,
+  baseDeploymentOptions: string[],
+): string | undefined {
+  if (!deploymentLabel?.trim()) return undefined;
+  const labelLower = deploymentLabel.trim().toLowerCase();
+  return baseDeploymentOptions.find(
+    (opt) => opt?.trim().toLowerCase() === labelLower,
+  );
+}
+
+/**
+ * Resolves classification environment (e.g. "Production") to the deployment display label
+ * by matching against project deployments' type.label or name. Use to auto-select deployment.
+ *
+ * @param {string} environmentLabel - caseInfo.environment from classification.
+ * @param {ProjectDeploymentOption[]} projectDeployments - Deployments from useGetProjectDeployments.
+ * @returns {string | undefined} Display label (name ?? type.label) for the matching deployment.
+ */
+export function getDeploymentDisplayLabelForEnvironment(
+  environmentLabel: string,
+  projectDeployments: ProjectDeploymentOption[] | undefined,
+): string | undefined {
+  if (!environmentLabel?.trim() || !projectDeployments?.length) return undefined;
+  const envLower = environmentLabel.trim().toLowerCase();
+  const dep = projectDeployments.find((d) => {
+    const typeLabel = d.type?.label?.trim();
+    const name = d.name?.trim();
+    return (
+      typeLabel?.toLowerCase() === envLower || name?.toLowerCase() === envLower
+    );
+  });
+  if (!dep) return undefined;
+  return dep.name || dep.type?.label;
 }
 
 /**
@@ -83,35 +135,63 @@ export function resolveDeploymentMatch(
   const label = deploymentLabel?.trim();
   if (!label) return null;
 
-  const fromProject = projectDeployments?.find(
-    (d) => d.type?.label === label || d.name === label,
-  );
-  if (fromProject) return { id: fromProject.id };
+  const labelLower = label.toLowerCase();
 
-  const fromFilters = filterDeployments?.find(
+  const fromProjectExact = projectDeployments?.find((d) => {
+    const typeLabel = d.type?.label?.trim();
+    const depName = d.name?.trim();
+    return typeLabel === label || depName === label;
+  });
+  if (fromProjectExact) return { id: fromProjectExact.id };
+
+  const fromProjectCaseInsensitive = projectDeployments?.find((d) => {
+    const typeLabel = d.type?.label?.trim();
+    const depName = d.name?.trim();
+    return (
+      typeLabel?.toLowerCase() === labelLower ||
+      depName?.toLowerCase() === labelLower
+    );
+  });
+  if (fromProjectCaseInsensitive)
+    return { id: fromProjectCaseInsensitive.id };
+
+  const fromFiltersExact = filterDeployments?.find(
     (d) => d.id === label || d.label === label,
   );
-  if (fromFilters) return { id: fromFilters.id };
+  if (fromFiltersExact) return { id: fromFiltersExact.id };
+
+  const fromFiltersCaseInsensitive = filterDeployments?.find(
+    (d) =>
+      d.id?.toLowerCase() === labelLower ||
+      d.label?.toLowerCase() === labelLower,
+  );
+  if (fromFiltersCaseInsensitive)
+    return { id: fromFiltersCaseInsensitive.id };
 
   return null;
 }
 
 /**
- * Resolves product ID from the selected product label by matching against deployment products.
+ * Resolves product ID from the selected value (id or combined label) against deployment products.
  *
- * @param {string} productLabel - Selected product label from the form.
+ * @param {string} productLabelOrId - Selected deployment product id or "Product Version" label.
  * @param {DeploymentProductItem[]} allDeploymentProducts - Flat list of deployment products.
  * @returns {string} Deployment product item id or empty string if no match.
  */
 export function resolveProductId(
-  productLabel: string,
+  productLabelOrId: string,
   allDeploymentProducts: DeploymentProductItem[],
 ): string {
-  const normalized = normalizeProductLabel(productLabel);
+  if (!productLabelOrId?.trim()) return "";
+  const input = productLabelOrId.trim();
+  const byId = allDeploymentProducts.find((item) => item.id === input);
+  if (byId) return byId.id;
+  const normalized = normalizeProductLabel(input);
   if (!normalized) return "";
-
   const match = allDeploymentProducts.find(
-    (item) => normalizeProductLabel(item.product?.label) === normalized,
+    (item) =>
+      normalizeProductLabel(getDeploymentProductDisplayLabel(item)) ===
+      normalized,
   );
   return match?.id ?? "";
 }
@@ -135,40 +215,156 @@ export function resolveIssueTypeKey(
 }
 
 /**
- * Returns whether the classification product should be added as an extra dropdown option.
- * Returns false if it would duplicate an existing option (same normalized label).
+ * Finds a base product option that matches the given label (normalized comparison).
  *
- * @param {string} classificationProduct - Combined product label from classification.
- * @param {string[]} baseProductOptions - Product labels from deployment products.
- * @returns {boolean} True if classification product should be added as extra option.
+ * @param {string} productLabel - Selected or classification product label (e.g. "WSO2 API Manager 3.2.0").
+ * @param {string[]} baseProductOptions - Product labels from deployment products (legacy).
+ * @returns {string | undefined} Matching base option label, or undefined if no match.
  */
-export function shouldAddClassificationProductToOptions(
-  classificationProduct: string,
+export function findMatchingProductLabel(
+  productLabel: string,
   baseProductOptions: string[],
-): boolean {
-  if (!classificationProduct?.trim()) return false;
-  const normalized = normalizeProductLabel(classificationProduct);
-  return !baseProductOptions.some(
+): string | undefined {
+  if (!productLabel?.trim()) return undefined;
+  const normalized = normalizeProductLabel(productLabel);
+  if (!normalized) return undefined;
+  return baseProductOptions.find(
     (opt) => normalizeProductLabel(opt) === normalized,
   );
 }
 
 /**
- * Builds the list of unique product labels from deployment products (for dropdown).
+ * Finds deployment product option id that matches the given combined label (e.g. "WSO2 API Manager 1.8.0").
+ *
+ * @param {string} productLabel - Classification or display label.
+ * @param {ProductVersionOption[]} baseProductOptions - Options from getBaseProductOptions.
+ * @returns {string | undefined} Matching option id, or undefined if no match.
+ */
+export function findMatchingProductId(
+  productLabel: string,
+  baseProductOptions: ProductVersionOption[],
+): string | undefined {
+  if (!productLabel?.trim() || !baseProductOptions?.length) return undefined;
+  const normalized = normalizeProductLabel(productLabel);
+  if (!normalized) return undefined;
+  const opt = baseProductOptions.find(
+    (o) => normalizeProductLabel(o.label) === normalized,
+  );
+  return opt?.id;
+}
+
+/**
+ * Returns whether the classification product should be added as an extra dropdown option.
+ * When using ProductVersionOption[], returns false if a matching option already exists.
+ *
+ * @param {string} classificationProduct - Combined product label from classification.
+ * @param {ProductVersionOption[]} baseProductOptions - Options from getBaseProductOptions.
+ * @returns {boolean} True if classification product should be added as extra option.
+ */
+export function shouldAddClassificationProductToOptions(
+  classificationProduct: string,
+  baseProductOptions: ProductVersionOption[],
+): boolean {
+  if (!classificationProduct?.trim()) return false;
+  return findMatchingProductId(classificationProduct, baseProductOptions) == null;
+}
+
+/** Option for Product Version dropdown: id is deployment product item id, label is "Product Version" display. */
+export interface ProductVersionOption {
+  id: string;
+  label: string;
+}
+
+/**
+ * Gets display label for a deployment product (product.label + version.label).
+ *
+ * @param {DeploymentProductItem} item - Deployment product item.
+ * @returns {string} Combined label, e.g. "WSO2 API Manager 1.8.0".
+ */
+export function getDeploymentProductDisplayLabel(
+  item: DeploymentProductItem,
+): string {
+  const productLabel = item.product?.label?.trim() ?? "";
+  let versionLabel = "";
+  if (typeof item.version === "object" && item.version !== null && "label" in item.version) {
+    versionLabel = (item.version as { id: string; label: string }).label?.trim() ?? "";
+  } else if (typeof item.version === "string") {
+    versionLabel = item.version.trim();
+  }
+  const combined = [productLabel, versionLabel].filter(Boolean).join(" ");
+  return combined.trim();
+}
+
+/**
+ * Builds Product Version options from deployment products: one option per item,
+ * label = "product.label version.label", value = item id.
  *
  * @param {DeploymentProductItem[]} allDeploymentProducts - Flat list of deployment products.
- * @returns {string[]} Unique non-empty product labels.
+ * @returns {ProductVersionOption[]} Options with id and display label.
  */
 export function getBaseProductOptions(
   allDeploymentProducts: DeploymentProductItem[],
-): string[] {
-  return Array.from(
-    new Set(
-      allDeploymentProducts
-        .map((item) => item.product?.label?.trim())
-        .filter((label): label is string => Boolean(label)),
-    ),
-  );
+): ProductVersionOption[] {
+  return allDeploymentProducts
+    .map((item) => {
+      const label = getDeploymentProductDisplayLabel(item);
+      return label ? { id: item.id, label } : null;
+    })
+    .filter((opt): opt is ProductVersionOption => opt !== null);
+}
+
+/**
+ * Formats chat messages for the case classification API.
+ *
+ * @param {Array<{ text: string; sender: string }>} messages - Chat messages with text and sender.
+ * @returns {string} Formatted string: "User: ...\nAssistant: ..."
+ */
+export function formatChatHistoryForClassification(
+  messages: Array<{ text: string; sender: string }>,
+): string {
+  return messages
+    .map((m) => {
+      const text = (m.text || "").trim();
+      if (!text) return "";
+      const role = m.sender === "user" ? "User" : "Assistant";
+      return `${role}: ${text}`;
+    })
+    .filter((line) => line.length > 0)
+    .join("\n");
+}
+
+/**
+ * Builds envProducts for classification from deployment products map.
+ * Each value is "product.label version.label" (e.g. "WSO2 API Manager 1.8.0") so the classification API receives product and version.
+ *
+ * @param {Record<string, DeploymentProductItem[]>} productsByDeploymentId - Products keyed by deployment id.
+ * @param {ProjectDeploymentOption[]} projectDeployments - Deployments with id and name.
+ * @returns {Record<string, string[]>} envProducts: { [deploymentName]: [productVersionLabel, ...] }
+ */
+export function buildEnvProducts(
+  productsByDeploymentId: Record<string, DeploymentProductItem[]>,
+  projectDeployments: ProjectDeploymentOption[] | undefined,
+): Record<string, string[]> {
+  if (!projectDeployments?.length) return {};
+
+  const result: Record<string, string[]> = {};
+
+  for (const dep of projectDeployments) {
+    const products = productsByDeploymentId[dep.id] ?? [];
+    const labels = Array.from(
+      new Set(
+        products
+          .map((p) => getDeploymentProductDisplayLabel(p))
+          .filter((l): l is string => Boolean(l)),
+      ),
+    );
+    const key = dep.name ?? dep.type?.label ?? "";
+    if (key) {
+      result[key] = labels;
+    }
+  }
+
+  return result;
 }
 
 /**

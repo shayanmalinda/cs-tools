@@ -18,56 +18,67 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import CasesList from "@components/dashboard/cases-table/CasesList";
 
-// Mock Oxygen UI components
-vi.mock("@wso2/oxygen-ui", () => ({
-  Box: ({ children }: any) => <div data-testid="box">{children}</div>,
-  Table: ({ children }: any) => <table data-testid="table">{children}</table>,
-  TableBody: ({ children }: any) => (
-    <tbody data-testid="table-body">{children}</tbody>
-  ),
-  TableCell: ({ children }: any) => (
-    <td data-testid="table-cell">{children}</td>
-  ),
-  TableContainer: ({ children }: any) => (
-    <div data-testid="table-container">{children}</div>
-  ),
-  TableHead: ({ children }: any) => (
-    <thead data-testid="table-head">{children}</thead>
-  ),
-  TableRow: ({ children }: any) => <tr data-testid="table-row">{children}</tr>,
-  Typography: ({ children, onClick, ...rest }: any) => (
-    <span onClick={onClick} {...rest}>
-      {children}
-    </span>
-  ),
-  Chip: ({ label }: any) => <span data-testid="chip">{label}</span>,
-  IconButton: ({ children }: any) => <button>{children}</button>,
-  Paper: ({ children }: any) => <div>{children}</div>,
-  Avatar: ({ children }: any) => <div>{children}</div>,
-  TablePagination: ({
-    count,
-    page,
-    onPageChange,
-    rowsPerPage,
-    onRowsPerPageChange,
-  }: any) => (
-    <div data-testid="table-pagination">
-      <span>Count: {count}</span>
-      <span>Page: {page}</span>
-      <button onClick={() => onPageChange(null, page + 1)}>Next Page</button>
-      <input
-        data-testid="rows-per-page-input"
-        value={rowsPerPage}
-        onChange={onRowsPerPageChange}
-      />
-    </div>
-  ),
-}));
+// Mock Oxygen UI components (use importOriginal for alpha, colors, etc.; override components for testing)
+vi.mock("@wso2/oxygen-ui", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@wso2/oxygen-ui")>();
+  return {
+    ...actual,
+    Box: ({ children }: any) => <div data-testid="box">{children}</div>,
+    Table: ({ children }: any) => <table data-testid="table">{children}</table>,
+    TableBody: ({ children }: any) => (
+      <tbody data-testid="table-body">{children}</tbody>
+    ),
+    TableCell: ({ children }: any) => (
+      <td data-testid="table-cell">{children}</td>
+    ),
+    TableContainer: ({ children }: any) => (
+      <div data-testid="table-container">{children}</div>
+    ),
+    TableHead: ({ children }: any) => (
+      <thead data-testid="table-head">{children}</thead>
+    ),
+    TableRow: ({ children }: any) => (
+      <tr data-testid="table-row">{children}</tr>
+    ),
+    Typography: ({ children, onClick, ...rest }: any) => (
+      <span onClick={onClick} {...rest}>
+        {children}
+      </span>
+    ),
+    Chip: ({ label }: any) => <span data-testid="chip">{label}</span>,
+    IconButton: ({ children }: any) => <button>{children}</button>,
+    Paper: ({ children }: any) => <div>{children}</div>,
+    Avatar: ({ children }: any) => <div>{children}</div>,
+    TablePagination: ({
+      count,
+      page,
+      onPageChange,
+      rowsPerPage,
+      onRowsPerPageChange,
+    }: any) => (
+      <div data-testid="table-pagination">
+        <span>Count: {count}</span>
+        <span>Page: {page}</span>
+        <button onClick={() => onPageChange(null, page + 1)}>Next Page</button>
+        <input
+          data-testid="rows-per-page-input"
+          value={rowsPerPage}
+          onChange={onRowsPerPageChange}
+        />
+      </div>
+    ),
+  };
+});
 
-vi.mock("@wso2/oxygen-ui-icons-react", () => ({
-  ExternalLink: () => <span />,
-  MoreVertical: () => <span />,
-}));
+vi.mock("@wso2/oxygen-ui-icons-react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@wso2/oxygen-ui-icons-react")>();
+  return {
+    ...actual,
+    ExternalLink: () => <span />,
+    MoreVertical: () => <span />,
+  };
+});
 
 vi.mock("../CasesTableSkeleton", () => ({
   default: () => (
@@ -77,9 +88,12 @@ vi.mock("../CasesTableSkeleton", () => ({
   ),
 }));
 
-vi.mock("@utils/casesTable", () => ({
+vi.mock("@utils/support", () => ({
+  formatValue: (v: unknown) => (v ? String(v) : "--"),
+  getInitials: () => "JD",
   getSeverityColor: () => "error.main",
   getStatusColor: () => "#000",
+  mapSeverityToDisplay: (l: string) => l || "--",
 }));
 
 describe("CasesList", () => {

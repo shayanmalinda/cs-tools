@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
 import {
   useState,
   useMemo,
@@ -36,8 +36,13 @@ import {
 } from "@wso2/oxygen-ui";
 import { ArrowLeft } from "@wso2/oxygen-ui-icons-react";
 import { useGetProjectCasesStats } from "@api/useGetProjectCasesStats";
-import useGetCasesFilters from "@api/useGetCasesFilters";
+import useGetProjectDetails from "@api/useGetProjectDetails";
+import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
+import { useGetDeployments } from "@api/useGetDeployments";
+import { isS0Case } from "@utils/support";
+import { CaseType } from "@constants/supportConstants";
+import { PROJECT_TYPE_LABELS } from "@constants/projectDetailsConstants";
 import type { AllCasesFilterValues } from "@models/responses";
 import AllCasesStatCards from "@components/support/all-cases/AllCasesStatCards";
 import AllCasesSearchBar from "@components/support/all-cases/AllCasesSearchBar";
@@ -51,47 +56,72 @@ import AllCasesList from "@components/support/all-cases/AllCasesList";
 export default function AllCasesPage(): JSX.Element {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
+  const [searchParams] = useSearchParams();
+  const createdByMe = searchParams.get("createdByMe") === "true";
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<AllCasesFilterValues>({});
+  const [sortField, setSortField] = useState<
+    "createdOn" | "updatedOn" | "severity" | "state"
+  >("createdOn");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // Fetch stats (runs in parallel with cases when projectId and auth are ready)
+  const { data: project, isLoading: isProjectLoading } = useGetProjectDetails(
+    projectId || "",
+  );
+  const projectReady = !isProjectLoading && project !== undefined;
+  const isManagedCloudSubscription =
+    project?.type?.label === PROJECT_TYPE_LABELS.MANAGED_CLOUD_SUBSCRIPTION;
+  const excludeS0 = projectReady ? !isManagedCloudSubscription : false;
+
+  // Fetch filter metadata first to get Incident and Query IDs for stats API
+  const { data: filterMetadata } = useGetProjectFilters(projectId || "");
+
+  // Fetch deployments for the deployment filter
+  const { data: deploymentsData } = useGetDeployments(projectId || "");
+
   const {
     data: stats,
     isLoading: isStatsQueryLoading,
     isError: isStatsError,
-  } = useGetProjectCasesStats(projectId || "");
-
-  // Fetch filter metadata
-  const { data: filterMetadata } = useGetCasesFilters(projectId || "");
+  } = useGetProjectCasesStats(projectId || "", {
+    caseTypes: [CaseType.DEFAULT_CASE],
+    enabled: !!projectId,
+  });
 
   const caseSearchRequest = useMemo(
     () => ({
       filters: {
-        statusId: filters.statusId ? Number(filters.statusId) : undefined,
+        caseTypes: [CaseType.DEFAULT_CASE],
+        statusIds: filters.statusId ? [Number(filters.statusId)] : undefined,
         severityId: filters.severityId ? Number(filters.severityId) : undefined,
         issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
         deploymentId: filters.deploymentId || undefined,
+        searchQuery: searchTerm.trim() || undefined,
+        createdByMe: createdByMe || undefined,
       },
       sortBy: {
-        field: "createdOn",
-        order: "desc" as const,
+        field: sortField,
+        order: sortOrder,
       },
     }),
-    [filters],
+    [filters, searchTerm, sortField, sortOrder, createdByMe],
   );
 
   // Fetch all cases using infinite query (runs in parallel with stats when projectId and auth are ready)
   const {
     data,
     isLoading: isCasesQueryLoading,
+    isError: isCasesError,
     hasNextPage,
     fetchNextPage,
-  } = useGetProjectCases(projectId || "", caseSearchRequest);
+    isFetchingNextPage,
+  } = useGetProjectCases(projectId || "", caseSearchRequest, {
+    enabled: !!projectId,
+  });
 
   const { showLoader, hideLoader } = useLoader();
 
@@ -101,7 +131,9 @@ export default function AllCasesPage(): JSX.Element {
   const isStatsLoading =
     isStatsQueryLoading || (!!projectId && !hasStatsResponse);
   const isCasesAreaLoading =
-    isCasesQueryLoading || (!!projectId && !hasCasesResponse);
+    isCasesQueryLoading ||
+    (!!projectId && !hasCasesResponse) ||
+    isFetchingNextPage;
 
   const isInitialPageLoading = isStatsLoading || isCasesAreaLoading;
 
@@ -113,53 +145,36 @@ export default function AllCasesPage(): JSX.Element {
     hideLoader();
   }, [isInitialPageLoading, showLoader, hideLoader]);
 
-  // Background-load all remaining pages so search/filters work on full dataset.
   useEffect(() => {
-    if (!data || !hasNextPage) {
-      return;
+    if (!data) return;
+    const loadedPages = data.pages.length;
+    if (page > loadedPages && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
     }
+  }, [page, data, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-    void fetchNextPage();
-  }, [data, hasNextPage, fetchNextPage]);
+  const currentPageCases = useMemo(() => {
+    if (!data || data.pages.length === 0) return [];
+    const requestedPageIndex = page - 1;
+    if (requestedPageIndex < 0 || requestedPageIndex >= data.pages.length) {
+      return [];
+    }
+    return data.pages[requestedPageIndex]?.cases ?? [];
+  }, [data, page]);
 
-  const allCases = useMemo(
-    () => data?.pages.flatMap((page) => page.cases) ?? [],
-    [data],
-  );
   const apiTotalRecords = data?.pages?.[0]?.totalRecords ?? 0;
 
-  // Frontend search and sort
-  const filteredAndSearchedCases = useMemo(() => {
-    let filtered = [...allCases];
-
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (caseItem) =>
-          caseItem.number?.toLowerCase().includes(searchLower) ||
-          caseItem.title?.toLowerCase().includes(searchLower) ||
-          caseItem.description?.toLowerCase().includes(searchLower),
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.createdOn).getTime() || 0;
-      const dateB = new Date(b.createdOn).getTime() || 0;
-      return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
-    });
-
-    return filtered;
-  }, [allCases, searchTerm, sortOrder]);
+  const filteredAndSearchedCases = useMemo(
+    () =>
+      excludeS0
+        ? currentPageCases.filter((c) => !isS0Case(c))
+        : currentPageCases,
+    [currentPageCases, excludeS0],
+  );
 
   const totalItems = apiTotalRecords || filteredAndSearchedCases.length;
 
-  // Pagination logic
-  const paginatedCases = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    return filteredAndSearchedCases.slice(startIndex, startIndex + pageSize);
-  }, [filteredAndSearchedCases, page]);
+  const paginatedCases = filteredAndSearchedCases;
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -185,6 +200,13 @@ export default function AllCasesPage(): JSX.Element {
     setPage(1);
   };
 
+  const handleSortFieldChange = (
+    value: "createdOn" | "updatedOn" | "severity" | "state",
+  ) => {
+    setSortField(value);
+    setPage(1);
+  };
+
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setPage(1);
@@ -204,10 +226,12 @@ export default function AllCasesPage(): JSX.Element {
         </Button>
         <Box>
           <Typography variant="h4" color="text.primary" sx={{ mb: 1 }}>
-            All Cases
+            {createdByMe ? "My Cases" : "All Cases"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage and track all your support cases
+            {createdByMe
+              ? "Manage and track your support cases"
+              : "Manage and track all your support cases"}
           </Typography>
         </Box>
       </Box>
@@ -226,8 +250,10 @@ export default function AllCasesPage(): JSX.Element {
         onFiltersToggle={() => setIsFiltersOpen(!isFiltersOpen)}
         filters={filters}
         filterMetadata={filterMetadata}
+        deployments={deploymentsData?.deployments}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
+        excludeS0={excludeS0}
       />
 
       {/* Sort and results count */}
@@ -243,7 +269,38 @@ export default function AllCasesPage(): JSX.Element {
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel id="sort-label">Sort</InputLabel>
+            <InputLabel id="sort-by-label">Sort by</InputLabel>
+            <Select<"createdOn" | "updatedOn" | "severity" | "state">
+              labelId="sort-by-label"
+              id="sort-by"
+              value={sortField}
+              label="Sort by"
+              onChange={(e) =>
+                handleSortFieldChange(
+                  e.target.value as
+                    | "createdOn"
+                    | "updatedOn"
+                    | "severity"
+                    | "state",
+                )
+              }
+            >
+              <MenuItem value="createdOn">
+                <Typography variant="body2">Created date</Typography>
+              </MenuItem>
+              <MenuItem value="updatedOn">
+                <Typography variant="body2">Updated date</Typography>
+              </MenuItem>
+              <MenuItem value="severity">
+                <Typography variant="body2">Severity</Typography>
+              </MenuItem>
+              <MenuItem value="state">
+                <Typography variant="body2">State</Typography>
+              </MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="sort-label">Order By</InputLabel>
             <Select<"desc" | "asc">
               labelId="sort-label"
               id="sort"
@@ -267,8 +324,11 @@ export default function AllCasesPage(): JSX.Element {
       {/* Cases list */}
       <AllCasesList
         cases={paginatedCases}
-        isLoading={isCasesAreaLoading}
-        onCaseClick={(c) => navigate(`/${projectId}/support/cases/${c.id}`)}
+        isLoading={isCasesAreaLoading && !isCasesError}
+        isError={isCasesError}
+        onCaseClick={(c) =>
+          navigate(`/projects/${projectId}/support/cases/${c.id}`)
+        }
       />
 
       {/* Pagination */}

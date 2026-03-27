@@ -18,7 +18,6 @@ import type { ReactElement } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import ProjectCard from "@components/project-hub/project-card/ProjectCard";
-import { useGetProjectStat } from "@api/useGetProjectStat";
 import { LoaderProvider } from "@context/linear-loader/LoaderContext";
 
 // Mock @wso2/oxygen-ui
@@ -36,10 +35,9 @@ vi.mock("@wso2/oxygen-ui", () => ({
 
 // Mock sub-components
 vi.mock("../ProjectCardBadges", () => ({
-  default: ({ projectKey, status, isError, isLoading }: any) => (
+  default: ({ projectKey, slaStatus, isError, isLoading }: any) => (
     <div data-testid="badges">
-      {projectKey} {status} {isError ? "Error" : "No Error"}{" "}
-      {isLoading ? "Loading" : "Not Loading"}
+      {isError ? "Error" : isLoading ? "Loading" : `${projectKey} ${slaStatus}`}
     </div>
   ),
 }));
@@ -53,9 +51,16 @@ vi.mock("../ProjectCardInfo", () => ({
 }));
 
 vi.mock("../ProjectCardStats", () => ({
-  default: ({ activeChats, date, openCases, isError, isLoading }: any) => (
+  default: ({
+    activeChatsCount,
+    date,
+    activeCasesCount,
+    isError,
+    isLoading,
+  }: any) => (
     <div data-testid="stats">
-      {activeChats} {date} {openCases} {isError ? "Error" : "No Error"}{" "}
+      {activeChatsCount} {date} {activeCasesCount}{" "}
+      {isError ? "Error" : "No Error"}{" "}
       {isLoading ? "Loading" : "Not Loading"}
     </div>
   ),
@@ -69,21 +74,6 @@ vi.mock("../ProjectCardActions", () => ({
 const mockNavigate = vi.fn();
 vi.mock("react-router", () => ({
   useNavigate: () => mockNavigate,
-}));
-
-// Mock useGetProjectStat
-vi.mock("@/api/useGetProjectStat", () => ({
-  useGetProjectStat: vi.fn(() => ({
-    data: {
-      projectStats: {
-        slaStatus: "All Good",
-        openCases: 10,
-        activeChats: 5,
-      },
-    },
-    isLoading: false,
-    isError: false,
-  })),
 }));
 
 // Mock mockFunctions
@@ -104,9 +94,12 @@ describe("ProjectCard", () => {
   const defaultProps = {
     id: "1",
     projectKey: "PROJ",
+    slaStatus: "Needs Attention",
     title: "Project Title",
     subtitle: "<p>Project Subtitle</p>",
     date: "2026-01-17",
+    activeCasesCount: 10,
+    activeChatsCount: 5,
   };
 
   it("should render all sub-components with correct props", () => {
@@ -127,7 +120,7 @@ describe("ProjectCard", () => {
 
     fireEvent.click(screen.getByTestId("card-button"));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/1/dashboard");
+    expect(mockNavigate).toHaveBeenCalledWith("/projects/1/dashboard");
   });
 
   it("should call onViewDashboard if provided", () => {
@@ -140,31 +133,5 @@ describe("ProjectCard", () => {
 
     expect(onViewDashboard).toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it("should pass isError to sub-components when a query error occurs", () => {
-    vi.mocked(useGetProjectStat).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-    } as any);
-
-    renderWithLoader(<ProjectCard {...defaultProps} />);
-
-    expect(screen.getByTestId("badges")).toHaveTextContent("Error");
-    expect(screen.getByTestId("stats")).toHaveTextContent("Error");
-  });
-
-  it("should pass isLoading to sub-components when stats are loading", () => {
-    vi.mocked(useGetProjectStat).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-    } as any);
-
-    renderWithLoader(<ProjectCard {...defaultProps} />);
-
-    expect(screen.getByTestId("badges")).toHaveTextContent("Loading");
-    expect(screen.getByTestId("stats")).toHaveTextContent("Loading");
   });
 });

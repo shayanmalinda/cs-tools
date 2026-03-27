@@ -16,11 +16,8 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
-import { getMockCaseClassification } from "@models/mockFunctions";
 import type { CaseClassificationRequest } from "@models/requests";
 import type { CaseClassificationResponse } from "@models/responses";
 
@@ -35,8 +32,8 @@ export function usePostCaseClassifications(): UseMutationResult<
   CaseClassificationRequest
 > {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useMutation<
     CaseClassificationResponse,
@@ -58,13 +55,6 @@ export function usePostCaseClassifications(): UseMutationResult<
         },
       );
 
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-        const data = getMockCaseClassification(requestBody);
-        logger.debug("[usePostCaseClassifications] Mock response:", data);
-        return data;
-      }
-
       try {
         if (!isSignedIn || isAuthLoading) {
           throw new Error("User must be signed in to classify case details");
@@ -72,17 +62,14 @@ export function usePostCaseClassifications(): UseMutationResult<
 
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
         if (!baseUrl) {
-          throw new Error(
-            "CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured",
-          );
+          throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const idToken = await getIdToken();
         const requestUrl = `${baseUrl}/cases/classify`;
 
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "POST",
-          headers: addApiHeaders(idToken),
+
           body: JSON.stringify(requestBody),
         });
 

@@ -20,6 +20,11 @@ import ProjectCardInfo from "@components/project-hub/project-card/ProjectCardInf
 
 // Mock @wso2/oxygen-ui
 vi.mock("@wso2/oxygen-ui", () => ({
+  Box: ({ children, sx }: any) => (
+    <div data-testid="box" style={sx}>
+      {children}
+    </div>
+  ),
   Form: {
     CardHeader: ({ title, subheader }: any) => (
       <div data-testid="card-header">
@@ -28,6 +33,7 @@ vi.mock("@wso2/oxygen-ui", () => ({
       </div>
     ),
   },
+  Tooltip: ({ children }: any) => <span data-testid="tooltip">{children}</span>,
   Typography: ({ children, variant, sx }: any) => (
     <span data-testid={`typography-${variant}`} style={sx}>
       {children}

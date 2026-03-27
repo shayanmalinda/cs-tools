@@ -36,24 +36,18 @@ describe("AllCasesStatCards", () => {
   it("should render stat cards with data", () => {
     const mockStats = {
       totalCases: 100,
-      openCases: 40,
       averageResponseTime: 0,
-      activeCases: {
-        workInProgress: 10,
-        waitingOnClient: 20,
-        waitingOnWso2: 30,
-        total: 100,
-      },
-      outstandingCases: {
-        medium: 0,
-        high: 0,
-        critical: 0,
-        total: 0,
-      },
-      resolvedCases: {
-        total: 60,
-        currentMonth: 0,
-      },
+      resolvedCases: { total: 60, currentMonth: 0 },
+      stateCount: [
+        { id: "1", label: "Work In Progress", count: 10 },
+        { id: "2", label: "Awaiting Info", count: 20 },
+        { id: "3", label: "Waiting On WSO2", count: 30 },
+        { id: "4", label: "Closed", count: 40 },
+      ],
+      severityCount: [],
+      outstandingSeverityCount: [],
+      caseTypeCount: [],
+      casesTrend: [],
     };
 
     (useGetProjectCasesStats as any).mockReturnValue({
@@ -67,11 +61,9 @@ describe("AllCasesStatCards", () => {
       </ThemeProvider>,
     );
 
-    // openCases (40) is labeld "Open"
-    // workInProgress (10) is labeled "Working in Progress"
-    // waitingOnClient (20) is labeled "Awaiting Info"
-    // waitingOnWso2 (30) is labeled "Waiting on WSO2"
-    expect(screen.getByText("40")).toBeInTheDocument();
+    // openCases = 10+20+30 = 60 (excluding Closed)
+    // workInProgress (10), waitingOnClient (20), waitingOnWso2 (30)
+    expect(screen.getByText("60")).toBeInTheDocument();
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("20")).toBeInTheDocument();
     expect(screen.getByText("30")).toBeInTheDocument();

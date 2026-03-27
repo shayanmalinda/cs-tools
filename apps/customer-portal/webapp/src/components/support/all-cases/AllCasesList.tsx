@@ -24,19 +24,25 @@ import {
   useTheme,
 } from "@wso2/oxygen-ui";
 import { Calendar, FileText, User } from "@wso2/oxygen-ui-icons-react";
-import type { JSX } from "react";
+import type { JSX, KeyboardEvent } from "react";
 import type { CaseListItem } from "@models/responses";
-import { getStatusColor, getSeverityColor } from "@utils/casesTable";
+import { getSeverityLegendColor } from "@constants/dashboardConstants";
 import {
-  formatRelativeTime,
-  resolveColorFromTheme,
+  formatDateTime,
+  getAssignedEngineerLabel,
+  getStatusColor,
   getStatusIcon,
+  mapSeverityToDisplay,
+  resolveColorFromTheme,
+  stripHtml,
 } from "@utils/support";
 import AllCasesListSkeleton from "@components/support/all-cases/AllCasesListSkeleton";
+import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 
 export interface AllCasesListProps {
   cases: CaseListItem[];
   isLoading: boolean;
+  isError?: boolean;
   onCaseClick?: (caseItem: CaseListItem) => void;
 }
 
@@ -49,6 +55,7 @@ export interface AllCasesListProps {
 export default function AllCasesList({
   cases,
   isLoading,
+  isError = false,
   onCaseClick,
 }: AllCasesListProps): JSX.Element {
   const theme = useTheme();
@@ -57,11 +64,22 @@ export default function AllCasesList({
     return <AllCasesListSkeleton />;
   }
 
+  if (isError) {
+    return (
+      <Box sx={{ textAlign: "center", py: 6 }}>
+        <ErrorIndicator entityName="cases" size="medium" />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Failed to load cases. Please try again.
+        </Typography>
+      </Box>
+    );
+  }
+
   if (cases.length === 0) {
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
         <Typography variant="body1" color="text.secondary">
-          No cases found.
+          No cases found. Try adjusting your filters or search query.
         </Typography>
       </Box>
     );
@@ -78,6 +96,19 @@ export default function AllCasesList({
           <Form.CardButton
             key={caseItem.id}
             onClick={() => onCaseClick?.(caseItem)}
+            tabIndex={onCaseClick ? 0 : undefined}
+            role={onCaseClick ? "button" : undefined}
+            onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
+              if (!onCaseClick) return;
+              if (
+                event.key === "Enter" ||
+                event.key === " " ||
+                event.key === "Spacebar"
+              ) {
+                event.preventDefault();
+                onCaseClick(caseItem);
+              }
+            }}
             sx={{
               p: 3,
               display: "flex",
@@ -102,25 +133,30 @@ export default function AllCasesList({
                   >
                     {caseItem.number || "--"}
                   </Typography>
-                  <Box
+                  <Chip
+                    label={mapSeverityToDisplay(caseItem.severity?.label)}
+                    size="small"
+                    variant="outlined"
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
+                      bgcolor: alpha(
+                        getSeverityLegendColor(caseItem.severity?.label),
+                        0.1,
+                      ),
+                      color: getSeverityLegendColor(caseItem.severity?.label),
+                      borderColor: alpha(
+                        getSeverityLegendColor(caseItem.severity?.label),
+                        0.3,
+                      ),
+                      fontWeight: 500,
+                      px: 0,
+                      height: 20,
+                      fontSize: "0.75rem",
+                      "& .MuiChip-label": {
+                        pl: "6px",
+                        pr: "6px",
+                      },
                     }}
-                  >
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        bgcolor: getSeverityColor(caseItem.severity?.label),
-                      }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {caseItem.severity?.label || "--"}
-                    </Typography>
-                  </Box>
+                  />
                   <Chip
                     size="small"
                     variant="outlined"
@@ -178,7 +214,7 @@ export default function AllCasesList({
                   overflow: "hidden",
                 }}
               >
-                {caseItem.description || "--"}
+                {stripHtml(caseItem.description) || "--"}
               </Typography>
             </Form.CardContent>
 
@@ -212,17 +248,32 @@ export default function AllCasesList({
                     color="text.secondary"
                     sx={{ lineHeight: 1 }}
                   >
-                    Created {formatRelativeTime(caseItem.createdOn) || "--"}
+                    Created {formatDateTime(caseItem.createdOn) || "--"}
                   </Typography>
                 </Box>
+                {caseItem.createdBy && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <User size={14} />
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ lineHeight: 1 }}
+                    >
+                      Created by {caseItem.createdBy}
+                    </Typography>
+                  </Box>
+                )}
                 {(() => {
-                  const raw = caseItem.assignedEngineer;
-                  const assignedLabel =
-                    raw == null
-                      ? ""
-                      : typeof raw === "object" && "label" in raw
-                        ? (raw as { id: string; label: string }).label
-                        : String(raw);
+                  const assignedLabel = getAssignedEngineerLabel(
+                    caseItem.assignedEngineer,
+                  );
                   return assignedLabel ? (
                     <Box
                       sx={{

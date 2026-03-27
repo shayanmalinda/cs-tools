@@ -27,13 +27,22 @@ import {
 import { Clock } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
 import type { CaseListItem } from "@models/responses";
+import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import OutstandingCasesSkeleton from "./OutstandingCasesSkeleton";
-import { getStatusColor, getSeverityColor } from "@utils/casesTable";
-import { formatRelativeTime, resolveColorFromTheme } from "@utils/support";
+import { getSeverityLegendColor } from "@constants/dashboardConstants";
+import {
+  formatRelativeTime,
+  getAssignedEngineerLabel,
+  getStatusColor,
+  mapSeverityToDisplay,
+  resolveColorFromTheme,
+  stripHtml,
+} from "@utils/support";
 
 export interface OutstandingCasesListProps {
   cases: CaseListItem[];
   isLoading?: boolean;
+  isError?: boolean;
   /** When provided, clicking a case card navigates to case details (caller should navigate). */
   onCaseClick?: (caseItem: CaseListItem) => void;
 }
@@ -47,9 +56,14 @@ export interface OutstandingCasesListProps {
 export default function OutstandingCasesList({
   cases,
   isLoading,
+  isError,
   onCaseClick,
 }: OutstandingCasesListProps): JSX.Element {
   const theme = useTheme();
+
+  if (isError) {
+    return <ErrorIndicator entityName="outstanding cases" size="medium" />;
+  }
 
   if (isLoading) {
     return <OutstandingCasesSkeleton />;
@@ -94,18 +108,30 @@ export default function OutstandingCasesList({
                   >
                     {c.number}
                   </Typography>
-                  <Box
+                  <Chip
+                    label={mapSeverityToDisplay(c.severity?.label)}
+                    size="small"
+                    variant="outlined"
                     sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      flexShrink: 0,
-                      bgcolor: getSeverityColor(c.severity?.label),
+                      bgcolor: alpha(
+                        getSeverityLegendColor(c.severity?.label),
+                        0.1,
+                      ),
+                      color: getSeverityLegendColor(c.severity?.label),
+                      borderColor: alpha(
+                        getSeverityLegendColor(c.severity?.label),
+                        0.3,
+                      ),
+                      fontWeight: 500,
+                      px: 0,
+                      height: 20,
+                      fontSize: "0.75rem",
+                      "& .MuiChip-label": {
+                        pl: "6px",
+                        pr: "6px",
+                      },
                     }}
                   />
-                  <Typography variant="caption" color="text.secondary">
-                    {c.severity?.label ?? "—"}
-                  </Typography>
                 </Stack>
               }
             />
@@ -123,7 +149,7 @@ export default function OutstandingCasesList({
                     WebkitBoxOrient: "vertical",
                   }}
                 >
-                  {c.title}
+                  {stripHtml(c.title)}
                 </Typography>
               </Box>
             </Form.CardContent>
@@ -153,13 +179,7 @@ export default function OutstandingCasesList({
               />
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 {(() => {
-                  const raw = c.assignedEngineer;
-                  const label =
-                    raw == null
-                      ? ""
-                      : typeof raw === "object" && "label" in raw
-                        ? raw.label
-                        : String(raw);
+                  const label = getAssignedEngineerLabel(c.assignedEngineer);
                   return label ? (
                     <Tooltip title={`Assigned to ${label}`}>
                       <Typography variant="caption" color="text.secondary">

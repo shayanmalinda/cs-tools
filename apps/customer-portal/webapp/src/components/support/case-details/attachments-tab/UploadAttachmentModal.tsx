@@ -28,55 +28,93 @@ import {
 import { X } from "@wso2/oxygen-ui-icons-react";
 import { useCallback, useRef, useState, type JSX } from "react";
 import { usePostAttachments } from "@api/usePostAttachments";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { usePostDeploymentAttachment } from "@api/usePostDeploymentAttachment";
 import { MAX_ATTACHMENT_SIZE_BYTES } from "@constants/supportConstants";
 import UploadAttachmentDropZone from "@case-details-attachments/UploadAttachmentDropZone";
 import SelectedFileDisplay from "@case-details-attachments/SelectedFileDisplay";
 
 export { MAX_ATTACHMENT_SIZE_BYTES } from "@constants/supportConstants";
 
+function getFileExtension(fileName: string): string {
+  const dotIndex = fileName.lastIndexOf(".");
+  if (dotIndex < 0 || dotIndex === fileName.length - 1) {
+    return "";
+  }
+  return fileName.slice(dotIndex);
+}
+
+function getBaseFileName(fileName: string): string {
+  const dotIndex = fileName.lastIndexOf(".");
+  if (dotIndex < 0 || dotIndex === fileName.length - 1) {
+    return fileName;
+  }
+  return fileName.slice(0, dotIndex);
+}
+
+function ensureExtension(fileName: string, extension: string): string {
+  if (!extension) return fileName;
+  if (fileName.toLowerCase().endsWith(extension.toLowerCase())) {
+    return fileName;
+  }
+  return `${fileName}${extension}`;
+}
+
 export interface UploadAttachmentModalProps {
   open: boolean;
-  caseId: string;
+  /** Case ID for case attachment upload. */
+  caseId?: string;
+  /** Deployment ID for deployment document upload. */
+  deploymentId?: string;
   onClose: () => void;
   onSuccess?: () => void;
+  onSelect?: (file: File, attachmentName?: string) => void;
 }
 
 /**
- * Modal for uploading a case attachment: drag-and-drop or file picker, optional name (defaults to file name).
- * Upload is disabled when isMockEnabled. Max file size 15 MB; shows ErrorBanner when exceeded.
+ * Modal for uploading a case attachment or deployment document: drag-and-drop or file picker.
+ * Supports caseId (case attachments) or deploymentId (deployment documents). Max file size 15 MB.
  *
- * @param {UploadAttachmentModalProps} props - open, caseId, onClose, optional onSuccess.
+ * @param {UploadAttachmentModalProps} props - open, caseId/deploymentId, onClose, optional onSuccess.
  * @returns {JSX.Element} The upload attachment modal.
  */
 export default function UploadAttachmentModal({
   open,
   caseId,
+  deploymentId,
   onClose,
   onSuccess,
+  onSelect,
 }: UploadAttachmentModalProps): JSX.Element {
-  const { isMockEnabled } = useMockConfig();
   const postAttachments = usePostAttachments();
+  const postDeploymentAttachment = usePostDeploymentAttachment();
+  const isDeploymentMode = !!deploymentId && !caseId;
+  const showDescription = isDeploymentMode;
+  const isPending = isDeploymentMode
+    ? postDeploymentAttachment.isPending
+    : postAttachments.isPending;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileSizeErrorVisible, setFileSizeErrorVisible] = useState(false);
+  const [readErrorVisible, setReadErrorVisible] = useState(false);
 
   const fileTooLarge = file ? file.size > MAX_ATTACHMENT_SIZE_BYTES : false;
-  const displayName = name.trim() || (file?.name ?? "");
+  const displayName = name.trim() || (file ? getBaseFileName(file.name) : "");
   const canUpload =
-    !isMockEnabled &&
     !!file &&
     !fileTooLarge &&
     !!displayName &&
-    !postAttachments.isPending;
+    (!!onSelect || (!isPending && (!!caseId || !!deploymentId)));
 
   const reset = useCallback(() => {
     setFile(null);
     setName("");
+    setDescription("");
     setFileSizeErrorVisible(false);
+    setReadErrorVisible(false);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -93,7 +131,7 @@ export default function UploadAttachmentModal({
         setFileSizeErrorVisible(false);
       }
       if (selected && !name.trim()) {
-        setName(selected.name);
+        setName(getBaseFileName(selected.name));
       }
     },
     [name],
@@ -132,42 +170,73 @@ export default function UploadAttachmentModal({
   );
 
   const handleUpload = useCallback(() => {
-    if (!file || fileTooLarge || isMockEnabled) return;
-    const attachmentName = (name.trim() || file.name).trim();
+    if (!file || fileTooLarge) return;
+    const normalizedName = (name.trim() || getBaseFileName(file.name)).trim();
+    const attachmentName = ensureExtension(
+      normalizedName,
+      getFileExtension(file.name),
+    );
     if (!attachmentName) return;
+
+    if (onSelect) {
+      onSelect(file, attachmentName);
+      handleClose();
+      return;
+    }
+
+    if (!caseId && !deploymentId) return;
+
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = typeof reader.result === "string" ? reader.result : "";
       const commaIndex = base64.indexOf(",");
       const content = commaIndex >= 0 ? base64.slice(commaIndex + 1) : base64;
-      postAttachments.mutate(
-        {
-          caseId,
-          body: {
-            referenceType: "case",
-            name: attachmentName,
-            type: file.type || "application/octet-stream",
-            content,
+      const body = {
+        name: attachmentName,
+        type: file.type || "application/octet-stream",
+        content,
+        ...(description.trim() && { description: description.trim() }),
+      };
+
+      if (isDeploymentMode) {
+        postDeploymentAttachment.mutate(
+          { deploymentId: deploymentId!, body },
+          {
+            onSuccess: () => {
+              handleClose();
+              onSuccess?.();
+            },
           },
-        },
-        {
-          onSuccess: () => {
-            handleClose();
-            onSuccess?.();
+        );
+      } else if (caseId) {
+        postAttachments.mutate(
+          { caseId, body },
+          {
+            onSuccess: () => {
+              handleClose();
+              onSuccess?.();
+            },
           },
-        },
-      );
+        );
+      }
+    };
+    reader.onerror = () => {
+      setReadErrorVisible(true);
     };
     reader.readAsDataURL(file);
   }, [
     caseId,
+    deploymentId,
     file,
     name,
+    description,
     fileTooLarge,
-    isMockEnabled,
+    isDeploymentMode,
     postAttachments,
+    postDeploymentAttachment,
     handleClose,
     onSuccess,
+    onSelect,
   ]);
 
   return (
@@ -182,7 +251,7 @@ export default function UploadAttachmentModal({
         id="upload-attachment-dialog-title"
         sx={{ pr: 6, position: "relative" }}
       >
-        Upload Attachment
+        {isDeploymentMode ? "Add Document" : "Upload Attachment"}
         <IconButton
           aria-label="close"
           onClick={handleClose}
@@ -200,6 +269,15 @@ export default function UploadAttachmentModal({
             sx={{ mb: 2 }}
           >
             File size exceeds 15 MB limit.
+          </Alert>
+        )}
+        {readErrorVisible && (
+          <Alert
+            severity="error"
+            onClose={() => setReadErrorVisible(false)}
+            sx={{ mb: 2 }}
+          >
+            Failed to read file. Please try again.
           </Alert>
         )}
         <input
@@ -225,18 +303,32 @@ export default function UploadAttachmentModal({
 
         <TextField
           fullWidth
-          label="Attachment name"
+          label={isDeploymentMode ? "Document name" : "Attachment name"}
           placeholder="Leave empty to use file name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={!file}
+          sx={{ mt: 2 }}
         />
+        {showDescription && (
+          <TextField
+            fullWidth
+            label="Description (optional)"
+            placeholder="Add a short description for this file"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={!file}
+            multiline
+            minRows={2}
+            sx={{ mt: 2 }}
+          />
+        )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
-        <Button onClick={handleClose} disabled={postAttachments.isPending}>
+        <Button onClick={handleClose} disabled={isPending}>
           Cancel
         </Button>
-        {postAttachments.isPending ? (
+        {isPending ? (
           <Button
             variant="outlined"
             startIcon={<CircularProgress color="inherit" size={16} />}
@@ -252,7 +344,7 @@ export default function UploadAttachmentModal({
             onClick={handleUpload}
             disabled={!canUpload}
           >
-            Upload
+            {onSelect ? "Add" : "Upload"}
           </Button>
         )}
       </DialogActions>

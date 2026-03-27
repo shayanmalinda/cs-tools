@@ -15,26 +15,24 @@
 // under the License.
 
 import { Form } from "@wso2/oxygen-ui";
-import { useMemo, type JSX, useEffect } from "react";
+import { type JSX, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useGetProjectStat } from "@api/useGetProjectStat";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import ProjectCardActions from "@components/project-hub/project-card/ProjectCardActions";
 import ProjectCardBadges from "@components/project-hub/project-card/ProjectCardBadges";
 import ProjectCardInfo from "@components/project-hub/project-card/ProjectCardInfo";
 import ProjectCardStats from "@components/project-hub/project-card/ProjectCardStats";
-import {
-  getMockActiveChats,
-  getMockOpenCases,
-  getMockStatus,
-} from "@models/mockFunctions";
+import { setLastSelectedProjectId } from "@utils/settingsStorage";
 
 // Props for the ProjectCard component.
 export interface ProjectCardProps {
   date: string;
   id: string;
+  activeCasesCount: number;
+  activeChatsCount: number;
   onViewDashboard?: () => void;
   projectKey: string;
+  slaStatus: string;
   subtitle: string;
   title: string;
 }
@@ -48,47 +46,30 @@ export interface ProjectCardProps {
 export default function ProjectCard({
   id,
   projectKey,
+  slaStatus,
   title,
   subtitle,
   date,
+  activeCasesCount,
+  activeChatsCount,
   onViewDashboard,
 }: ProjectCardProps): JSX.Element {
   // Hook to navigate between routes.
   const navigate = useNavigate();
-  const { showLoader, hideLoader } = useLoader();
+  const { hideLoader } = useLoader();
 
   const handleViewDashboard = () => {
+    setLastSelectedProjectId(id);
     if (onViewDashboard) {
       onViewDashboard();
     } else {
-      navigate(`/${id}/dashboard`);
+      navigate(`/projects/${id}/dashboard`);
     }
   };
 
-  // Hook to fetch project statistics.
-  const {
-    data: statsData,
-    isLoading: isStatsLoading,
-    isError: isStatsQueryError,
-  } = useGetProjectStat(id);
-
   useEffect(() => {
-    if (isStatsLoading) {
-      showLoader();
-      return () => hideLoader();
-    }
-  }, [isStatsLoading, showLoader, hideLoader]);
-
-  const mockStatus = useMemo(() => getMockStatus(), []);
-  const mockOpenCases = useMemo(() => getMockOpenCases(), []);
-  const mockActiveChats = useMemo(() => getMockActiveChats(), []);
-
-  const resolvedStatus = statsData?.projectStats?.slaStatus ?? mockStatus;
-  const resolvedOpenCases = statsData?.projectStats?.openCases ?? mockOpenCases;
-  const resolvedActiveChats =
-    statsData?.projectStats?.activeChats ?? mockActiveChats;
-
-  const resolvedIsStatsError = isStatsQueryError;
+    hideLoader();
+  }, [hideLoader]);
 
   return (
     <Form.CardButton
@@ -98,24 +79,18 @@ export default function ProjectCard({
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        minHeight: 320,
       }}
     >
       {/* project card badges */}
-      <ProjectCardBadges
-        projectKey={projectKey}
-        status={resolvedStatus}
-        isError={resolvedIsStatsError}
-        isLoading={isStatsLoading}
-      />
+      <ProjectCardBadges projectKey={projectKey} slaStatus={slaStatus} />
       {/* project card info */}
       <ProjectCardInfo subtitle={subtitle} title={title} />
       {/* project card stats */}
       <ProjectCardStats
-        activeChats={resolvedActiveChats}
+        activeChatsCount={activeChatsCount}
         date={date}
-        openCases={resolvedOpenCases}
-        isError={resolvedIsStatsError}
-        isLoading={isStatsLoading}
+        activeCasesCount={activeCasesCount}
       />
       {/* project card actions */}
       <ProjectCardActions onViewDashboard={handleViewDashboard} />

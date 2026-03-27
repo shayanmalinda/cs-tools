@@ -16,14 +16,13 @@
 
 import {
   Briefcase,
-  FileText,
+  Cog,
   FolderOpen,
   Headset,
-  Home,
+  LayoutDashboard,
   Megaphone,
   RefreshCw,
   Shield,
-  Users,
 } from "@wso2/oxygen-ui-icons-react";
 import type { ComponentType } from "react";
 
@@ -36,14 +35,9 @@ interface AppShellNavItem {
 
 // Navigation items for the app shell.
 export const APP_SHELL_NAV_ITEMS: AppShellNavItem[] = [
-  { id: "dashboard", label: "Dashboard", path: "dashboard", icon: Home },
+  { id: "dashboard", label: "Dashboard", path: "dashboard", icon: LayoutDashboard },
   { id: "support", label: "Support", path: "support", icon: Headset },
-  {
-    id: "project-details",
-    label: "Project Details",
-    path: "project-details",
-    icon: FolderOpen,
-  },
+  { id: "operations", label: "Operations", path: "operations", icon: Cog},
   { id: "updates", label: "Updates", path: "updates", icon: RefreshCw },
   {
     id: "security-center",
@@ -51,19 +45,13 @@ export const APP_SHELL_NAV_ITEMS: AppShellNavItem[] = [
     path: "security-center",
     icon: Shield,
   },
+  { id: "engagements", label: "Engagements", path: "engagements", icon: Briefcase },
   {
-    id: "engagements",
-    label: "Engagements",
-    path: "engagements",
-    icon: Briefcase,
+    id: "project-details",
+    label: "Project Details",
+    path: "project-details",
+    icon: FolderOpen,
   },
-  {
-    id: "legal-contracts",
-    label: "Legal Contracts",
-    path: "legal-contracts",
-    icon: FileText,
-  },
-  { id: "community", label: "Community", path: "community", icon: Users },
   {
     id: "announcements",
     label: "Announcements",

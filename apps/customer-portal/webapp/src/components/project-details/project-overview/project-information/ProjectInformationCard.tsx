@@ -18,7 +18,7 @@ import { Box, Card, CardContent } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
 
 import type { ProjectDetails } from "@models/responses";
-import { formatProjectDate } from "@utils/projectStats";
+import { formatProjectDate } from "@utils/projectDetails";
 import ProjectHeader from "@components/project-details/project-overview/project-information/ProjectHeader";
 import ProjectName from "@components/project-details/project-overview/project-information/ProjectName";
 import ProjectDescription from "@components/project-details/project-overview/project-information/ProjectDescription";
@@ -43,16 +43,22 @@ const ProjectInformationCard = ({
   const getDescription = () => project?.description || "--";
   const getCreatedDate = () =>
     project?.createdOn ? formatProjectDate(project.createdOn) : "--";
-  const getType = () => project?.type || "--";
-  const getSupportTier = () => project?.subscription?.supportTier || "--";
-  const getStartDate = () =>
-    project?.subscription?.startDate
-      ? formatProjectDate(project.subscription.startDate)
-      : "--";
-  const getEndDate = () =>
-    project?.subscription?.endDate
-      ? formatProjectDate(project.subscription.endDate)
-      : "--";
+  const getType = () => project?.type || { id: "--", label: "--" };
+  const getSupportTier = () => project?.account?.supportTier || "--";
+  const getStartDate = () => {
+    const val = project?.startDate;
+    return val?.trim() ? formatProjectDate(val.trim()) : "--";
+  };
+  const getEndDate = () => {
+    const val = project?.endDate;
+    return val?.trim() ? formatProjectDate(val.trim()) : "--";
+  };
+  const getGoLivePlanDate = () => {
+    const val = project?.goLivePlanDate;
+    return val?.trim() ? formatProjectDate(val.trim()) : "--";
+  };
+  const getOnboardingStatus = () =>
+    project?.onboardingStatus?.trim() || "--";
 
   return (
     <Card sx={{ height: "100%" }}>
@@ -75,9 +81,11 @@ const ProjectInformationCard = ({
 
           <ProjectMetadata
             createdDate={getCreatedDate()}
-            projectType={getType()}
+            type={getType()}
             supportTier={getSupportTier()}
             slaStatus={slaStatus}
+            goLivePlanDate={getGoLivePlanDate()}
+            onboardingStatus={getOnboardingStatus()}
             isLoading={isLoading}
             isError={isError}
           />

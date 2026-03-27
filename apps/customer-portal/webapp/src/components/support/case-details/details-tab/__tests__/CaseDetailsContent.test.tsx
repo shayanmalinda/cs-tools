@@ -18,13 +18,74 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ThemeProvider, createTheme } from "@wso2/oxygen-ui";
 import CaseDetailsContent from "@case-details-details/CaseDetailsContent";
-import { mockCaseDetails } from "@models/mockData";
+
+const mockCaseDetails = {
+  id: "case-001",
+  internalId: "INT-1",
+  number: "CS0001001",
+  createdOn: "2026-01-31 10:45:12",
+  updatedOn: "2026-02-10 23:47:57",
+  title: "Test case",
+  description: "Desc",
+  slaResponseTime: "129671000",
+  product: null,
+  account: { type: null, id: "acc-1", label: "Account" },
+  csManager: null,
+  assignedEngineer: null,
+  project: { id: "p1", label: "Project" },
+  type: { id: "1", label: "Incident" },
+  deployment: { id: "d1", label: "Production" },
+  deployedProduct: null,
+  parentCase: null,
+  conversation: null,
+  issueType: null,
+  severity: { id: "60", label: "S0" },
+  status: { id: "1", label: "Open" },
+  closedOn: null,
+  closedBy: null,
+  closeNotes: null,
+  hasAutoClosed: null,
+  engineerEmail: null,
+  findingsResolved: null,
+  findingsTotal: null,
+};
+
+vi.mock("@api/useGetProjectFilters", () => ({
+  default: () => ({
+    data: { caseStates: [{ id: "3", label: "Closed" }] },
+  }),
+}));
+
+vi.mock("@api/usePatchCase", () => ({
+  usePatchCase: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@context/success-banner/SuccessBannerContext", () => ({
+  useSuccessBanner: () => ({ showSuccess: vi.fn() }),
+}));
+
+vi.mock("@context/error-banner/ErrorBannerContext", () => ({
+  useErrorBanner: () => ({ showError: vi.fn() }),
+}));
 
 vi.mock("@api/useGetCaseAttachments", () => ({
-  default: vi.fn(() => ({
-    data: { totalRecords: 3, attachments: [], limit: 50, offset: 0 },
+  useGetCaseAttachments: vi.fn(() => ({
+    data: {
+      pages: [{ totalRecords: 3, attachments: [], limit: 10, offset: 0 }],
+      pageParams: [0],
+    },
     isLoading: false,
     isError: false,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  })),
+}));
+
+
+vi.mock("@api/useGetCallRequests", () => ({
+  useGetCallRequests: vi.fn(() => ({
+    data: { pages: [{ totalRecords: 2, callRequests: [] }] },
   })),
 }));
 
@@ -33,13 +94,15 @@ vi.mock("@case-details/CaseDetailsTabPanels", () => ({
   default: () => <div data-testid="tab-panels">Tab panels</div>,
 }));
 
-function renderContent(props: {
-  data?: typeof mockCaseDetails;
-  isLoading?: boolean;
-  isError?: boolean;
-  caseId?: string;
-  onBack?: () => void;
-} = {}) {
+function renderContent(
+  props: {
+    data?: typeof mockCaseDetails;
+    isLoading?: boolean;
+    isError?: boolean;
+    caseId?: string;
+    onBack?: () => void;
+  } = {},
+) {
   return render(
     <ThemeProvider theme={createTheme()}>
       <CaseDetailsContent
@@ -64,14 +127,14 @@ describe("CaseDetailsContent", () => {
   it("should render header and action row when not in focus mode", () => {
     renderContent();
     expect(screen.getByText("CS0001001")).toBeInTheDocument();
-    expect(screen.getByText("Support Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Manage case status")).toBeInTheDocument();
   });
 
   it("should hide header and action row when focus mode is on", () => {
     renderContent();
     const focusButton = screen.getByRole("button", { name: /focus mode/i });
     fireEvent.click(focusButton);
-    expect(screen.queryByText("Support Engineer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Manage case status")).not.toBeInTheDocument();
   });
 
   it("should show attachment count in Attachments tab label when available", () => {

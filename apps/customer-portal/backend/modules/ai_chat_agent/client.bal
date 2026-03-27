@@ -14,9 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/http;
+import ballerina/websocket;
 
 configurable string aiChatAgentBaseUrl = ?;
+configurable string aiChatAgentWsBaseUrl = ?;
 configurable ClientCredentialsOauth2Config clientCredentialsOauth2Config = ?;
+configurable ClientCredentialsOauth2Config clientCredentialsOauth2ConfigWs = ?;
 
 final http:Client aiChatAgentClient = check new (aiChatAgentBaseUrl, {
     auth: {
@@ -35,3 +38,11 @@ final http:Client aiChatAgentClient = check new (aiChatAgentBaseUrl, {
         ]
     }
 });
+
+isolated function createAiChatAgentWsClient(string sessionId) returns websocket:Client|error {
+    return new (string `${aiChatAgentWsBaseUrl}/ws?sessionId=${sessionId}`, {
+        auth: {
+            ...clientCredentialsOauth2ConfigWs
+        }
+    });
+}

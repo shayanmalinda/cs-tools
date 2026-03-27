@@ -28,13 +28,16 @@ import { OUTSTANDING_INCIDENTS_CHART_DATA } from "@constants/dashboardConstants"
 
 interface OutstandingIncidentsChartProps {
   data: {
+    low: number;
     medium: number;
     high: number;
     critical: number;
+    catastrophic: number;
     total: number;
   };
   isLoading?: boolean;
   isError?: boolean;
+  excludeS0?: boolean;
 }
 
 /**
@@ -49,25 +52,34 @@ export const OutstandingIncidentsChart = ({
   data,
   isLoading,
   isError,
+  excludeS0 = false,
 }: OutstandingIncidentsChartProps): JSX.Element => {
   const safeData = data ?? {
+    low: 0,
     medium: 0,
     high: 0,
     critical: 0,
+    catastrophic: 0,
     total: 0,
   };
 
+  const chartSource = excludeS0
+    ? OUTSTANDING_INCIDENTS_CHART_DATA.filter(
+        (item) => item.key !== "catastrophic",
+      )
+    : OUTSTANDING_INCIDENTS_CHART_DATA;
+
   const chartData = isError
-    ? OUTSTANDING_INCIDENTS_CHART_DATA.map((item) => ({
-        name: item.name,
+    ? chartSource.map((item) => ({
+        name: item.displayName,
         value: 1,
-        color: colors.grey[300],
+        color: colors.grey?.[300] ?? "#D1D5DB",
       }))
     : isLoading
       ? []
-      : OUTSTANDING_INCIDENTS_CHART_DATA.map((item) => ({
-          name: item.name,
-          value: safeData[item.key] || 0,
+      : chartSource.map((item) => ({
+          name: item.displayName,
+          value: safeData[item.key as keyof typeof safeData] ?? 0,
           color: item.color,
         }));
 
@@ -75,7 +87,7 @@ export const OutstandingIncidentsChart = ({
     <Card sx={{ height: "100%", p: 2 }}>
       {/* Title */}
       <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
-        Outstanding cases
+        Outstanding Support Cases
       </Typography>
       {/* Chart state */}
       {isLoading ? (
@@ -96,10 +108,14 @@ export const OutstandingIncidentsChart = ({
             position: "relative",
             opacity: isError ? 0.3 : 1,
             filter: isError ? "grayscale(1)" : "none",
+            "& *:focus": { outline: "none" },
           }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart legend={{ show: false }} tooltip={{ show: !isError }}>
+            <PieChart
+              legend={{ show: false }}
+              tooltip={{ show: !isError, wrapperStyle: { zIndex: 1000 } }}
+            >
               <Pie
                 data={chartData}
                 cx="50%"
@@ -168,18 +184,19 @@ export const OutstandingIncidentsChart = ({
             mt: 2,
           }}
         >
-          {[1, 2, 3].map((i) => (
+          {chartSource.map((_, i) => (
             <Skeleton key={i} variant="rounded" width={60} height={20} />
           ))}
         </Box>
       ) : (
         <ChartLegend
-          data={OUTSTANDING_INCIDENTS_CHART_DATA.map((item) => ({
-            name: item.name,
-            value: 0,
+          data={chartSource.map((item) => ({
+            name: item.displayName,
+            value: safeData[item.key as keyof typeof safeData] ?? 0,
             color: item.color,
           }))}
           isError={isError}
+          showValues
         />
       )}
     </Card>

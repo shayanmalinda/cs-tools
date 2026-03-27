@@ -16,11 +16,9 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { mockProjectDetails } from "@models/mockData";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { ProjectDetails } from "@models/responses";
 
 /**
@@ -33,38 +31,15 @@ export default function useGetProjectDetails(
   projectId: string,
 ): UseQueryResult<ProjectDetails, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useQuery<ProjectDetails, Error>({
-    queryKey: [ApiQueryKeys.PROJECT_DETAILS, projectId, isMockEnabled],
+    queryKey: [ApiQueryKeys.PROJECT_DETAILS, projectId],
     queryFn: async (): Promise<ProjectDetails> => {
-      logger.debug(
-        `Fetching project details for project ID: ${projectId}, mock: ${isMockEnabled}`,
-      );
-
-      if (isMockEnabled) {
-        // Mock behavior: simulate network latency.
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-
-        // Find project by ID from mock data.
-        const project = mockProjectDetails.find((p) => p.id === projectId);
-
-        if (!project) {
-          logger.error(`Project not found for ID: ${projectId}`);
-          throw new Error(`Project with ID ${projectId} not found`);
-        }
-
-        logger.debug(
-          `Project details fetched successfully for project ID: ${projectId} (mock)`,
-          project,
-        );
-
-        return project;
-      }
+      logger.debug(`Fetching project details for project ID: ${projectId}`);
 
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
@@ -73,9 +48,8 @@ export default function useGetProjectDetails(
 
         const requestUrl = `${baseUrl}/projects/${projectId}`;
 
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         logger.debug(
@@ -96,7 +70,7 @@ export default function useGetProjectDetails(
         throw error;
       }
     },
-    enabled: !!projectId && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!projectId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

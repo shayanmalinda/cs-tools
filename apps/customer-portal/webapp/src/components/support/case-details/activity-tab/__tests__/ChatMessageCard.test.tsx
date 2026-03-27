@@ -14,22 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it} from "vitest";
 import { ThemeProvider, createTheme } from "@wso2/oxygen-ui";
 import ChatMessageCard from "@case-details-activity/ChatMessageCard";
 
 function renderCard(props: {
   htmlContent?: string;
-  isExpanded?: boolean;
-  onToggleExpand?: () => void;
   isCurrentUser?: boolean;
   primaryBg?: string;
 } = {}) {
   const defaults = {
     htmlContent: "<p>Short message</p>",
-    isExpanded: false,
-    onToggleExpand: () => {},
     isCurrentUser: false,
     primaryBg: "rgba(250,123,63,0.1)",
   };
@@ -46,26 +42,14 @@ describe("ChatMessageCard", () => {
     expect(screen.getByText("Hello")).toBeInTheDocument();
   });
 
-  it("should not show expand button for short content", () => {
-    renderCard({ htmlContent: "<p>Short</p>" });
-    expect(screen.queryByRole("button", { name: /show more/i })).not.toBeInTheDocument();
-  });
-
-  it("should show expand button for long content", () => {
+  it("should not show expand button even for long content", () => {
     const longText = "a".repeat(250);
     renderCard({ htmlContent: `<p>${longText}</p>` });
-    expect(screen.getByRole("button", { name: /show more/i })).toBeInTheDocument();
-  });
-
-  it("should call onToggleExpand when expand button clicked", () => {
-    const onToggle = vi.fn();
-    const longText = "a".repeat(250);
-    renderCard({
-      htmlContent: `<p>${longText}</p>`,
-      onToggleExpand: onToggle,
-    });
-    const btn = screen.getByRole("button", { name: /show more/i });
-    fireEvent.click(btn);
-    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: /show more/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /show less/i }),
+    ).not.toBeInTheDocument();
   });
 });

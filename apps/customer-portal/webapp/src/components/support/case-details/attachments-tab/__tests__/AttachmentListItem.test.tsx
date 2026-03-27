@@ -31,10 +31,18 @@ const mockAttachment: CaseAttachment = {
   downloadUrl: "https://example.com/download/att-1",
 };
 
-function renderItem(att = mockAttachment, onDownload = vi.fn()) {
+function renderItem(
+  att = mockAttachment,
+  onDownload = vi.fn(),
+  isDownloadLoading = false,
+) {
   return render(
     <ThemeProvider theme={createTheme()}>
-      <AttachmentListItem attachment={att} onDownload={onDownload} />
+      <AttachmentListItem
+        attachment={att}
+        onDownload={onDownload}
+        isDownloadLoading={isDownloadLoading}
+      />
     </ThemeProvider>,
   );
 }
@@ -53,5 +61,13 @@ describe("AttachmentListItem", () => {
     renderItem(mockAttachment, onDownload);
     fireEvent.click(screen.getByRole("button", { name: /download/i }));
     expect(onDownload).toHaveBeenCalledWith(mockAttachment);
+  });
+
+  it("should show progress on download button when isDownloadLoading", () => {
+    renderItem(mockAttachment, vi.fn(), true);
+    expect(
+      document.querySelector(".MuiCircularProgress-root"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /download/i })).toBeDisabled();
   });
 });

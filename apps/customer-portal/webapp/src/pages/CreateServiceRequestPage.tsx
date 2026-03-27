@@ -1,0 +1,436 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { Box, Button } from "@wso2/oxygen-ui";
+import { CircleCheck } from "@wso2/oxygen-ui-icons-react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  type FormEvent,
+  type JSX,
+} from "react";
+import { useNavigate, useParams, useLocation } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetProjectDeployments } from "@api/useGetProjectDeployments";
+import { useGetDeploymentsProducts } from "@api/useGetDeploymentsProducts";
+import { useAuthApiClient } from "@api/useAuthApiClient";
+import { useSearchCatalogs } from "@api/useSearchCatalogs";
+import { useGetCatalogItemVariables } from "@api/useGetCatalogItemVariables";
+import { usePostCase } from "@api/usePostCase";
+import useGetProjectDetails from "@api/useGetProjectDetails";
+import { useLoader } from "@context/linear-loader/LoaderContext";
+import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
+import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
+import {
+  getFirstEmptyRequiredField,
+  isContextField,
+  isDescriptionField,
+} from "@utils/serviceRequestValidation";
+import {
+  getBaseDeploymentOptions,
+  getBaseProductOptions,
+  resolveDeploymentMatch,
+  resolveProductId,
+} from "@utils/caseCreation";
+import {
+  refreshCaseQueriesAfterCreation,
+  triggerPostCreationApiCalls,
+} from "@utils/caseRefresh";
+import { htmlToPlainText } from "@utils/richTextEditor";
+import type { CreateServiceRequestPayload } from "@models/requests";
+import CatalogSelector from "@components/support/service-requests/CatalogSelector";
+import VariableFormFields from "@components/support/service-requests/VariableFormFields";
+import UploadAttachmentModal from "@components/support/case-details/attachments-tab/UploadAttachmentModal";
+import { CaseCreationHeader } from "@components/support/case-creation-layout/header/CaseCreationHeader";
+import { BasicInformationSection } from "@components/support/case-creation-layout/form-sections/basic-information-section/BasicInformationSection";
+import { CaseType } from "@constants/supportConstants";
+
+/**
+ * CreateServiceRequestPage - multi-step form to create a service request.
+ * Flow: Select Deployment -> Select Product -> Select Catalog Item -> Fill Variables -> Submit.
+ *
+ * @returns {JSX.Element} The Create Service Request page.
+ */
+export default function CreateServiceRequestPage(): JSX.Element {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { projectId } = useParams<{ projectId: string }>();
+  const basePath = location.pathname.includes("/operations/") ? "operations" : "support";
+  const { showLoader, hideLoader } = useLoader();
+  const { showError } = useErrorBanner();
+  const { showSuccess } = useSuccessBanner();
+  const queryClient = useQueryClient();
+  const authFetch = useAuthApiClient();
+
+  const [deployment, setDeployment] = useState("");
+  const [product, setProduct] = useState("");
+  const [selectedCatalogId, setSelectedCatalogId] = useState("");
+  const [selectedCatalogItemId, setSelectedCatalogItemId] = useState("");
+  const [variableValues, setVariableValues] = useState<Record<string, string>>(
+    {},
+  );
+  type AttachmentItem = { id: string; file: File };
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const attachmentNamesRef = useRef<Map<string, string>>(new Map());
+  const attachmentIdCounterRef = useRef(0);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+
+  const { data: projectDetails, isLoading: isProjectLoading } =
+    useGetProjectDetails(projectId || "");
+  const { data: projectDeployments, isLoading: isDeploymentsLoading } =
+    useGetProjectDeployments(projectId || "");
+
+  const baseDeploymentOptions = getBaseDeploymentOptions(projectDeployments);
+  const selectedDeploymentMatch = useMemo(
+    () => resolveDeploymentMatch(deployment, projectDeployments, undefined),
+    [deployment, projectDeployments],
+  );
+  const selectedDeploymentId = selectedDeploymentMatch?.id ?? "";
+
+  const {
+    data: deploymentProductsData,
+    isLoading: deploymentProductsLoading,
+  } = useGetDeploymentsProducts(selectedDeploymentId);
+
+  const allDeploymentProducts = useMemo(
+    () =>
+      (deploymentProductsData ?? []).filter((item) =>
+        item.product?.label?.trim(),
+      ),
+    [deploymentProductsData],
+  );
+  const baseProductOptions = getBaseProductOptions(allDeploymentProducts);
+  const sortedProductOptions = useMemo(
+    () =>
+      [...baseProductOptions].sort((a, b) =>
+        a.label.localeCompare(b.label, undefined, { numeric: true }),
+      ),
+    [baseProductOptions],
+  );
+
+  const productId = resolveProductId(product, allDeploymentProducts);
+  const { data: catalogsData, isLoading: isCatalogsLoading } =
+    useSearchCatalogs(productId);
+  const { data: variablesData, isLoading: isVariablesLoading } =
+    useGetCatalogItemVariables(selectedCatalogId, selectedCatalogItemId);
+
+  const selectedCatalogItemLabel = useMemo(() => {
+    if (!selectedCatalogId || !selectedCatalogItemId || !catalogsData?.catalogs)
+      return undefined;
+    const catalog = catalogsData.catalogs.find((c) => c.id === selectedCatalogId);
+    const item = catalog?.catalogItems?.find(
+      (i) => i.id === selectedCatalogItemId,
+    );
+    return item?.label;
+  }, [catalogsData, selectedCatalogId, selectedCatalogItemId]);
+
+  const { mutate: postCase, isPending: isCreatePending } = usePostCase();
+
+  const isInitialLoading =
+    isProjectLoading || isDeploymentsLoading || !projectId;
+  useEffect(() => {
+    if (isInitialLoading) {
+      showLoader();
+    } else {
+      hideLoader();
+    }
+    return () => hideLoader();
+  }, [isInitialLoading, showLoader, hideLoader]);
+
+  const handleDeploymentChange = useCallback((value: string) => {
+    setDeployment(value);
+    setProduct("");
+    setSelectedCatalogId("");
+    setSelectedCatalogItemId("");
+    setVariableValues({});
+    setAttachments([]);
+  }, []);
+
+  const handleProductChange = useCallback((value: string) => {
+    setProduct(value);
+    setSelectedCatalogId("");
+    setSelectedCatalogItemId("");
+    setVariableValues({});
+    setAttachments([]);
+  }, []);
+
+  const handleSelectCatalogItem = useCallback(
+    (catalogId: string, catalogItemId: string) => {
+      setSelectedCatalogId(catalogId);
+      setSelectedCatalogItemId(catalogItemId);
+      setVariableValues({});
+      setAttachments([]);
+    },
+    [],
+  );
+
+  const handleVariableChange = useCallback((variableId: string, value: string) => {
+    setVariableValues((prev) => ({ ...prev, [variableId]: value }));
+  }, []);
+
+  const handleAttachmentClick = () => setIsAttachmentModalOpen(true);
+
+  const handleSelectAttachment = (file: File, attachmentName?: string) => {
+    setAttachments((prev) => {
+      const sig = `${file.name}-${file.size}-${file.lastModified}`;
+      if (prev.some((a) => `${a.file.name}-${a.file.size}-${a.file.lastModified}` === sig))
+        return prev;
+      const id = `att-${++attachmentIdCounterRef.current}-${Date.now()}`;
+      if (attachmentName?.trim()) attachmentNamesRef.current.set(id, attachmentName.trim());
+      return [...prev, { id, file }];
+    });
+  };
+
+  const handleAttachmentRemove = (index: number) => {
+    setAttachments((prev) => {
+      const item = prev[index];
+      if (item) attachmentNamesRef.current.delete(item.id);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else if (projectId) {
+      navigate(`/projects/${projectId}/${basePath}/service-requests`);
+    } else {
+      navigate("/");
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const s = typeof reader.result === "string" ? reader.result : "";
+        const i = s.indexOf(",");
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!projectId) return;
+
+    const deploymentMatch = resolveDeploymentMatch(
+      deployment,
+      projectDeployments,
+      undefined,
+    );
+    if (!deploymentMatch) {
+      showError("Please select a deployment type.");
+      return;
+    }
+
+    if (!productId) {
+      showError("Please select a product version.");
+      return;
+    }
+
+    if (!selectedCatalogId || !selectedCatalogItemId) {
+      showError("Please select a request type (catalog item).");
+      return;
+    }
+
+    const variables = variablesData?.variables ?? [];
+    const contextValues = {
+      projectDisplay: projectDetails?.name ?? "",
+      deploymentDisplay: deployment,
+      productDisplay:
+        sortedProductOptions.find((p) => p.id === product)?.label ?? "",
+    };
+    const firstEmpty = getFirstEmptyRequiredField(
+      variables,
+      contextValues,
+      variableValues,
+    );
+    if (firstEmpty) {
+      showError(`Please fill in the required field: ${firstEmpty}`);
+      return;
+    }
+
+    const variablePayload = variables
+      .filter((v) => !isContextField(v.questionText ?? ""))
+      .map((v) => {
+        const raw = variableValues[v.id] ?? "";
+        const value = isDescriptionField(v.questionText ?? "")
+          ? raw.trim()
+          : htmlToPlainText(raw).trim();
+        return { id: v.id, value };
+      })
+      .filter((v) => v.value !== "");
+
+    let encodedAttachments: Array<{ name: string; file: string }> = [];
+    if (attachments.length > 0) {
+      try {
+        encodedAttachments = await Promise.all(
+          attachments.map(async (item) => ({
+            name: attachmentNamesRef.current.get(item.id) || item.file.name,
+            file: await fileToBase64(item.file),
+          })),
+        );
+      } catch {
+        showError("Failed to process attachments. Please try again.");
+        return;
+      }
+    }
+
+    const payload: CreateServiceRequestPayload = {
+      type: "service_request",
+      projectId,
+      deploymentId: deploymentMatch.id,
+      deployedProductId: productId,
+      catalogId: selectedCatalogId,
+      catalogItemId: selectedCatalogItemId,
+      variables: variablePayload,
+      ...(encodedAttachments.length > 0 && { attachments: encodedAttachments }),
+    };
+
+    postCase(payload, {
+      onSuccess: async (data) => {
+        const srNumber = (data as { number?: string }).number;
+        showSuccess(
+          srNumber
+            ? `Service request ${srNumber} created successfully`
+            : "Service request created successfully",
+        );
+
+        if (projectId) {
+          await triggerPostCreationApiCalls(
+            authFetch,
+            projectId,
+            CaseType.SERVICE_REQUEST,
+          );
+          await refreshCaseQueriesAfterCreation(
+            queryClient,
+            projectId,
+            CaseType.SERVICE_REQUEST,
+          );
+        }
+
+        navigate(`/projects/${projectId}/${basePath}/service-requests/${data.id}`);
+      },
+      onError: (error) => {
+        const msg =
+          error?.message?.trim() ||
+          "We couldn't create your service request. Please try again.";
+        showError(msg);
+      },
+    });
+  };
+
+  const projectDisplay = projectDetails?.name ?? "";
+  const isProductDropdownDisabled =
+    !selectedDeploymentId || deploymentProductsLoading;
+  const canSubmit =
+    !!projectId &&
+    !!selectedDeploymentId &&
+    !!productId &&
+    !!selectedCatalogId &&
+    !!selectedCatalogItemId &&
+    !isCreatePending;
+
+  return (
+    <Box sx={{ width: "100%", pt: 0, position: "relative" }}>
+      <CaseCreationHeader
+        onBack={handleBack}
+        hideAiChip
+        backLabel="Back"
+        title="New Service Request"
+        subtitle="Select deployment, product, and request type, then complete the required fields"
+      />
+
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+      >
+        <BasicInformationSection
+          project={projectDisplay}
+          product={product}
+          setProduct={handleProductChange}
+          deployment={deployment}
+          setDeployment={handleDeploymentChange}
+          productOptionList={sortedProductOptions}
+          isProductAutoDetected={false}
+          isDeploymentAutoDetected={false}
+          isRelatedCaseMode
+          metadata={{ deploymentTypes: baseDeploymentOptions }}
+          isDeploymentLoading={isProjectLoading || isDeploymentsLoading}
+          isProductDropdownDisabled={isProductDropdownDisabled}
+          isProductLoading={
+            !!selectedDeploymentId && deploymentProductsLoading
+          }
+        />
+
+        {!!productId && (
+          <CatalogSelector
+            catalogs={catalogsData?.catalogs}
+            isLoading={isCatalogsLoading}
+            selectedCatalogId={selectedCatalogId}
+            selectedCatalogItemId={selectedCatalogItemId}
+            onSelectCatalogItem={handleSelectCatalogItem}
+          />
+        )}
+
+        {!!selectedCatalogId && !!selectedCatalogItemId && (
+          <VariableFormFields
+            variables={variablesData?.variables}
+            isLoading={isVariablesLoading}
+            values={variableValues}
+            onChange={handleVariableChange}
+            selectedRequestTypeLabel={selectedCatalogItemLabel}
+            contextValues={{
+              projectDisplay: projectDisplay,
+              deploymentDisplay: deployment,
+              productDisplay:
+                sortedProductOptions.find((p) => p.id === product)?.label ?? "",
+            }}
+            attachments={attachments}
+            onAttachmentClick={handleAttachmentClick}
+            onAttachmentRemove={handleAttachmentRemove}
+          />
+        )}
+
+        <UploadAttachmentModal
+          open={isAttachmentModalOpen}
+          onClose={() => setIsAttachmentModalOpen(false)}
+          onSelect={handleSelectAttachment}
+        />
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5 }}>
+          <Button variant="outlined" color="inherit" onClick={handleBack}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            startIcon={<CircleCheck size={18} />}
+            disabled={!canSubmit}
+          >
+            {isCreatePending ? "Creating..." : "Create Service Request"}
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+}

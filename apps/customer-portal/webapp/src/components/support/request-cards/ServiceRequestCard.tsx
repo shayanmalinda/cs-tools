@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import type { JSX } from "react";
 import { colors } from "@wso2/oxygen-ui";
 import { Server } from "@wso2/oxygen-ui-icons-react";
@@ -29,6 +29,8 @@ import { SERVICE_REQUEST_BULLET_ITEMS } from "@constants/supportConstants";
  */
 export default function ServiceRequestCard(): JSX.Element {
   const navigate = useNavigate();
+  const { projectId } = useParams<{ projectId: string }>();
+  const base = `/projects/${projectId}/support`;
 
   return (
     <RequestCard
@@ -40,11 +42,20 @@ export default function ServiceRequestCard(): JSX.Element {
       infoBoxTitle="What are Service Requests?"
       infoBoxDescription="Request operational changes to your managed cloud deployment:"
       bulletItems={SERVICE_REQUEST_BULLET_ITEMS}
-      secondaryButtonLabel="View All Service Requests"
-      onSecondaryClick={() => navigate("../dashboard")}
+      footerButtons={[
+        {
+          label: "View my requests",
+          onClick: () =>
+            navigate(`${base}/service-requests?createdByMe=true`),
+        },
+        {
+          label: "View all requests",
+          onClick: () => navigate(`${base}/service-requests`),
+        },
+      ]}
       primaryButton={{
         label: "New Service Request",
-        onClick: () => navigate("../create-case"),
+        onClick: () => navigate(`${base}/service-requests/create`),
         icon: Server,
       }}
     />

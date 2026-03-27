@@ -21,27 +21,20 @@ import ChatInput from "@components/support/novera-ai-assistant/novera-chat-page/
 // Mock @wso2/oxygen-ui components
 vi.mock("@wso2/oxygen-ui", () => ({
   Box: ({ children }: any) => <div data-testid="box">{children}</div>,
+  Button: ({ children, onClick }: any) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  CircularProgress: () => <span data-testid="circular-progress" />,
   IconButton: ({ children, onClick, disabled }: any) => (
     <button data-testid="icon-button" onClick={onClick} disabled={disabled}>
       {children}
     </button>
   ),
-  TextField: ({ value, onChange, placeholder, onKeyDown }: any) => (
-    <input
-      data-testid="text-field"
-      value={value}
-      placeholder={placeholder}
-      onChange={onChange}
-      onKeyDown={onKeyDown}
-    />
-  ),
   Paper: ({ children }: any) => <div data-testid="paper">{children}</div>,
   Typography: ({ children }: any) => (
     <span data-testid="typography">{children}</span>
   ),
-  Button: ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
-  ),
+  Stack: ({ children }: any) => <div>{children}</div>,
   colors: {
     orange: {
       700: "#C2410C",
@@ -52,11 +45,44 @@ vi.mock("@wso2/oxygen-ui", () => ({
 // Mock icons
 vi.mock("@wso2/oxygen-ui-icons-react", () => ({
   Send: () => <svg data-testid="icon-send" />,
-  CircleAlert: () => <svg data-testid="icon-alert" />,
+  Sparkles: () => <svg data-testid="icon-sparkles" />,
+}));
+
+// Mock Tooltip component
+vi.mock("@wso2/oxygen-ui", async () => {
+  const actual: any = await vi.importActual("@wso2/oxygen-ui");
+  return {
+    ...actual,
+    Tooltip: ({ children }: any) => <div data-testid="tooltip">{children}</div>,
+  };
+});
+
+// Mock Editor as a simple input for testing
+vi.mock("@components/common/rich-text-editor/Editor", () => ({
+  default: ({ value, onChange, placeholder, onSubmitKeyDown }: any) => (
+    <div data-testid="chat-editor">
+      <span data-testid="editor-placeholder">{placeholder}</span>
+      <input
+        data-testid="editor-input"
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSubmitKeyDown?.();
+          }
+        }}
+      />
+    </div>
+  ),
+}));
+
+vi.mock("@utils/richTextEditor", () => ({
+  htmlToPlainText: (html: string) => html || "",
 }));
 
 describe("ChatInput", () => {
-  it("should render input and send button", () => {
+  it("should render editor and send button", () => {
     const onSendMock = vi.fn();
     const setInputMock = vi.fn();
     render(
@@ -64,27 +90,23 @@ describe("ChatInput", () => {
         inputValue=""
         setInputValue={setInputMock}
         onSend={onSendMock}
-        showEscalationBanner={false}
-        onCreateCase={vi.fn()}
       />,
     );
 
-    expect(
-      screen.getByPlaceholderText("Type your message..."),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("editor-placeholder")).toHaveTextContent(
+      /Type your message/,
+    );
     expect(screen.getByTestId("icon-send")).toBeInTheDocument();
   });
 
-  it("should call onSend when clicking send button", () => {
+  it("should call onSend when clicking send button with content", () => {
     const onSendMock = vi.fn();
     const setInputMock = vi.fn();
     render(
       <ChatInput
-        inputValue="Hi"
+        inputValue="<p>Hi</p>"
         setInputValue={setInputMock}
         onSend={onSendMock}
-        showEscalationBanner={false}
-        onCreateCase={vi.fn()}
       />,
     );
 
@@ -92,27 +114,5 @@ describe("ChatInput", () => {
     fireEvent.click(sendButton);
 
     expect(onSendMock).toHaveBeenCalled();
-  });
-
-  it("should show escalation banner and call onCreateCase when visible is true", () => {
-    const onSendMock = vi.fn();
-    const setInputMock = vi.fn();
-    const onCreateCaseMock = vi.fn();
-    render(
-      <ChatInput
-        inputValue=""
-        setInputValue={setInputMock}
-        onSend={onSendMock}
-        showEscalationBanner={true}
-        onCreateCase={onCreateCaseMock}
-      />,
-    );
-
-    expect(screen.getByText(/Need more help?/i)).toBeInTheDocument();
-    const createCaseButton = screen.getByText("Create Case");
-    expect(createCaseButton).toBeInTheDocument();
-
-    fireEvent.click(createCaseButton);
-    expect(onCreateCaseMock).toHaveBeenCalledTimes(1);
   });
 });

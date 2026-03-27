@@ -29,27 +29,11 @@ vi.mock("@/hooks/useLogger", () => ({
   useLogger: () => mockLogger,
 }));
 
-vi.mock("@/constants/apiConstants", async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    API_MOCK_DELAY: 0,
-  };
-});
-
-// Mock @asgardeo/react
 vi.mock("@asgardeo/react", () => ({
   useAsgardeo: () => ({
-    getIdToken: vi.fn(),
+    getIdToken: vi.fn().mockResolvedValue("mock-token"),
     isSignedIn: true,
     isLoading: false,
-  }),
-}));
-
-// Mock MockConfigProvider
-vi.mock("@/providers/MockConfigProvider", () => ({
-  useMockConfig: () => ({
-    isMockEnabled: true,
   }),
 }));
 
@@ -58,14 +42,17 @@ describe("useGetProjectCasesStats", () => {
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
+      defaultOptions: { queries: { retry: false } },
     });
     mockLogger.debug.mockClear();
     mockLogger.error.mockClear();
+    (
+      window as unknown as {
+        config?: { CUSTOMER_PORTAL_BACKEND_BASE_URL?: string };
+      }
+    ).config = {
+      CUSTOMER_PORTAL_BACKEND_BASE_URL: "https://api.test",
+    };
   });
 
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -88,16 +75,10 @@ describe("useGetProjectCasesStats", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toBeDefined();
-    expect(result.current.data?.totalCases).toBeGreaterThanOrEqual(50);
-    expect(result.current.data?.activeCases).toBeDefined();
-    expect(result.current.data?.outstandingCases).toBeDefined();
+    expect(result.current.data?.totalCases).toBe(50);
+    expect(result.current.data?.stateCount).toBeDefined();
+    expect(result.current.data?.outstandingSeverityCount).toBeDefined();
     expect(result.current.data?.resolvedCases).toBeDefined();
-
-    expect(mockLogger.debug).toHaveBeenCalledWith(
-      expect.stringContaining(
-        "Fetching case stats for project ID: project-1, mock: true",
-      ),
-    );
   });
 
   it("should have correct query options", () => {
@@ -106,11 +87,15 @@ describe("useGetProjectCasesStats", () => {
     });
 
     const query = queryClient.getQueryCache().findAll({
-      queryKey: ["cases-stats", "project-1", true],
+      queryKey: ["cases-stats", "project-1", undefined, undefined],
     })[0];
 
-    expect((query?.options as any).staleTime).toBe(5 * 60 * 1000);
-    expect((query?.options as any).refetchOnWindowFocus).toBeUndefined();
+    expect((query?.options as Record<string, unknown>).staleTime).toBe(
+      5 * 60 * 1000,
+    );
+    expect(
+      (query?.options as Record<string, unknown>).refetchOnWindowFocus,
+    ).toBe(false);
   });
 
   it("should not fetch if id is missing", () => {

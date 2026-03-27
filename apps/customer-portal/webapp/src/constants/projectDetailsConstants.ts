@@ -26,11 +26,11 @@ import type { ElementType } from "react";
 import type { TabOption } from "@components/common/tab-bar/TabBar";
 import { colors } from "@wso2/oxygen-ui";
 import type { ProjectStatsResponse } from "@models/responses";
-import { getSystemHealthColor } from "@utils/projectStats";
+import { convertMinutesToHours } from "@utils/projectDetails";
 
 export interface Contact {
   role: string;
-  email: string;
+  email: string | null;
   icon: ElementType<{ size?: number }>;
   bgColor: string;
 }
@@ -41,6 +41,13 @@ export interface Stat {
   iconColor: "primary" | "success" | "warning";
   key: keyof NonNullable<ProjectStatsResponse["projectStats"]>;
 }
+
+/** Project type labels for conditional UI visibility. */
+export const PROJECT_TYPE_LABELS = {
+  MANAGED_CLOUD_SUBSCRIPTION: "Managed Cloud Subscription",
+  CLOUD_SUPPORT: "Cloud Support",
+  CLOUD_EVALUATION_SUPPORT: "Cloud Evaluation Support",
+} as const;
 
 export const PROJECT_DETAILS_TABS: TabOption[] = [
   {
@@ -79,7 +86,7 @@ export interface ActivityItem {
   label: string;
   value: string;
   type?: "text" | "chip";
-  chipColor?: "success" | "warning" | "error" | "default" | "primary" | "info";
+  chipColor?: ProjectStatusChipColor;
 }
 
 export const statItems: Stat[] = [
@@ -105,37 +112,66 @@ export const statItems: Stat[] = [
 
 export const getRecentActivityItems = (
   activity?: ProjectStatsResponse["recentActivity"],
-): ActivityItem[] => [
-  {
-    label: "Total Time Logged",
-    value:
-      activity?.totalTimeLogged !== undefined
-        ? `${activity.totalTimeLogged}h`
-        : "N/A",
-    type: "text",
-  },
-  {
-    label: "Billable Hours",
-    value:
-      activity?.billableHours !== undefined
-        ? `${activity.billableHours}h`
-        : "N/A",
-    type: "text",
-  },
-  {
+  projectTypeLabel?: string | null,
+): ActivityItem[] => {
+  const hideTimeTracking =
+    projectTypeLabel === PROJECT_TYPE_LABELS.CLOUD_SUPPORT ||
+    projectTypeLabel === PROJECT_TYPE_LABELS.CLOUD_EVALUATION_SUPPORT;
+
+  const formatDateTime = (dateString: string): string => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString.replace(" ", "T"));
+      if (isNaN(date.getTime())) return "";
+      const dateStr = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      const timeStr = date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return `${dateStr} at ${timeStr}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const items: ActivityItem[] = [];
+
+  if (!hideTimeTracking) {
+    items.push(
+      {
+        label: "Total Time Logged",
+        value:
+          activity?.totalHours !== undefined
+            ? `${convertMinutesToHours(activity.totalHours)} hrs`
+            : "N/A",
+        type: "text",
+      },
+      {
+        label: "Billable Hours",
+        value:
+          activity?.billableHours !== undefined
+            ? `${convertMinutesToHours(activity.billableHours)} hrs`
+            : "N/A",
+        type: "text",
+      },
+    );
+  }
+
+  items.push({
     label: "Last Deployment",
     value: activity?.lastDeploymentOn
-      ? new Date(activity.lastDeploymentOn).toLocaleDateString()
+      ? formatDateTime(activity.lastDeploymentOn)
       : "N/A",
     type: "text",
-  },
-  {
-    label: "System Health",
-    value: activity?.systemHealth || "N/A",
-    type: "chip",
-    chipColor: getSystemHealthColor(activity?.systemHealth || ""),
-  },
-];
+  });
+
+  return items;
+};
 
 export const SUBSCRIPTION_STATUS = {
   EXPIRED: "Expired",
@@ -168,8 +204,8 @@ export const SYSTEM_HEALTH = {
 export type SystemHealth = (typeof SYSTEM_HEALTH)[keyof typeof SYSTEM_HEALTH];
 
 export const SLA_STATUS = {
-  GOOD: "All Good",
-  BAD: "Bad",
+  ALL_GOOD: "All Good",
+  NEEDS_ATTENTION: "Needs attention",
 } as const;
 
 export type SLAStatus = (typeof SLA_STATUS)[keyof typeof SLA_STATUS];
@@ -194,4 +230,68 @@ export const CASE_STATUS = {
   REOPENED: "Reopened",
 } as const;
 
+export const CASE_TYPES = {
+  INCIDENT: "Incident",
+  QUERY: "Query",
+  SERVICE_REQUEST: "Service Request",
+  SECURITY_REPORT_ANALYSIS: "Security Report Analysis",
+} as const;
+
 export type CaseStatus = (typeof CASE_STATUS)[keyof typeof CASE_STATUS];
+
+export const PROJECT_USER_STATUSES = {
+  INVITED: "invited",
+  REGISTERED: "registered",
+} as const;
+
+export const TIME_TRACKING_BADGE_TYPES = {
+  SUPPORT: "support",
+  BILLABLE: "billable",
+  CASE: "case",
+  CONSULTATION: "consultation",
+  MAINTENANCE: "maintenance",
+} as const;
+
+export type TimeTrackingBadgeType =
+  (typeof TIME_TRACKING_BADGE_TYPES)[keyof typeof TIME_TRACKING_BADGE_TYPES];
+
+export const TIME_CARD_STATE = {
+  PENDING: "Pending",
+  SUBMITTED: "Submitted",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  PROCESSED: "Processed",
+  RECALLED: "Recalled",
+} as const;
+
+export type TimeCardState =
+  (typeof TIME_CARD_STATE)[keyof typeof TIME_CARD_STATE];
+
+export const DEPLOYMENT_STATUS = {
+  HEALTHY: "Healthy",
+  WARNING: "Warning",
+  ERROR: "Error",
+} as const;
+
+export type DeploymentStatus =
+  (typeof DEPLOYMENT_STATUS)[keyof typeof DEPLOYMENT_STATUS];
+
+export const PRODUCT_SUPPORT_STATUS = {
+  ACTIVE: "Active Support",
+  END_OF_LIFE: "End of Life",
+  DEPRECATED: "Deprecated",
+  LIMITED: "Limited Support",
+  EXTENDED: "Extended Support",
+} as const;
+
+export type ProductSupportStatus =
+  (typeof PRODUCT_SUPPORT_STATUS)[keyof typeof PRODUCT_SUPPORT_STATUS];
+
+export type ProjectStatusChipColor =
+  | "default"
+  | "primary"
+  | "secondary"
+  | "error"
+  | "info"
+  | "success"
+  | "warning";

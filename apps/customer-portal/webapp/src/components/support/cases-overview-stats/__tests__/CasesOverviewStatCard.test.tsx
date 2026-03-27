@@ -80,17 +80,17 @@ describe("CasesOverviewStatCard", () => {
     // Verify all configured icons are present
 
     expect(screen.getByTestId("icon-file-text")).toBeInTheDocument();
-    expect(screen.getByTestId("icon-message")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-clock")).toBeInTheDocument();
     expect(screen.getByTestId("icon-trending-up")).toBeInTheDocument();
-    expect(screen.getByTestId("icon-bot")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-check")).toBeInTheDocument();
   });
 
   it("should render statistics correctly when data is loaded", () => {
     const mockStats = {
-      activeChats: 5,
+      ongoingCases: 10,
+      resolvedPast30DaysCasesCount: 15,
       resolvedChats: 20,
-      sessionChats: 15,
-      totalCases: 10,
+      activeChats: 5,
     };
 
     render(<CasesOverviewStatCard isLoading={false} stats={mockStats} />);
@@ -101,7 +101,7 @@ describe("CasesOverviewStatCard", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
 
     expect(screen.getByTestId("icon-trending-up")).toBeInTheDocument();
-    expect(screen.getByTestId("icon-bot")).toBeInTheDocument();
+    expect(screen.getByTestId("icon-check")).toBeInTheDocument();
 
     // Verify all labels from config are rendered
     SUPPORT_STAT_CONFIGS.forEach((config) => {

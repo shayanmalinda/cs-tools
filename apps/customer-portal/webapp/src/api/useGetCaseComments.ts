@@ -16,11 +16,9 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { mockCaseComments } from "@models/mockData";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CaseCommentsResponse } from "@models/responses";
 
 export interface UseGetCaseCommentsOptions {
@@ -42,34 +40,16 @@ export default function useGetCaseComments(
   options?: UseGetCaseCommentsOptions,
 ): UseQueryResult<CaseCommentsResponse, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
   const { offset = 0, limit = 20 } = options ?? {};
 
   return useQuery<CaseCommentsResponse, Error>({
-    queryKey: [
-      ApiQueryKeys.CASE_COMMENTS,
-      projectId,
-      caseId,
-      offset,
-      limit,
-      isMockEnabled,
-    ],
+    queryKey: [ApiQueryKeys.CASE_COMMENTS, projectId, caseId, offset, limit],
     queryFn: async (): Promise<CaseCommentsResponse> => {
       logger.debug(
-        `Fetching case comments: projectId=${projectId}, caseId=${caseId}, mock=${isMockEnabled}`,
+        `Fetching case comments: projectId=${projectId}, caseId=${caseId}`,
       );
-
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-        const sliced = mockCaseComments.slice(offset, offset + limit);
-        return {
-          comments: sliced.length > 0 ? sliced : mockCaseComments,
-          totalRecords: mockCaseComments.length,
-          offset,
-          limit,
-        };
-      }
 
       try {
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
@@ -77,15 +57,13 @@ export default function useGetCaseComments(
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const idToken = await getIdToken();
         const params = new URLSearchParams();
         if (offset !== undefined) params.set("offset", String(offset));
         if (limit !== undefined) params.set("limit", String(limit));
         const query = params.toString();
         const requestUrl = `${baseUrl}/cases/${caseId}/comments${query ? `?${query}` : ""}`;
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         if (!response.ok) {
@@ -102,10 +80,7 @@ export default function useGetCaseComments(
         throw error;
       }
     },
-    enabled:
-      !!projectId &&
-      !!caseId &&
-      (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!projectId && !!caseId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

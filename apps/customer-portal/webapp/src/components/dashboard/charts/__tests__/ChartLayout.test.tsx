@@ -28,8 +28,16 @@ vi.mock("../ActiveCasesChart", () => ({
 }));
 
 vi.mock("../CasesTrendChart", () => ({
-  CasesTrendChart: ({ isLoading }: any) => (
-    <div data-testid="cases-trend-chart" data-loading={isLoading}>
+  CasesTrendChart: ({ isLoading, data }: any) => (
+    <div
+      data-testid="cases-trend-chart"
+      data-loading={isLoading}
+      data-onboarding={data?.onboarding}
+      data-migration={data?.migration}
+      data-services={data?.services}
+      data-improvements={data?.improvements}
+      data-total={data?.total}
+    >
       Cases Trend Chart
     </div>
   ),
@@ -55,18 +63,27 @@ vi.mock("@wso2/oxygen-ui", () => ({
 describe("ChartLayout", () => {
   const mockProps = {
     outstandingCases: {
+      low: 2,
       medium: 5,
       high: 3,
       critical: 1,
-      total: 9,
+      catastrophic: 0,
+      total: 11,
     },
     activeCases: {
-      workInProgress: 10,
-      waitingOnClient: 5,
-      waitingOnWso2: 3,
-      total: 18,
+      serviceRequests: 12,
+      changeRequests: 8,
+      total: 20,
     },
-    casesTrend: [{ name: "Jan", TypeA: 10, TypeB: 20, TypeC: 30, TypeD: 40 }],
+    engagements: {
+      categories: [
+        { name: "Onboarding", value: 1 },
+        { name: "Migration", value: 2 },
+        { name: "Services", value: 3 },
+        { name: "Improvements", value: 4 },
+      ],
+      total: 10,
+    },
     isLoading: false,
   };
 

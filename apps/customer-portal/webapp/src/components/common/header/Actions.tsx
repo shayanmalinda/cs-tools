@@ -16,14 +16,13 @@
 
 import {
   Box,
-  Button,
   ColorSchemeToggle,
   Divider,
   Header as HeaderUI,
 } from "@wso2/oxygen-ui";
-import { Users } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
-import { JOIN_COMMUNITY_URL } from "@constants/appLayoutConstants";
+import { useLocation } from "react-router";
+import GetHelpDropdown from "@components/common/header/GetHelpDropdown";
 import UserProfile from "@components/common/header/UserProfile";
 
 interface ActionsProps {
@@ -39,20 +38,21 @@ interface ActionsProps {
 export default function Actions({
   showUserProfile = true,
 }: ActionsProps): JSX.Element {
+  const location = useLocation();
+  const isProjectHub = location.pathname === "/";
+  const isPublicLandingPage = location.pathname === "/home";
+
   return (
     <HeaderUI.Actions>
-      {/* join community button */}
-      <Button
-        variant="outlined"
-        startIcon={<Users size={20} />}
-        color="secondary"
-        size="medium"
-        href={JOIN_COMMUNITY_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Join our community
-      </Button>
+      {/* Get Help dropdown (before theme switcher, not on project hub or public landing page) */}
+      {!isProjectHub && !isPublicLandingPage && <GetHelpDropdown />}
+      {!isProjectHub && !isPublicLandingPage && (
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{ mx: 1, display: { xs: "none", sm: "block" } }}
+        />
+      )}
       {/* theme switcher */}
       <ColorSchemeToggle />
       {/* header action divider */}

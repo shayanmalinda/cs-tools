@@ -14,9 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Global mock delay for API hooks to simulate network latency.
-export const API_MOCK_DELAY = 800;
-
 // Constants for API-related query keys.
 export const ApiQueryKeys = {
   PROJECTS: "projects",
@@ -31,9 +28,45 @@ export const ApiQueryKeys = {
   CASE_COMMENTS: "case-comments",
   CASE_ATTACHMENTS: "case-attachments",
   CHAT_HISTORY: "chat-history",
+  CONVERSATIONS_SEARCH: "conversations-search",
+  CONVERSATION_MESSAGES: "conversation-messages",
+  CONVERSATION_STATS: "conversation-stats",
+  CONVERSATION_SUMMARY: "conversation-summary",
   DEPLOYMENTS: "deployments",
+  DEPLOYMENT_ATTACHMENTS: "deployment-attachments",
+  PRODUCTS: "products",
+  PRODUCT_VERSIONS_SEARCH: "product-versions-search",
   DEPLOYMENT_PRODUCTS: "deployment-products",
   TIME_TRACKING_STATS: "time-tracking-stats",
-  UPDATES_STATS: "updates-stats",
+  RECOMMENDED_UPDATE_LEVELS: "recommended-update-levels",
   PRODUCT_UPDATE_LEVELS: "product-update-levels",
+  PRODUCT_VULNERABILITY: "product-vulnerability",
+  PRODUCT_VULNERABILITIES_SEARCH: "product-vulnerabilities-search",
+  PRODUCT_VULNERABILITIES_META: "product-vulnerabilities-meta",
+  CASE_CALL_REQUESTS: "case-call-requests",
+  PROJECT_CONTACTS: "project-contacts",
+  TIME_TRACKING_DETAILS: "time-tracking-details",
+  TIME_CARDS_SEARCH: "time-cards-search",
+  PROJECT_DEPLOYMENT_DETAILS: "project-deployment-details",
+  UPDATE_LEVELS_SEARCH: "update-levels-search",
+  CHANGE_REQUESTS: "change-requests",
+  CHANGE_REQUEST_DETAILS: "change-request-details",
+  CHANGE_REQUEST_COMMENTS: "change-request-comments",
+  CHANGE_REQUEST_STATS: "change-request-stats",
+  CATALOGS_SEARCH: "catalogs-search",
+  CATALOG_ITEM_VARIABLES: "catalog-item-variables",
+  REGISTRY_TOKENS_SEARCH: "registry-tokens-search",
+  INTEGRATION_USERS: "integration-users",
+  METADATA: "metadata",
 } as const;
+
+// Constants for API-related mutation keys.
+export const ApiMutationKeys = {
+  POST_COMMENT: ["postComment"],
+  POST_CHANGE_REQUEST_COMMENT: ["postChangeRequestComment"],
+} as const;
+
+// Constants for WebSocket communication.
+export const WS_CHOREO_OAUTH2_TOKEN = "choreo-oauth2-token";
+export const WS_CUSTOMER_PORTAL = "cs-customer-portal";
+export const CONNECT_HANDSHAKE_TIMEOUT_MS = 25_000;

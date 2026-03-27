@@ -20,6 +20,10 @@ import type { JSX } from "react";
 
 export interface CaseCreationHeaderProps {
   onBack?: () => void;
+  hideAiChip?: boolean;
+  backLabel?: string;
+  subtitle?: string;
+  title?: string;
 }
 
 /**
@@ -30,7 +34,12 @@ export interface CaseCreationHeaderProps {
  */
 export function CaseCreationHeader({
   onBack,
+  hideAiChip = false,
+  backLabel = "Back to Chat",
+  subtitle = "Please review and edit the auto-populated information before submitting",
+  title: titleProp,
 }: CaseCreationHeaderProps): JSX.Element {
+  const title = titleProp ?? "Complete Case Details";
   return (
     <Box sx={{ mb: 3 }}>
       {/* navigation button container */}
@@ -40,7 +49,7 @@ export function CaseCreationHeader({
         variant="text"
         sx={{ mb: 2 }}
       >
-        Back to Chat
+        {backLabel}
       </Button>
       {/* header content container */}
       <Box
@@ -55,20 +64,21 @@ export function CaseCreationHeader({
         {/* title and description container */}
         <Box>
           <Typography variant="h5" sx={{ mb: 0.5 }}>
-            Review Case Details
+            {title}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Please review and edit the auto-populated information before
-            submitting
+            {subtitle}
           </Typography>
         </Box>
-        <Chip
-          icon={<Sparkles size={10} />}
-          label="AI Generated"
-          color="warning"
-          variant="outlined"
-          sx={{ p: 0.5 }}
-        />
+        {!hideAiChip && (
+          <Chip
+            icon={<Sparkles size={10} />}
+            label="AI Generated"
+            color="warning"
+            variant="outlined"
+            sx={{ p: 0.5 }}
+          />
+        )}
       </Box>
     </Box>
   );

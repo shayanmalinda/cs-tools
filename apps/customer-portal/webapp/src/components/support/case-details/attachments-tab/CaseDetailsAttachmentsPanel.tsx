@@ -14,76 +14,154 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Alert, Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
+import { Box, Button, Pagination, Stack, Typography } from "@wso2/oxygen-ui";
 import { Paperclip } from "@wso2/oxygen-ui-icons-react";
-import { useMemo, useState, type JSX } from "react";
-import useGetCaseAttachments from "@api/useGetCaseAttachments";
+import { useEffect, useMemo, useState, type JSX } from "react";
+import {
+  useGetCaseAttachments,
+  flattenCaseAttachments,
+} from "@api/useGetCaseAttachments";
 import type { CaseAttachment } from "@models/responses";
-import { CASE_ATTACHMENTS_INITIAL_LIMIT } from "@constants/supportConstants";
+import { useDeleteAttachment } from "@api/useDeleteAttachment";
+import { useGetAttachment } from "@api/useGetAttachment";
+import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import UploadAttachmentModal from "@case-details-attachments/UploadAttachmentModal";
 import AttachmentListItem from "@case-details-attachments/AttachmentListItem";
 import AttachmentsListSkeleton from "@case-details-attachments/AttachmentsListSkeleton";
+import DeleteAttachmentModal from "@case-details-attachments/DeleteAttachmentModal";
+import EditCaseAttachmentModal from "@case-details-attachments/EditCaseAttachmentModal";
 import EmptyIcon from "@components/common/empty-state/EmptyIcon";
+
+const ITEMS_PER_PAGE = 10;
 
 export interface CaseDetailsAttachmentsPanelProps {
   caseId: string;
+  isCaseClosed?: boolean;
 }
 
 /**
  * Renders the Attachments tab: upload button, modal, and list from GET /cases/:id/attachments.
- * Fetches first page, then remaining when totalRecords > limit; shows skeleton until all loaded.
+ * Download uses GET /attachments/:id (authenticated) when inline content is absent.
+ * Uses infinite query with server-side pagination (10 items per page).
  *
  * @param {CaseDetailsAttachmentsPanelProps} props - caseId.
  * @returns {JSX.Element} The attachments panel.
  */
 export default function CaseDetailsAttachmentsPanel({
   caseId,
+  isCaseClosed = false,
 }: CaseDetailsAttachmentsPanelProps): JSX.Element {
+  const { showError } = useErrorBanner();
+  const { downloadAttachment, isDownloading, downloadingId } =
+    useGetAttachment();
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [attachmentToDelete, setAttachmentToDelete] =
+    useState<CaseAttachment | null>(null);
+  const [attachmentToEdit, setAttachmentToEdit] =
+    useState<CaseAttachment | null>(null);
 
-  const first = useGetCaseAttachments(caseId, {
-    limit: CASE_ATTACHMENTS_INITIAL_LIMIT,
-    offset: 0,
-  });
-  const totalRecords = first.data?.totalRecords ?? 0;
-  const needMore = totalRecords > CASE_ATTACHMENTS_INITIAL_LIMIT;
-  const secondEnabled =
-    !!caseId &&
-    needMore &&
-    !!first.data &&
-    totalRecords > CASE_ATTACHMENTS_INITIAL_LIMIT;
-  const second = useGetCaseAttachments(caseId, {
-    limit: Math.max(0, totalRecords - CASE_ATTACHMENTS_INITIAL_LIMIT),
-    offset: CASE_ATTACHMENTS_INITIAL_LIMIT,
-    enabled: secondEnabled,
-  });
+  const {
+    data,
+    isLoading,
+    isError,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    isFetchNextPageError,
+  } = useGetCaseAttachments(caseId);
 
-  const allAttachments = useMemo(() => {
-    if (!first.data) return [];
-    if (!needMore) return first.data.attachments;
-    if (!second.data) return first.data.attachments;
-    return [...first.data.attachments, ...second.data.attachments];
-  }, [first.data, needMore, second.data]);
+  const deleteAttachment = useDeleteAttachment();
 
-  const combinedLength =
-    (first.data?.attachments?.length ?? 0) +
-    (second.data?.attachments?.length ?? 0);
+  const allAttachments = useMemo(() => flattenCaseAttachments(data), [data]);
 
-  const hasPartialError =
-    secondEnabled &&
-    (second.isError ||
-      (first.data != null &&
-        totalRecords > 0 &&
-        first.data.totalRecords !== combinedLength));
+  const totalRecords = data?.pages?.[0]?.totalRecords ?? 0;
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
 
-  const isLoading =
-    first.isLoading ||
-    (secondEnabled && !second.isError && (second.isLoading || !second.data));
+  // Ensure current page is within bounds
+  const boundedPage =
+    totalPages > 0 && currentPage > totalPages ? 1 : currentPage;
 
-  const handleDownload = (att: CaseAttachment) => {
-    if (att.downloadUrl) {
-      window.open(att.downloadUrl, "_blank", "noopener,noreferrer");
+  const paginatedAttachments = useMemo(() => {
+    const startIndex = (boundedPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return allAttachments.slice(startIndex, endIndex);
+  }, [allAttachments, boundedPage]);
+
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    page: number,
+  ) => {
+    setCurrentPage(page);
+  };
+
+  // Auto-fetch next page if we need more data for the current page
+  useEffect(() => {
+    const neededItemsCount = boundedPage * ITEMS_PER_PAGE;
+    if (
+      !isLoading &&
+      !isFetchingNextPage &&
+      !isFetchNextPageError &&
+      hasNextPage &&
+      allAttachments.length < neededItemsCount &&
+      allAttachments.length < totalRecords
+    ) {
+      fetchNextPage();
     }
+  }, [
+    boundedPage,
+    allAttachments.length,
+    totalRecords,
+    hasNextPage,
+    fetchNextPage,
+    isLoading,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  ]);
+
+  const handleDownload = async (att: CaseAttachment) => {
+    try {
+      await downloadAttachment({
+        id: att.id,
+        name: att.name,
+        type: att.type,
+        content: att.content,
+        downloadUrl: att.downloadUrl,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Download failed";
+      showError(message);
+    }
+  };
+
+  const handleDeleteClick = (att: CaseAttachment) => {
+    setAttachmentToDelete(att);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!attachmentToDelete?.id) return;
+    deleteAttachment.mutate(
+      { attachmentId: attachmentToDelete.id, caseId },
+      {
+        onSuccess: () => setAttachmentToDelete(null),
+        onError: (error) => {
+          showError(error.message);
+        },
+      },
+    );
+  };
+
+  const handleEditClick = (att: CaseAttachment) => {
+    setAttachmentToEdit(att);
+  };
+
+  const handleEditSuccess = () => {
+    setAttachmentToEdit(null);
+  };
+
+  const handleEditError = (message: string) => {
+    showError(message);
   };
 
   if (!caseId) {
@@ -94,22 +172,28 @@ export default function CaseDetailsAttachmentsPanel({
     );
   }
 
+  const uploadButton = (
+    <Button
+      variant="contained"
+      color="primary"
+      startIcon={<Paperclip size={16} aria-hidden />}
+      onClick={() => setUploadOpen(true)}
+      disabled={isCaseClosed}
+    >
+      Upload Attachment
+    </Button>
+  );
+
   return (
     <>
       <Stack spacing={3}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Paperclip size={16} aria-hidden />}
-          sx={{ alignSelf: "flex-start" }}
-          onClick={() => setUploadOpen(true)}
-        >
-          Upload Attachment
-        </Button>
+        {!(allAttachments.length === 0 && !isLoading && !isError) && (
+          <Box sx={{ alignSelf: "flex-start" }}>{uploadButton}</Box>
+        )}
 
         {isLoading ? (
           <AttachmentsListSkeleton />
-        ) : first.isError ? (
+        ) : isError ? (
           <Typography variant="body2" color="error">
             Failed to load attachments.
           </Typography>
@@ -133,22 +217,41 @@ export default function CaseDetailsAttachmentsPanel({
             <Typography variant="body2" color="text.secondary">
               No attachments found.
             </Typography>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+              {uploadButton}
+            </Box>
           </Stack>
         ) : (
           <Stack spacing={2}>
-            {hasPartialError && (
-              <Alert severity="warning" sx={{ mb: 1 }}>
-                Some attachments may not be shown. The list may be incomplete
-                due to a load error or API limits.
-              </Alert>
+            {isFetchingNextPage && paginatedAttachments.length === 0 ? (
+              <AttachmentsListSkeleton />
+            ) : (
+              paginatedAttachments.map((att) => (
+                <AttachmentListItem
+                  key={att.id}
+                  attachment={att}
+                  onDownload={handleDownload}
+                  onDelete={isCaseClosed ? undefined : handleDeleteClick}
+                  onEdit={isCaseClosed ? undefined : handleEditClick}
+                  hideDescription
+                  isDownloadLoading={
+                    isDownloading && downloadingId === att.id
+                  }
+                />
+              ))
             )}
-            {allAttachments.map((att) => (
-              <AttachmentListItem
-                key={att.id}
-                attachment={att}
-                onDownload={handleDownload}
-              />
-            ))}
+            {totalPages > 1 && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Pagination
+                  count={totalPages}
+                  page={boundedPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
           </Stack>
         )}
       </Stack>
@@ -157,6 +260,23 @@ export default function CaseDetailsAttachmentsPanel({
         open={uploadOpen}
         caseId={caseId}
         onClose={() => setUploadOpen(false)}
+      />
+
+      <DeleteAttachmentModal
+        open={!!attachmentToDelete}
+        attachmentName={attachmentToDelete?.name ?? null}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={!!attachmentToDelete && deleteAttachment.isPending}
+      />
+
+      <EditCaseAttachmentModal
+        open={!!attachmentToEdit}
+        attachment={attachmentToEdit}
+        caseId={caseId}
+        onClose={() => setAttachmentToEdit(null)}
+        onSuccess={handleEditSuccess}
+        onError={handleEditError}
       />
     </>
   );

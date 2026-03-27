@@ -68,11 +68,6 @@ vi.mock("@api/useGetProjectStat", () => ({
   useGetProjectStat: () => mockUseGetProjectStat(),
 }));
 
-const mockUseGetProjectTimeTrackingStat = vi.fn();
-vi.mock("@api/useGetProjectTimeTrackingStat", () => ({
-  default: () => mockUseGetProjectTimeTrackingStat(),
-}));
-
 // Mock Child Components
 vi.mock("@components/common/tab-bar/TabBar", () => ({
   default: () => <div data-testid="tab-bar" />,
@@ -100,9 +95,9 @@ vi.mock(
 );
 
 vi.mock(
-  "@components/project-details/project-overview/recent-activity/RecentActivityCard",
+  "@components/project-details/project-overview/service-hours-allocations/ServiceHoursAllocationsCard",
   () => ({
-    default: () => <div data-testid="recent-activity-card" />,
+    default: () => <div data-testid="service-hours-allocations-card" />,
   }),
 );
 
@@ -115,6 +110,9 @@ vi.mock("@wso2/oxygen-ui", () => ({
     purple: { 700: "#9C27B0" },
     teal: { 700: "#008080" },
     orange: { 700: "#FFA500" },
+    red: { 500: "#EF4444" },
+    yellow: { 700: "#F59E0B" },
+    green: { 500: "#22C55E" },
   },
 }));
 
@@ -133,11 +131,6 @@ describe("ProjectDetails", () => {
       error: null,
     });
     mockUseGetProjectStat.mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: null,
-    });
-    mockUseGetProjectTimeTrackingStat.mockReturnValue({
       data: null,
       isLoading: false,
       error: null,

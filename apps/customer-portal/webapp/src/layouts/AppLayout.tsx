@@ -15,16 +15,26 @@
 // under the License.
 
 import { notificationBannerConfig } from "@config/notificationBannerConfig";
-import { AppShell, Box, useAppShell, LinearProgress } from "@wso2/oxygen-ui";
-import { type JSX, type ReactNode, useRef, useEffect } from "react";
+import {
+  AppShell,
+  Box,
+  useAppShell,
+  LinearProgress,
+  Typography,
+} from "@wso2/oxygen-ui";
+import { type JSX, type ReactNode, useRef, useEffect, useState } from "react";
+import { useAsgardeo } from "@asgardeo/react";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useLocation, Outlet } from "react-router";
+import IdleTimeoutProvider from "@providers/IdleTimeoutProvider";
 import GlobalNotificationBanner from "@components/common/notification-banner/GlobalNotificationBanner";
 import Footer from "@components/common/footer/Footer";
 import Header from "@components/common/header/Header";
 import SideBar from "@components/common/side-nav-bar/SideBar";
-import { BackgroundTokenRefresh } from "@providers/BackgroundTokenRefresh";
-
+import {
+  getSidebarCollapsed,
+  setSidebarCollapsed,
+} from "@utils/settingsStorage";
 /**
  * AppLayout component.
  *
@@ -37,6 +47,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation();
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const { isLoading: isAuthLoading } = useAsgardeo();
 
   useEffect(() => {
     if (mainContentRef.current) {
@@ -45,19 +56,72 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   }, [location.pathname]);
 
   const { state: shellState, actions: shellActions } = useAppShell({
-    initialCollapsed: false,
+    initialCollapsed: getSidebarCollapsed(),
   });
 
   const { isVisible } = useLoader();
+  const [loadingMessage, setLoadingMessage] = useState<
+    "Authenticating…" | "Fetching user info…" | "Please wait…"
+  >("Authenticating…");
 
-  const isProjectHub = location.pathname === "/";
-  const isCaseDetailsPage = /\/[^/]+\/support\/cases\/[^/]+$/.test(
-    location.pathname,
-  );
+  // Animate loading message in the center of the page.
+  useEffect(() => {
+    if (!isAuthLoading) return;
+
+    setLoadingMessage("Authenticating…");
+
+    const t1 = setTimeout(() => {
+      setLoadingMessage("Fetching user info…");
+    }, 1500);
+
+    const t2 = setTimeout(() => {
+      setLoadingMessage("Please wait…");
+    }, 3000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [isAuthLoading]);
+
+  // Persist sidebar collapsed state to localStorage
+  useEffect(() => {
+    setSidebarCollapsed(shellState.sidebarCollapsed);
+  }, [shellState.sidebarCollapsed]);
+
+  const isProjectHub = location.pathname === "/" || location.pathname === "";
+  const isCaseDetailsPage =
+    /\/projects\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname) ||
+    /\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname);
+  const isEngagementDetailsPage = location.pathname.includes("/engagements/");
+  const isSecurityReportAnalysisDetailsPage =
+    /\/projects\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
+      location.pathname,
+    ) ||
+    /\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
+      location.pathname,
+    );
+  const isVulnerabilityDetailsPage =
+    (/\/projects\/[^/]+\/security-center\/[^/]+$/.test(location.pathname) ||
+      /\/[^/]+\/security-center\/[^/]+$/.test(location.pathname)) &&
+    !location.pathname.includes("security-report-analysis");
+  const isPendingUpdatesPage =
+    /\/projects\/[^/]+\/updates\/pending$/.test(location.pathname) ||
+    /\/[^/]+\/updates\/pending$/.test(location.pathname);
+  const isUpdateLevelDetailsPage =
+    /\/projects\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(
+      location.pathname,
+    ) || /\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(location.pathname);
+  const isDetailsStylePage =
+    isCaseDetailsPage ||
+    isEngagementDetailsPage ||
+    isSecurityReportAnalysisDetailsPage ||
+    isVulnerabilityDetailsPage ||
+    isPendingUpdatesPage ||
+    isUpdateLevelDetailsPage;
 
   return (
-    <>
-      <BackgroundTokenRefresh />
+    <IdleTimeoutProvider>
       <GlobalNotificationBanner visible={notificationBannerConfig.visible} />
       <AppShell>
         {/* Header component. */}
@@ -111,19 +175,44 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
               ref={mainContentRef}
               sx={{
                 flex: 1,
-                minHeight: isCaseDetailsPage ? "60vh" : 0,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
                 overflow: "auto",
-                display: isCaseDetailsPage ? "flex" : "block",
-                flexDirection: isCaseDetailsPage ? "column" : undefined,
-                ...(isCaseDetailsPage
-                  ? { px: 0, pb: 0, pt: 0 }
-                  : { p: 3 }),
+                ...(isDetailsStylePage ? { minHeight: "60vh" } : {}),
+                ...(isAuthLoading
+                  ? { p: 0 }
+                  : isDetailsStylePage
+                    ? { px: 0, pb: 0, pt: 0 }
+                    : { p: 3 }),
               }}
             >
-              {children || (
-                <Outlet
-                  context={{ sidebarCollapsed: shellState.sidebarCollapsed }}
-                />
+              {isAuthLoading ? (
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 2,
+                  }}
+                >
+                  <LinearProgress
+                    color="warning"
+                    sx={{ width: "80%", maxWidth: 400, height: 4 }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {loadingMessage}
+                  </Typography>
+                </Box>
+              ) : (
+                children || (
+                  <Outlet
+                    context={{ sidebarCollapsed: shellState.sidebarCollapsed }}
+                  />
+                )
               )}
             </Box>
           </Box>
@@ -134,6 +223,6 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
           <Footer />
         </AppShell.Footer>
       </AppShell>
-    </>
+    </IdleTimeoutProvider>
   );
 }

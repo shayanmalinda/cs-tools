@@ -14,14 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box } from "@wso2/oxygen-ui";
-import { type JSX, type RefObject } from "react";
+import { Box, Skeleton } from "@wso2/oxygen-ui";
+import { type JSX, type RefObject, useCallback, useEffect, useRef } from "react";
 import ChatMessageBubble from "@components/support/novera-ai-assistant/novera-chat-page/ChatMessageBubble";
-import type { Message } from "@pages/NoveraChatPage";
+import LoadingDotsBubble from "@components/support/novera-ai-assistant/novera-chat-page/LoadingDotsBubble";
+import type { Message } from "@models/chatTypes";
 
 interface ChatMessageListProps {
   messages: Message[];
   messagesEndRef: RefObject<HTMLDivElement | null>;
+  onCreateCase?: () => void;
+  onThumbsUp?: (messageId: string) => void;
+  onThumbsDown?: (messageId: string) => void;
+  onFetchOlder?: () => void;
+  isFetchingOlder?: boolean;
 }
 
 /**
@@ -35,9 +41,42 @@ interface ChatMessageListProps {
 export default function ChatMessageList({
   messages,
   messagesEndRef,
+  onCreateCase,
+  onThumbsUp,
+  onThumbsDown,
+  onFetchOlder,
+  isFetchingOlder = false,
 }: ChatMessageListProps): JSX.Element {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const pendingPrependRef = useRef(false);
+  const prevScrollHeightRef = useRef(0);
+
+  const handleScroll = useCallback(() => {
+    const node = scrollRef.current;
+    if (!node || !onFetchOlder || isFetchingOlder) return;
+    if (node.scrollTop <= 0) {
+      pendingPrependRef.current = true;
+      prevScrollHeightRef.current = node.scrollHeight;
+      onFetchOlder();
+    }
+  }, [onFetchOlder, isFetchingOlder]);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    // When older messages are prepended, keep the user's viewport anchored.
+    if (pendingPrependRef.current) {
+      const newHeight = node.scrollHeight;
+      const delta = newHeight - prevScrollHeightRef.current;
+      node.scrollTop = delta;
+      pendingPrependRef.current = false;
+    }
+  }, [messages.length]);
+
   return (
     <Box
+      ref={scrollRef}
+      onScroll={handleScroll}
       sx={{
         flex: 1,
         overflowY: "auto",
@@ -47,9 +86,24 @@ export default function ChatMessageList({
         gap: 3,
       }}
     >
-      {messages.map((msg) => (
-        <ChatMessageBubble key={msg.id} message={msg} />
-      ))}
+      {isFetchingOlder && (
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Skeleton variant="rounded" width={220} height={28} />
+        </Box>
+      )}
+      {messages.map((msg) =>
+        msg.isLoading ? (
+          <LoadingDotsBubble key={msg.id} />
+        ) : (
+          <ChatMessageBubble
+            key={msg.id}
+            message={msg}
+            onCreateCase={onCreateCase}
+            onThumbsUp={onThumbsUp}
+            onThumbsDown={onThumbsDown}
+          />
+        ),
+      )}
       <div ref={messagesEndRef} />
     </Box>
   );

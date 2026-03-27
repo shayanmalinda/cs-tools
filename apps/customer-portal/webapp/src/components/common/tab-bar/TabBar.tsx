@@ -15,7 +15,7 @@
 // under the License.
 
 import React, { type JSX } from "react";
-import { Box, Button, Card } from "@wso2/oxygen-ui";
+import { Box, Button, Card, type SxProps, type Theme } from "@wso2/oxygen-ui";
 
 export interface TabOption {
   id: string;
@@ -30,9 +30,11 @@ export interface TabBarProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
   className?: string;
+  /** Optional sx to merge with default styles (e.g. reduce margin) */
+  sx?: SxProps<Theme>;
 }
 
-const TabBar = ({ tabs, activeTab, onTabChange }: TabBarProps): JSX.Element => {
+const TabBar = ({ tabs, activeTab, onTabChange, sx }: TabBarProps): JSX.Element => {
   return (
     <Card
       role="tablist"
@@ -41,9 +43,11 @@ const TabBar = ({ tabs, activeTab, onTabChange }: TabBarProps): JSX.Element => {
         alignItems: "center",
         justifyContent: "center",
         p: 0.5,
-        mb: 3,
-        height: 36,
+        mb: 2,
+        minHeight: 36,
+        height: "auto",
         width: "fit-content",
+        ...sx,
       }}
     >
       {tabs.map((tab) => {
@@ -68,12 +72,14 @@ const TabBar = ({ tabs, activeTab, onTabChange }: TabBarProps): JSX.Element => {
               border: "1px solid",
               px: 2,
               py: 0.5,
+              lineHeight: "normal",
               textTransform: "none",
               color: isActive ? "warning.main" : "text.secondary",
               borderColor: isActive ? "warning.main" : "transparent",
               transition: "all 0.2s ease-in-out",
               minWidth: "auto",
-              height: "100%",
+              height: "auto",
+              minHeight: 32,
               "&:hover": {
                 bgcolor: isActive ? "background.paper" : "text.secondary.light",
               },

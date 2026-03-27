@@ -16,45 +16,30 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { getMockDeployments } from "@models/mockFunctions";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
-import type { DeploymentsResponse } from "@models/responses";
+import { ApiQueryKeys } from "@constants/apiConstants";
+import type { ProjectDeploymentsListResponse } from "@models/responses";
 
 /**
  * Fetches deployments for a project.
  *
  * @param {string} projectId - The project ID.
- * @returns {UseQueryResult<DeploymentsResponse, Error>} The query result.
+ * @returns {UseQueryResult<ProjectDeploymentsListResponse, Error>} The query result.
  */
 export function useGetDeployments(
   projectId: string,
-): UseQueryResult<DeploymentsResponse, Error> {
+): UseQueryResult<ProjectDeploymentsListResponse, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
-  return useQuery<DeploymentsResponse, Error>({
-    queryKey: [ApiQueryKeys.DEPLOYMENTS, projectId, isMockEnabled],
-    queryFn: async (): Promise<DeploymentsResponse> => {
-      logger.debug(
-        `Fetching deployments for project ID: ${projectId}, mock: ${isMockEnabled}`,
-      );
-
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-        const data = getMockDeployments(projectId);
-        logger.debug(
-          `Deployments fetched successfully for project ID: ${projectId} (mock)`,
-          data,
-        );
-        return data;
-      }
+  return useQuery<ProjectDeploymentsListResponse, Error>({
+    queryKey: [ApiQueryKeys.DEPLOYMENTS, projectId],
+    queryFn: async (): Promise<ProjectDeploymentsListResponse> => {
+      logger.debug(`Fetching deployments for project ID: ${projectId}`);
 
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
@@ -63,9 +48,8 @@ export function useGetDeployments(
 
         const requestUrl = `${baseUrl}/projects/${projectId}/deployments`;
 
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         logger.debug(`[useGetDeployments] Response status: ${response.status}`);
@@ -74,7 +58,7 @@ export function useGetDeployments(
           throw new Error(`Error fetching deployments: ${response.statusText}`);
         }
 
-        const data: DeploymentsResponse = await response.json();
+        const data: ProjectDeploymentsListResponse = await response.json();
         logger.debug("[useGetDeployments] Data received:", data);
         return data;
       } catch (error) {
@@ -82,7 +66,7 @@ export function useGetDeployments(
         throw error;
       }
     },
-    enabled: !!projectId && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!projectId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000,
   });
 }

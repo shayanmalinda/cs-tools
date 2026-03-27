@@ -16,8 +16,11 @@
 
 import {
   Activity,
+  Bell,
   BookOpen,
   Bot,
+  Calendar,
+  CalendarDays,
   CircleAlert,
   CircleCheck,
   CirclePause,
@@ -30,16 +33,28 @@ import {
   MessageSquare,
   Paperclip,
   Phone,
+  Server,
   TriangleAlert,
   TrendingUp,
-  Zap,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  PlayCircle,
+  Eye,
+  ShieldCheck,
+  UserCheck,
+  CalendarCheck,
+  FileCheck,
 } from "@wso2/oxygen-ui-icons-react";
+import { colors, alpha } from "@wso2/oxygen-ui";
 import { type ComponentType } from "react";
 import type {
   ProjectSupportStats,
   ProjectCasesStats,
   CaseMetadataResponse,
   AllCasesFilterValues,
+  AllConversationsFilterValues,
+  ChangeRequestFilterValues,
 } from "@models/responses";
 
 // Chat actions for the history list.
@@ -53,14 +68,108 @@ export type ChatAction = (typeof ChatAction)[keyof typeof ChatAction];
 // Chat status types.
 export const ChatStatus = {
   RESOLVED: "Resolved",
-  STILL_OPEN: "Still Open",
+  OPEN: "Open",
   ABANDONED: "Abandoned",
 } as const;
 
 export type ChatStatus = (typeof ChatStatus)[keyof typeof ChatStatus];
 
+export const ConversationStatus = {
+  ABANDONED: "Abandoned",
+  ACTIVE: "Active",
+  CONVERTED: "Converted",
+  OPEN: "Open",
+  RESOLVED: "Resolved",
+} as const;
+
+export type ConversationStatus =
+  (typeof ConversationStatus)[keyof typeof ConversationStatus];
+
+// Case status types matching API labels.
+export const CaseStatus = {
+  AWAITING_INFO: "Awaiting Info",
+  CLOSED: "Closed",
+  OPEN: "Open",
+  REOPENED: "Reopened",
+  SOLUTION_PROPOSED: "Solution Proposed",
+  WAITING_ON_WSO2: "Waiting On WSO2",
+  WORK_IN_PROGRESS: "Work In Progress",
+} as const;
+
+export type CaseStatus = (typeof CaseStatus)[keyof typeof CaseStatus];
+
+export const SUPPORT_STATE_CLOSED = CaseStatus.CLOSED;
+export const SUPPORT_STATE_AWAITING_INFO = CaseStatus.AWAITING_INFO;
+export const SUPPORT_STATE_WAITING_ON_WSO2 = CaseStatus.WAITING_ON_WSO2;
+export const CALL_SCHEDULABLE_CASE_STATUSES: CaseStatus[] = [
+  CaseStatus.WORK_IN_PROGRESS,
+  CaseStatus.AWAITING_INFO,
+  CaseStatus.WAITING_ON_WSO2,
+  CaseStatus.SOLUTION_PROPOSED,
+  CaseStatus.REOPENED,
+];
+
+// Call request status types.
+export const CallRequestStatus = {
+  CANCELED: "Canceled",
+  COMPLETED: "Completed",
+  PENDING: "Pending",
+  PENDING_ON_CUSTOMER: "Pending on Customer",
+  REJECTED: "Rejected",
+  SCHEDULED: "Scheduled",
+} as const;
+
+export type CallRequestStatus =
+  (typeof CallRequestStatus)[keyof typeof CallRequestStatus];
+
+/** API stateKey: customer has rejected the proposed time (PATCH). */
+export const CALL_REQUEST_STATE_CUSTOMER_REJECTED = 4;
+
+/** API stateKey: rescheduled back to WSO2 with new preferred times (PATCH). */
+export const CALL_REQUEST_STATE_PENDING_ON_WSO2 = 2;
+
+/** API stateKey value for cancelling a call request (PATCH). */
+export const CALL_REQUEST_STATE_CANCELLED = 6;
+
+// Case severity types matching API labels.
+export const CaseSeverity = {
+  CATASTROPHIC: "Catastrophic (P0)",
+  CRITICAL: "Critical (P1)",
+  HIGH: "High (P2)",
+  LOW: "Low (P4)",
+  MEDIUM: "Medium (P3)",
+} as const;
+
+export type CaseSeverity = (typeof CaseSeverity)[keyof typeof CaseSeverity];
+
+// Case severity levels (S0-S4).
+export const CaseSeverityLevel = {
+  S0: "S0",
+  S1: "S1",
+  S2: "S2",
+  S3: "S3",
+  S4: "S4",
+} as const;
+
+export type CaseSeverityLevel =
+  (typeof CaseSeverityLevel)[keyof typeof CaseSeverityLevel];
+
+// Case type values for case creation and stats filters.
+export const CaseType = {
+  DEFAULT_CASE: "default_case",
+  SERVICE_REQUEST: "service_request",
+  ENGAGEMENT: "engagement",
+  SECURITY_REPORT_ANALYSIS: "security_report_analysis",
+  ANNOUNCEMENT: "announcement",
+} as const;
+
+export type CaseType = (typeof CaseType)[keyof typeof CaseType];
+
 // Maximum allowed attachment file size in bytes.
 export const MAX_ATTACHMENT_SIZE_BYTES = 15 * 1024 * 1024;
+
+// Maximum allowed embedded image size in bytes (15MB for base64 images in rich text).
+export const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
 
 // Initial limit for case attachments list.
 export const CASE_ATTACHMENTS_INITIAL_LIMIT = 50;
@@ -68,44 +177,11 @@ export const CASE_ATTACHMENTS_INITIAL_LIMIT = 50;
 // Interface for support statistics card configuration.
 export interface SupportStatConfig<Key = keyof ProjectSupportStats> {
   iconColor: "primary" | "secondary" | "success" | "error" | "info" | "warning";
-  icon: ComponentType;
+  icon: ComponentType<{ size?: number; color?: string }>;
   key: Key;
   label: string;
-  secondaryIcon?: ComponentType;
+  secondaryIcon?: ComponentType<{ size?: number; color?: string }>;
 }
-
-/**
- * Valid keys for project time tracking statistics.
- */
-export type TimeTrackingStatKey =
-  | "totalHours"
-  | "billableHours"
-  | "nonBillableHours";
-
-/**
- * Configuration for the time tracking statistics cards.
- */
-export const TIME_TRACKING_STAT_CONFIGS: SupportStatConfig<TimeTrackingStatKey>[] =
-  [
-    {
-      icon: Clock,
-      iconColor: "primary",
-      key: "totalHours",
-      label: "Total Hours",
-    },
-    {
-      icon: Zap,
-      iconColor: "success",
-      key: "billableHours",
-      label: "Billable Hours",
-    },
-    {
-      icon: Activity,
-      iconColor: "info",
-      key: "nonBillableHours",
-      label: "Non-Billable Hours",
-    },
-  ];
 
 /**
  * Valid keys for all cases statistics.
@@ -124,7 +200,7 @@ export const ALL_CASES_STAT_CONFIGS: SupportStatConfig<AllCasesStatKey>[] = [
     icon: CircleAlert,
     iconColor: "error",
     key: "openCases",
-    label: "Open",
+    label: "Total Active",
   },
   {
     icon: Clock,
@@ -148,34 +224,47 @@ export const ALL_CASES_STAT_CONFIGS: SupportStatConfig<AllCasesStatKey>[] = [
 
 /**
  * Flattens the project cases statistics for the stat cards.
+ * Total Active = totalCases; Work in Progress, Awaiting Info, Waiting on WSO2 from stateCount.
  *
  * @param {ProjectCasesStats | undefined} stats - The original stats.
  * @returns {Record<AllCasesStatKey, number | undefined>} The flattened stats.
  */
 export const getAllCasesFlattenedStats = (
   stats: ProjectCasesStats | undefined,
-): Record<AllCasesStatKey, number | undefined> => ({
-  openCases: stats?.openCases,
-  waitingOnClient: stats?.activeCases?.waitingOnClient,
-  waitingOnWso2: stats?.activeCases?.waitingOnWso2,
-  workInProgress: stats?.activeCases?.workInProgress,
-});
+): Record<AllCasesStatKey, number | undefined> => {
+  const stateCount = stats?.stateCount ?? [];
+  const workInProgress = stateCount.find(
+    (s) => s.label === CaseStatus.WORK_IN_PROGRESS,
+  )?.count;
+  const waitingOnClient = stateCount.find(
+    (s) => s.label === CaseStatus.AWAITING_INFO,
+  )?.count;
+  const waitingOnWso2 = stateCount.find(
+    (s) => s.label === CaseStatus.WAITING_ON_WSO2,
+  )?.count;
+  const openCases = stats?.totalCases;
+  return {
+    openCases: openCases != null ? openCases : undefined,
+    waitingOnClient,
+    waitingOnWso2,
+    workInProgress,
+  };
+};
 
 // Configuration for the support statistics cards.
 export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
   {
     icon: FileText,
     iconColor: "error",
-    key: "totalCases",
-    label: "Ongoing Cases",
+    key: "ongoingCases",
+    label: "Active Cases",
     secondaryIcon: TrendingUp,
   },
   {
-    icon: MessageSquare,
+    icon: FileCheck,
     iconColor: "success",
-    key: "sessionChats",
-    label: "Chat Sessions",
-    secondaryIcon: Bot,
+    key: "resolvedPast30DaysCasesCount",
+    label: "Resolved Recently (Last 30d)",
   },
   {
     icon: CircleCheck,
@@ -217,12 +306,13 @@ export interface CaseStatusAction {
   paletteIntent: CaseStatusPaletteIntent;
 }
 
-// Case status actions shown in the case details action row.
+// Case status actions shown in the case details action row. Close button last.
 export const CASE_STATUS_ACTIONS: CaseStatusAction[] = [
-  { label: "Escalate Case", Icon: TriangleAlert, paletteIntent: "error" },
   { label: "Waiting on WSO2", Icon: CirclePause, paletteIntent: "warning" },
-  { label: "Mark as Resolved", Icon: CircleCheck, paletteIntent: "success" },
-  { label: "Close Case", Icon: CircleX, paletteIntent: "info" },
+  { label: "Accept Solution", Icon: CircleCheck, paletteIntent: "success" },
+  { label: "Reject Solution", Icon: TriangleAlert, paletteIntent: "error" },
+  { label: "Open Related Case", Icon: RotateCcw, paletteIntent: "info" },
+  { label: "Closed", Icon: CircleX, paletteIntent: "info" },
 ];
 
 // Number of outstanding cases to show on support overview cards.
@@ -230,6 +320,9 @@ export const SUPPORT_OVERVIEW_CASES_LIMIT = 5;
 
 // Number of chat history items to show on support overview cards.
 export const SUPPORT_OVERVIEW_CHAT_LIMIT = 5;
+
+// Number of service requests / change requests to show on operations overview cards.
+export const OPERATIONS_OVERVIEW_LIST_LIMIT = 5;
 
 // Rich text editor constants
 export const RICH_TEXT_HISTORY_LIMIT = 50;
@@ -296,13 +389,65 @@ export interface AllCasesFilterDefinition {
 }
 
 /**
+ * Valid keys for all conversations statistics (no values yet).
+ */
+export type AllConversationsStatKey =
+  | "resolved"
+  | "open"
+  | "abandoned"
+  | "totalChats";
+
+/**
+ * Configuration for the all conversations statistics cards (no values displayed yet).
+ */
+export const ALL_CONVERSATIONS_STAT_CONFIGS: SupportStatConfig<AllConversationsStatKey>[] =
+  [
+    {
+      icon: CircleCheck,
+      iconColor: "success",
+      key: "resolved",
+      label: "Resolved",
+    },
+    { icon: Clock, iconColor: "info", key: "open", label: "Open" },
+    {
+      icon: CircleAlert,
+      iconColor: "warning",
+      key: "abandoned",
+      label: "Abandoned",
+    },
+    { icon: Bot, iconColor: "info", key: "totalChats", label: "Total Chats" },
+  ];
+
+/**
+ * Interface for conversations filter configuration.
+ */
+export interface AllConversationsFilterDefinition {
+  id: string;
+  metadataKey: keyof CaseMetadataResponse;
+  filterKey: keyof AllConversationsFilterValues;
+}
+
+/**
+ * Configuration for the all conversations filters (state only).
+ */
+export const ALL_CONVERSATIONS_FILTER_DEFINITIONS: AllConversationsFilterDefinition[] =
+  [
+    {
+      filterKey: "stateId",
+      id: "state",
+      metadataKey: "conversationStates",
+    },
+  ];
+
+/**
  * Configuration for the all cases filters.
+ * Uses caseStates, caseTypes, severities, issueTypes, deploymentTypes from useGetProjectFilters.
  */
 export const ALL_CASES_FILTER_DEFINITIONS: AllCasesFilterDefinition[] = [
   {
     filterKey: "statusId",
     id: "status",
-    metadataKey: "statuses",
+    metadataKey: "caseStates",
   },
   {
     filterKey: "severityId",
@@ -317,6 +462,462 @@ export const ALL_CASES_FILTER_DEFINITIONS: AllCasesFilterDefinition[] = [
   {
     filterKey: "deploymentId",
     id: "deployment",
-    metadataKey: "deployments",
+    metadataKey: "deploymentTypes",
+  },
+];
+
+/**
+ * Announcement page stat keys (hardcoded values for now).
+ */
+export type AnnouncementStatKey =
+  | "unread"
+  | "critical"
+  | "actionRequired"
+  | "total";
+
+/**
+ * Hardcoded announcement stats (sample values).
+ */
+export const ANNOUNCEMENT_STATS_HARDCODED: Record<AnnouncementStatKey, number> =
+  {
+    unread: 3,
+    critical: 1,
+    actionRequired: 3,
+    total: 8,
+  };
+
+/**
+ * Configuration for announcement statistics cards.
+ */
+export const ANNOUNCEMENT_STAT_CONFIGS: SupportStatConfig<AnnouncementStatKey>[] =
+  [
+    { icon: Bell, iconColor: "warning", key: "unread", label: "Unread" },
+    {
+      icon: TriangleAlert,
+      iconColor: "error",
+      key: "critical",
+      label: "Critical",
+    },
+    {
+      icon: CircleAlert,
+      iconColor: "warning",
+      key: "actionRequired",
+      label: "Action Required",
+    },
+    {
+      icon: FileText,
+      iconColor: "info",
+      key: "total",
+      label: "Total",
+    },
+  ];
+
+/**
+ * Filter values for announcements page.
+ */
+export interface AnnouncementFilterValues {
+  statusId?: string;
+}
+
+/**
+ * Announcement filter definitions (status only).
+ */
+export const ANNOUNCEMENT_FILTER_DEFINITIONS: Array<{
+  filterKey: keyof AnnouncementFilterValues;
+  id: string;
+  metadataKey: keyof CaseMetadataResponse;
+  useLabelAsValue?: boolean;
+}> = [
+  {
+    filterKey: "statusId",
+    id: "status",
+    metadataKey: "caseStates",
+  },
+];
+
+/**
+ * Constants for comment types when posting a comment to a case.
+ */
+export const CommentType = {
+  COMMENT: "comments",
+} as const;
+export type CommentType = (typeof CommentType)[keyof typeof CommentType];
+
+// Line count threshold for showing expand button in support activity section.
+export const COLLAPSE_LINE_THRESHOLD = 4;
+
+// Case type object interface.
+export interface CaseTypeObject {
+  id: string;
+  label: string;
+}
+
+// Case type input.
+export type CaseTypeInput = CaseTypeObject | string | null | undefined;
+
+/**
+ * Change Request Status types.
+ */
+export const ChangeRequestStatus = {
+  SCHEDULED: "Scheduled",
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+  PENDING_APPROVAL: "Pending Approval",
+} as const;
+
+export type ChangeRequestStatus =
+  (typeof ChangeRequestStatus)[keyof typeof ChangeRequestStatus];
+
+/**
+ * Change Request Impact types.
+ */
+export const ChangeRequestImpact = {
+  HIGH: "High",
+  MEDIUM: "Medium",
+  LOW: "Low",
+} as const;
+
+export type ChangeRequestImpact =
+  (typeof ChangeRequestImpact)[keyof typeof ChangeRequestImpact];
+
+/**
+ * Change Request State labels.
+ */
+export const ChangeRequestStates = {
+  NEW: "New",
+  ASSESS: "Assess",
+  AUTHORIZE: "Authorize",
+  CUSTOMER_APPROVAL: "Customer Approval",
+  SCHEDULED: "Scheduled",
+  IMPLEMENT: "Implement",
+  REVIEW: "Review",
+  CUSTOMER_REVIEW: "Customer Review",
+  ROLLBACK: "Rollback",
+  CLOSED: "Closed",
+  CANCELED: "Canceled",
+} as const;
+
+export type ChangeRequestState =
+  (typeof ChangeRequestStates)[keyof typeof ChangeRequestStates];
+
+/**
+ * Helper: Get color palette object for state label using exact matching.
+ */
+function getStateColorPalette(stateLabel: string | undefined) {
+  if (!stateLabel) return colors.grey;
+
+  switch (stateLabel) {
+    case ChangeRequestStates.NEW:
+      return colors.blue;
+    case ChangeRequestStates.ASSESS:
+      return colors.purple;
+    case ChangeRequestStates.AUTHORIZE:
+      return colors.pink;
+    case ChangeRequestStates.CUSTOMER_APPROVAL:
+      return colors.amber;
+    case ChangeRequestStates.SCHEDULED:
+      return colors.cyan;
+    case ChangeRequestStates.IMPLEMENT:
+      return colors.orange;
+    case ChangeRequestStates.REVIEW:
+      return colors.indigo;
+    case ChangeRequestStates.CUSTOMER_REVIEW:
+      return colors.yellow;
+    case ChangeRequestStates.ROLLBACK:
+      return colors.red;
+    case ChangeRequestStates.CLOSED:
+      return colors.green;
+    case ChangeRequestStates.CANCELED:
+      return colors.red;
+    default:
+      return colors.grey;
+  }
+}
+
+/**
+ * Get color for change request state.
+ */
+export function getChangeRequestStateColor(
+  stateLabel: string | undefined,
+): string {
+  const palette = getStateColorPalette(stateLabel);
+
+  if (stateLabel === ChangeRequestStates.CUSTOMER_REVIEW) {
+    return palette[600];
+  } else if (stateLabel === ChangeRequestStates.CANCELED) {
+    return palette[700];
+  } else if (!stateLabel) {
+    return palette[400];
+  }
+
+  return palette[500];
+}
+
+/**
+ * Get icon component for change request state.
+ */
+export function getChangeRequestStateIcon(
+  stateLabel: string | undefined,
+): ComponentType<{ size?: number }> {
+  if (!stateLabel) return CircleQuestionMark;
+
+  switch (stateLabel) {
+    case ChangeRequestStates.NEW:
+      return FileText;
+    case ChangeRequestStates.ASSESS:
+      return Activity;
+    case ChangeRequestStates.AUTHORIZE:
+      return ShieldCheck;
+    case ChangeRequestStates.CUSTOMER_APPROVAL:
+      return UserCheck;
+    case ChangeRequestStates.SCHEDULED:
+      return CalendarCheck;
+    case ChangeRequestStates.IMPLEMENT:
+      return PlayCircle;
+    case ChangeRequestStates.REVIEW:
+      return Eye;
+    case ChangeRequestStates.CUSTOMER_REVIEW:
+      return UserCheck;
+    case ChangeRequestStates.ROLLBACK:
+      return RotateCcw;
+    case ChangeRequestStates.CLOSED:
+      return CheckCircle;
+    case ChangeRequestStates.CANCELED:
+      return XCircle;
+    default:
+      return CircleQuestionMark;
+  }
+}
+
+/**
+ * Change Request Impact labels.
+ */
+export const ChangeRequestImpactLabels = {
+  HIGH: "1 - High",
+  MEDIUM: "2 - Medium",
+  LOW: "3 - Low",
+} as const;
+
+/**
+ * Helper: Get color palette object for impact label using exact matching.
+ */
+function getImpactColorPalette(impactLabel: string | undefined) {
+  if (!impactLabel) return colors.grey;
+
+  switch (impactLabel) {
+    case ChangeRequestImpactLabels.HIGH:
+      return colors.red;
+    case ChangeRequestImpactLabels.MEDIUM:
+      return colors.orange;
+    case ChangeRequestImpactLabels.LOW:
+      return colors.green;
+    default:
+      return colors.grey;
+  }
+}
+
+/**
+ * Get color for change request impact level.
+ */
+export function getChangeRequestImpactColor(
+  impactLabel: string | undefined,
+): string {
+  const palette = getImpactColorPalette(impactLabel);
+  return !impactLabel ? palette[400] : palette[500];
+}
+
+/**
+ * Get color shadesfor change request impact level.
+ */
+export function getChangeRequestImpactColorShades(
+  impactLabel: string | undefined,
+): { bg: string; text: string; border: string } {
+  const colorShades = getImpactColorPalette(impactLabel);
+
+  return {
+    bg: alpha(colorShades[500], 0.1),
+    text: colorShades[800],
+    border: alpha(colorShades[500], 0.2),
+  };
+}
+
+/**
+ * Get color shades (bg, text, border) for change request state.
+ */
+export function getChangeRequestStateColorShades(
+  stateLabel: string | undefined,
+): { bg: string; text: string; border: string } {
+  const colorShades = getStateColorPalette(stateLabel);
+
+  // Match the special-case shades used by getChangeRequestStateColor
+  if (stateLabel === ChangeRequestStates.CUSTOMER_REVIEW) {
+    return {
+      bg: alpha(colorShades[600], 0.1),
+      text: colorShades[800],
+      border: alpha(colorShades[600], 0.2),
+    };
+  } else if (stateLabel === ChangeRequestStates.CANCELED) {
+    return {
+      bg: alpha(colorShades[700], 0.1),
+      text: colorShades[800],
+      border: alpha(colorShades[700], 0.2),
+    };
+  }
+
+  return {
+    bg: alpha(colorShades[500], 0.1),
+    text: colorShades[800],
+    border: alpha(colorShades[500], 0.2),
+  };
+}
+
+/**
+ * Format impact label by removing the numeric prefix.
+ * "1 - High" -> "High"
+ */
+export function formatImpactLabel(impactLabel: string | undefined): string {
+  if (!impactLabel) return "Not Available";
+
+  // Remove "1 - ", "2 - ", "3 - " prefix
+  return impactLabel.replace(/^\d+\s*-\s*/, "");
+}
+
+/**
+ * Valid keys for change requests statistics.
+ */
+export type ChangeRequestStatKey =
+  | "totalRequests"
+  | "scheduled"
+  | "inProgress"
+  | "completed";
+
+/**
+ * Configuration for the change requests statistics cards.
+ */
+export const CHANGE_REQUEST_STAT_CONFIGS: SupportStatConfig<ChangeRequestStatKey>[] =
+  [
+    {
+      icon: FileText,
+      iconColor: "info",
+      key: "totalRequests",
+      label: "Total Requests",
+    },
+    {
+      icon: Calendar,
+      iconColor: "primary",
+      key: "scheduled",
+      label: "Scheduled",
+    },
+    {
+      icon: Clock,
+      iconColor: "warning",
+      key: "inProgress",
+      label: "In Progress",
+    },
+    {
+      icon: CircleCheck,
+      iconColor: "success",
+      key: "completed",
+      label: "Completed",
+    },
+  ];
+
+/**
+ * Valid keys for service requests statistics.
+ */
+export type ServiceRequestStatKey =
+  | "pending"
+  | "inProgress"
+  | "completed"
+  | "rejected";
+
+/**
+ * Configuration for the service requests statistics cards.
+ */
+export const SERVICE_REQUEST_STAT_CONFIGS: SupportStatConfig<ServiceRequestStatKey>[] =
+  [
+    {
+      icon: Clock,
+      iconColor: "warning",
+      key: "pending",
+      label: "Pending",
+    },
+    {
+      icon: Info,
+      iconColor: "info",
+      key: "inProgress",
+      label: "In Progress",
+    },
+    {
+      icon: CircleCheck,
+      iconColor: "success",
+      key: "completed",
+      label: "Completed",
+    },
+    {
+      icon: XCircle,
+      iconColor: "error",
+      key: "rejected",
+      label: "Rejected",
+    },
+  ];
+
+/**
+ * Valid keys for operations statistics.
+ */
+export type OperationsStatKey =
+  | "activeServiceRequests"
+  | "activeChangeRequests"
+  | "completedThisMonth"
+  | "upcomingChanges";
+
+/**
+ * Configuration for the operations statistics cards.
+ */
+export const OPERATIONS_STAT_CONFIGS: SupportStatConfig<OperationsStatKey>[] = [
+  {
+    icon: Server,
+    iconColor: "info",
+    key: "activeServiceRequests",
+    label: "Active Service Requests",
+  },
+  {
+    icon: CalendarDays,
+    iconColor: "primary",
+    key: "activeChangeRequests",
+    label: "Active Change Requests",
+  },
+  {
+    icon: CircleCheck,
+    iconColor: "success",
+    key: "completedThisMonth",
+    label: "Completed This Month",
+  },
+  {
+    icon: Calendar,
+    iconColor: "warning",
+    key: "upcomingChanges",
+    label: "Upcoming Changes",
+  },
+];
+
+/**
+ * Change request filter definitions.
+ */
+export const CHANGE_REQUEST_FILTER_DEFINITIONS: Array<{
+  filterKey: keyof ChangeRequestFilterValues;
+  id: string;
+  metadataKey: keyof CaseMetadataResponse;
+}> = [
+  {
+    filterKey: "stateId",
+    id: "state",
+    metadataKey: "changeRequestStates",
+  },
+  {
+    filterKey: "impactId",
+    id: "impact",
+    metadataKey: "changeRequestImpacts",
   },
 ];

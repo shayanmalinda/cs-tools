@@ -14,60 +14,42 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { mockCaseAttachments } from "@models/mockData";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
-import type { CaseAttachmentsResponse } from "@models/responses";
+import { ApiQueryKeys } from "@constants/apiConstants";
+import type {
+  CaseAttachmentsResponse,
+  CaseAttachment,
+} from "@models/responses";
 
-export interface UseGetCaseAttachmentsOptions {
-  limit?: number;
-  offset?: number;
-  enabled?: boolean;
-}
+const PAGE_SIZE = 10;
 
 /**
- * Fetches attachments for a case.
+ * Fetches case attachments with pagination (GET /cases/:caseId/attachments).
+ * Uses infinite query to support server-side pagination.
  *
- * @param {string} caseId - The case id.
- * @param {UseGetCaseAttachmentsOptions} options - Optional limit and offset for pagination.
- * @returns {UseQueryResult<CaseAttachmentsResponse, Error>} Query result with attachments.
+ * @param {string} caseId - The case ID.
+ * @returns {UseInfiniteQueryResult} Infinite query result with case attachments.
  */
-export default function useGetCaseAttachments(
-  caseId: string,
-  options?: UseGetCaseAttachmentsOptions,
-): UseQueryResult<CaseAttachmentsResponse, Error> {
+export function useGetCaseAttachments(caseId: string) {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
-  const { limit = 50, offset = 0, enabled: optionsEnabled = true } = options ?? {};
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
-  return useQuery<CaseAttachmentsResponse, Error>({
-    queryKey: [
-      ApiQueryKeys.CASE_ATTACHMENTS,
-      caseId,
-      limit,
-      offset,
-      isMockEnabled,
-    ],
-    queryFn: async (): Promise<CaseAttachmentsResponse> => {
+  return useInfiniteQuery<
+    CaseAttachmentsResponse,
+    Error,
+    InfiniteData<CaseAttachmentsResponse>,
+    readonly (string | number)[],
+    number
+  >({
+    queryKey: [ApiQueryKeys.CASE_ATTACHMENTS, caseId, "infinite"],
+    queryFn: async ({ pageParam }): Promise<CaseAttachmentsResponse> => {
       logger.debug(
-        `Fetching case attachments: caseId=${caseId}, limit=${limit}, offset=${offset}, mock=${isMockEnabled}`,
+        `[useGetCaseAttachments] Fetching attachments for case ${caseId}, offset: ${pageParam}`,
       );
-
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-        const sliced = mockCaseAttachments.slice(offset, offset + limit);
-        return {
-          attachments: sliced.length > 0 ? sliced : mockCaseAttachments,
-          totalRecords: mockCaseAttachments.length,
-          limit,
-          offset,
-        };
-      }
 
       try {
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
@@ -75,34 +57,56 @@ export default function useGetCaseAttachments(
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const idToken = await getIdToken();
-        const params = new URLSearchParams();
-        params.set("limit", String(limit));
-        params.set("offset", String(offset));
-        const requestUrl = `${baseUrl}/cases/${caseId}/attachments?${params.toString()}`;
-        const response = await fetch(requestUrl, {
-          method: "GET",
-          headers: addApiHeaders(idToken),
+        const params = new URLSearchParams({
+          limit: String(PAGE_SIZE),
+          offset: String(pageParam),
         });
+        const encodedCaseId = encodeURIComponent(caseId);
+        const requestUrl = `${baseUrl}/cases/${encodedCaseId}/attachments?${params}`;
+        const response = await authFetch(requestUrl, {
+          method: "GET",
+        });
+
+        logger.debug(
+          `[useGetCaseAttachments] Response status: ${response.status}`,
+        );
 
         if (!response.ok) {
           throw new Error(
-            `Error fetching case attachments: ${response.status} ${response.statusText}`,
+            `Error fetching case attachments: ${response.statusText}`,
           );
         }
 
         const data: CaseAttachmentsResponse = await response.json();
-        logger.debug("[useGetCaseAttachments] Data received:", data);
+        logger.debug(
+          `[useGetCaseAttachments] Page received: ${data.attachments?.length ?? 0} attachments, offset ${data.offset}, total ${data.totalRecords}`,
+        );
         return data;
       } catch (error) {
-        logger.error("[useGetCaseAttachments] Error:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        logger.error(`[useGetCaseAttachments] Error: ${errorMessage}`);
         throw error;
       }
     },
-    enabled:
-      optionsEnabled &&
-      !!caseId &&
-      (isMockEnabled || (isSignedIn && !isAuthLoading)),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const { offset, limit, totalRecords } = lastPage;
+      if (limit <= 0) return undefined;
+      const nextOffset = offset + limit;
+      return nextOffset < totalRecords ? nextOffset : undefined;
+    },
+    enabled: !!caseId && isSignedIn && !isAuthLoading,
+    staleTime: 5 * 60 * 1000,
   });
+}
+
+/** Flattens all pages of case attachments into a single array. */
+export function flattenCaseAttachments(
+  data: InfiniteData<CaseAttachmentsResponse> | undefined,
+): CaseAttachment[] {
+  if (!data?.pages) return [];
+  return data.pages.flatMap(
+    (page: CaseAttachmentsResponse) => page.attachments ?? [],
+  );
 }

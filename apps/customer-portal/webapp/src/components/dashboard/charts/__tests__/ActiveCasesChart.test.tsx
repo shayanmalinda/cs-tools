@@ -17,6 +17,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ActiveCasesChart } from "@components/dashboard/charts/ActiveCasesChart";
+import { ACTIVE_CASES_CHART_DATA } from "@constants/dashboardConstants";
 
 // Mock @wso2/oxygen-ui
 vi.mock("@wso2/oxygen-ui", () => ({
@@ -86,15 +87,14 @@ vi.mock("../ChartLegend", () => ({
 
 describe("ActiveCasesChart", () => {
   const mockData = {
-    workInProgress: 10,
-    waitingOnClient: 5,
-    waitingOnWso2: 3,
-    total: 18,
+    serviceRequests: 12,
+    changeRequests: 8,
+    total: 20,
   };
 
   it("should render title correctly", () => {
     render(<ActiveCasesChart data={mockData} isLoading={false} />);
-    expect(screen.getByText("Active cases")).toBeInTheDocument();
+    expect(screen.getByText("Outstanding Operations")).toBeInTheDocument();
   });
 
   it("should render skeleton when loading", () => {
@@ -112,17 +112,15 @@ describe("ActiveCasesChart", () => {
 
   it("should render all chart segments even with missing data values", () => {
     const incompleteData = {
-      workInProgress: 10,
-      waitingOnClient: 5,
-      total: 15,
+      serviceRequests: 10,
+      total: 10,
     } as any;
 
     render(<ActiveCasesChart data={incompleteData} isLoading={false} />);
 
-    // Verify that all segments are still rendered (value will be undefined)
+    // Verify that all configured segments are still rendered
     const segments = screen.getAllByTestId("pie-segment");
-    // We expect 3 segments because ACTIVE_CASES_CHART_DATA has 3 items
-    expect(segments).toHaveLength(3);
+    expect(segments).toHaveLength(ACTIVE_CASES_CHART_DATA.length);
 
     // Verify that the missing value was defaulted to 0
     const values = segments.map((s) => s.getAttribute("data-value"));

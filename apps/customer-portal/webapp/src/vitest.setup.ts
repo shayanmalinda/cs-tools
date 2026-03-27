@@ -14,4 +14,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { vi } from "vitest";
 import "@testing-library/jest-dom";
+
+// Mock Asgardeo to avoid buffer resolution issues in tests
+vi.mock("@asgardeo/react", () => ({
+  useAsgardeo: () => ({
+    isSignedIn: true,
+    isLoading: false,
+    state: {},
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+    getAccessToken: vi.fn().mockResolvedValue("mock-access-token-123"),
+    getIdToken: vi.fn().mockResolvedValue("mock-token-123"),
+  }),
+  AsgardeoProvider: ({ children }: { children: unknown }) => children,
+}));
+
+// Globally mock useAuthApiClient to avoid unexpected native fetch executions inside UI component tests
+export const mockAuthFetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: () => Promise.resolve({}),
+});
+
+vi.mock("@api/useAuthApiClient", () => ({
+  useAuthApiClient: () => mockAuthFetch,
+}));

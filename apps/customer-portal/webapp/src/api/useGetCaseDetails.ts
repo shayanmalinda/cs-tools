@@ -16,39 +16,34 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { mockCaseDetails } from "@models/mockData";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CaseDetails } from "@models/responses";
 
 /**
- * Fetches a single case by id for a project.
+ * Fetches a single case by id. When projectId is provided, it is included in the query key.
+ * When projectId is omitted (e.g. for old-URL redirect by caseId only), the API still
+ * returns case details including project.id for redirect.
  *
- * @param {string} projectId - The project id.
+ * @param {string | undefined} projectId - The project id (optional when fetching by caseId only).
  * @param {string} caseId - The case id.
  * @returns {UseQueryResult<CaseDetails, Error>} Query result with case details.
  */
 export default function useGetCaseDetails(
-  projectId: string,
+  projectId: string | undefined,
   caseId: string,
 ): UseQueryResult<CaseDetails, Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isLoading: isAuthLoading, isSignedIn } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useQuery<CaseDetails, Error>({
-    queryKey: [ApiQueryKeys.CASE_DETAILS, projectId, caseId, isMockEnabled],
+    queryKey: [ApiQueryKeys.CASE_DETAILS, projectId ?? "byCaseId", caseId],
     queryFn: async (): Promise<CaseDetails> => {
       logger.debug(
-        `Fetching case details: projectId=${projectId}, caseId=${caseId}, mock=${isMockEnabled}`,
+        `Fetching case details: projectId=${projectId}, caseId=${caseId}`,
       );
-
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-        return { ...mockCaseDetails, id: caseId };
-      }
 
       try {
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
@@ -56,11 +51,9 @@ export default function useGetCaseDetails(
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const idToken = await getIdToken();
         const requestUrl = `${baseUrl}/cases/${caseId}`;
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "GET",
-          headers: addApiHeaders(idToken),
         });
 
         if (!response.ok) {
@@ -77,10 +70,7 @@ export default function useGetCaseDetails(
         throw error;
       }
     },
-    enabled:
-      !!projectId &&
-      !!caseId &&
-      (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!caseId && !isAuthLoading && isSignedIn,
     staleTime: 5 * 60 * 1000,
   });
 }

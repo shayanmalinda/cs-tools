@@ -14,12 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DashboardPage from "@pages/DashboardPage";
 import { DASHBOARD_STATS } from "@constants/dashboardConstants";
-import { useGetDashboardMockStats } from "@api/useGetDashboardMockStats";
 import { useGetProjectCasesStats } from "@api/useGetProjectCasesStats";
 import { ErrorBannerProvider } from "@context/error-banner/ErrorBannerContext";
 import { LoaderProvider } from "@context/linear-loader/LoaderContext";
@@ -66,22 +65,14 @@ vi.mock("@context/linear-loader/LoaderContext", async (importOriginal) => {
   };
 });
 
-const mockMockStats = {
+const mockFilters = {
   data: {
-    totalCases: { trend: { value: "12%", direction: "up", color: "success" } },
-    openCases: { trend: { value: "5%", direction: "down", color: "error" } },
-    resolvedCases: {
-      trend: { value: "8%", direction: "up", color: "success" },
-    },
-    avgResponseTime: {
-      trend: { value: "0.5h", direction: "down", color: "error" },
-    },
-    casesTrend: {
-      "Type A": 10,
-      "Type B": 20,
-      "Type C": 30,
-      "Type D": 40,
-    },
+    caseTypes: [
+      { id: "8d4b87bd1b18f010cb6898aebd4bcb59", label: "Incident" },
+      { id: "0d5b8fbd1b18f010cb6898aebd4bcba5", label: "Query" },
+      { id: "5aeff1201b74c210264c997a234bcb54", label: "Service Request" },
+      { id: "ab36479047ccf510a0a29cd3846d43ee", label: "Security Report Analysis" },
+    ],
   },
   isLoading: false,
   isError: false,
@@ -90,16 +81,26 @@ const mockMockStats = {
 const mockCasesStats = {
   data: {
     totalCases: 150,
-    openCases: 25,
     averageResponseTime: 4.5,
-    resolvedCases: { total: 125 },
+    resolvedCases: { total: 125, currentMonth: 6 },
+    stateCount: [
+      { id: "1", label: "Open", count: 100 },
+      { id: "3", label: "Closed", count: 25 },
+      { id: "10", label: "Work In Progress", count: 15 },
+      { id: "18", label: "Awaiting Info", count: 5 },
+      { id: "1003", label: "Waiting On WSO2", count: 5 },
+    ],
+    severityCount: [],
+    outstandingSeverityCount: [],
+    caseTypeCount: [],
+    casesTrend: [],
   },
   isLoading: false,
   isError: false,
 };
 
-vi.mock("@api/useGetDashboardMockStats", () => ({
-  useGetDashboardMockStats: vi.fn(() => mockMockStats),
+vi.mock("@api/useGetProjectFilters", () => ({
+  default: vi.fn(() => mockFilters),
 }));
 
 vi.mock("@api/useGetProjectCasesStats", () => ({
@@ -167,12 +168,13 @@ vi.mock("@wso2/oxygen-ui", () => ({
   ),
   colors: {
     common: { white: "#FFFFFF" },
-    blue: { 500: "#3B82F6", 700: "#1D4ED8" },
+    blue: { 500: "#3B82F6", 600: "#2563EB", 700: "#1D4ED8" },
     green: { 500: "#22C55E" },
+    grey: { 300: "#D1D5DB", 500: "#9CA3AF" },
     orange: { 500: "#F97316" },
-    red: { 500: "#EF4444" },
+    purple: { 400: "#A78BFA", 500: "#A855F7" },
+    red: { 500: "#EF4444", 600: "#DC2626" },
     yellow: { 600: "#EAB308" },
-    purple: { 400: "#A78BFA" },
   },
 }));
 
@@ -210,30 +212,6 @@ describe("DashboardPage", () => {
       DASHBOARD_STATS.length,
     );
     expect(screen.getByTestId("chart-layout")).toBeInTheDocument();
-    expect(screen.getByText("Get Support")).toBeInTheDocument();
-  });
-
-  it("should navigate to support chat on button click", () => {
-    renderWithProviders(<DashboardPage />);
-    const button = screen.getByText("Get Support");
-    fireEvent.click(button);
-
-    expect(mockNavigate).toHaveBeenCalledWith("/project-1/support/chat");
-  });
-
-  it("should render error banner when statistics fail to load", () => {
-    vi.mocked(useGetDashboardMockStats).mockReturnValueOnce({
-      ...mockMockStats,
-      isError: true,
-      data: undefined,
-    } as any);
-
-    renderWithProviders(<DashboardPage />);
-
-    expect(screen.getByTestId("error-banner")).toBeInTheDocument();
-    expect(
-      screen.getByText("Could not load dashboard statistics."),
-    ).toBeInTheDocument();
   });
 
   it("should render error banner when cases statistics fail to load", () => {

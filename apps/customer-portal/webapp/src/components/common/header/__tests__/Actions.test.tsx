@@ -67,13 +67,9 @@ vi.mock("../UserProfile", () => ({
 }));
 
 describe("Actions", () => {
-  it("should render join community button, theme toggle, and user profile", () => {
+  it("should render theme toggle and user profile", () => {
     render(<Actions />);
 
-    expect(screen.getByText("Join our community")).toBeInTheDocument();
-    const joinLink = screen.getByRole("link", { name: /join our community/i });
-    expect(joinLink).toHaveAttribute("target", "_blank");
-    expect(joinLink).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByTestId("theme-toggle")).toBeInTheDocument();
     expect(screen.getByTestId("user-profile")).toBeInTheDocument();
   });

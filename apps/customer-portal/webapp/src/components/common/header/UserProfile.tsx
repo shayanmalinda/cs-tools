@@ -16,13 +16,13 @@
 
 import { Skeleton, UserMenu } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
-import { User } from "@wso2/oxygen-ui-icons-react";
-import { useLogger } from "@hooks/useLogger";
+import { LogOut, User } from "@wso2/oxygen-ui-icons-react";
 import useGetUserDetails from "@api/useGetUserDetails";
-import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
+import { useLogger } from "@/hooks/useLogger";
+import UserProfileModal from "@components/common/header/UserProfileModal";
 
 /**
  * User profile component.
@@ -31,63 +31,57 @@ import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
  */
 export default function UserProfile(): JSX.Element {
   const navigate = useNavigate();
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const { signOut, isLoading: isAuthLoading, isSignedIn } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
   const { data: userDetails, isLoading, isError } = useGetUserDetails();
   const logger = useLogger();
 
-  if (!isAuthLoading && !isSignedIn && !isMockEnabled) {
+  if (!isAuthLoading && !isSignedIn) {
     return <></>;
   }
-  const user = userDetails
-    ? {
-        name:
-          userDetails.firstName || userDetails.lastName
-            ? `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim()
-            : "--",
-        email: userDetails.email || "--",
-        avatar:
-          userDetails.firstName || userDetails.lastName ? (
-            `${(userDetails.firstName?.[0] || "").toUpperCase()}${(
-              userDetails.lastName?.[0] || ""
-            ).toUpperCase()}`
-          ) : (
-            <User />
-          ),
-      }
-    : null;
 
-  // Loading user object with skeletons
-  const loadingUser = {
-    name: <Skeleton variant="text" width={100} />,
-    email: <Skeleton variant="text" width={150} />,
-    avatar: <></>,
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      logger.error("Failed to sign out", error);
+    } finally {
+      navigate("/");
+    }
   };
 
-  // Error user object with tooltips
-  const errorUser = {
-    name: <ErrorIndicator entityName="user" />,
-    avatar: <User />,
-  };
+  if (isLoading || isAuthLoading) {
+    return <Skeleton variant="circular" width={36} height={36} />;
+  }
 
-  const userToRender =
-    isLoading || isAuthLoading
-      ? loadingUser
-      : isError
-        ? errorUser
-        : user || errorUser;
+  const name = isError
+    ? "Unknown User"
+    : userDetails?.firstName || userDetails?.lastName
+      ? `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim()
+      : "--";
+
+  const email = isError ? "--" : userDetails?.email || "--";
 
   return (
     <>
-      {/* user profile menu */}
-      <UserMenu
-        user={userToRender as any}
-        onProfileClick={() => logger.debug("Profile clicked")}
-        onSettingsClick={() => logger.debug("Settings clicked")}
-        onLogout={async () => {
-          await signOut();
-          navigate("/");
-        }}
+      <UserMenu>
+        <UserMenu.Trigger name={name} />
+        <UserMenu.Header name={name} email={email} />
+        <UserMenu.Divider />
+        <UserMenu.Item
+          icon={<User size={18} />}
+          label="Profile"
+          onClick={() => setProfileModalOpen(true)}
+        />
+        <UserMenu.Logout
+          icon={<LogOut size={18} />}
+          label="Log out"
+          onClick={handleLogout}
+        />
+      </UserMenu>
+      <UserProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
       />
     </>
   );

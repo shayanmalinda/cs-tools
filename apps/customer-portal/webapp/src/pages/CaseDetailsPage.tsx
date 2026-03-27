@@ -15,11 +15,14 @@
 // under the License.
 
 import { useEffect, useRef, type JSX } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import useGetCaseDetails from "@api/useGetCaseDetails";
 import CaseDetailsContent from "@case-details-details/CaseDetailsContent";
+import { isSecurityReportAnalysisType } from "@utils/support";
+import { SecurityTab } from "@constants/securityConstants";
+import { ROUTE_PREVIOUS_PAGE } from "@/constants/commonConstants";
 
 /**
  * CaseDetailsPage displays details for a single support case.
@@ -28,6 +31,7 @@ import CaseDetailsContent from "@case-details-details/CaseDetailsContent";
  */
 export default function CaseDetailsPage(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projectId, caseId } = useParams<{
     projectId: string;
     caseId: string;
@@ -38,6 +42,11 @@ export default function CaseDetailsPage(): JSX.Element {
   const { data, isLoading, isFetching, isError } = useGetCaseDetails(
     projectId || "",
     caseId || "",
+  );
+
+  const isEngagementRoute = location.pathname.includes("/engagements/");
+  const isSecurityReportAnalysisRoute = location.pathname.includes(
+    "security-report-analysis",
   );
 
   // Show skeletons immediately when no data (avoid "-" flash on refresh) and when loading/refetching.
@@ -71,7 +80,45 @@ export default function CaseDetailsPage(): JSX.Element {
   }, [isError, showError]);
 
   const handleBack = () => {
-    navigate(`/${projectId}/support/cases`);
+    if (isEngagementRoute) {
+      navigate(`/projects/${projectId}/engagements`);
+      return;
+    }
+
+    const queryTab = new URLSearchParams(location.search).get("tab");
+    const caseDetailsWithFlag = data as
+      | ({ isSecurityReport?: boolean } & typeof data)
+      | undefined;
+
+    const isSecurityReport =
+      caseDetailsWithFlag?.isSecurityReport === true ||
+      isSecurityReportAnalysisType(data?.type) ||
+      isSecurityReportAnalysisRoute ||
+      queryTab === SecurityTab.VULNERABILITIES;
+
+    if (isSecurityReport) {
+      navigate(
+        `/projects/${projectId}/security-center?tab=${SecurityTab.VULNERABILITIES}`,
+      );
+    } else {
+      navigate(ROUTE_PREVIOUS_PAGE);
+    }
+  };
+
+  const handleOpenRelatedCase = () => {
+    if (!projectId) return;
+    navigate(`/projects/${projectId}/support/chat/create-related-case`, {
+      state: {
+        relatedCase: {
+          parentCaseId: data?.id ?? caseId ?? "",
+          number: data?.number ?? "",
+          title: data?.title ?? "",
+          description: data?.description ?? "",
+          deploymentId: data?.deployment?.id,
+          deploymentLabel: data?.deployment?.label,
+        },
+      },
+    });
   };
 
   return (
@@ -80,7 +127,11 @@ export default function CaseDetailsPage(): JSX.Element {
       isLoading={showSkeletons}
       isError={isError}
       caseId={caseId || ""}
+      projectId={projectId}
       onBack={handleBack}
+      onOpenRelatedCase={handleOpenRelatedCase}
+      hideActionRow={isSecurityReportAnalysisRoute}
+      showEngineerOnly={isEngagementRoute}
     />
   );
 }

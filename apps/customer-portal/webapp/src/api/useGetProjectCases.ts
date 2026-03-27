@@ -20,37 +20,36 @@ import {
   type InfiniteData,
 } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { mockCases } from "@models/mockData";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CaseSearchRequest } from "@models/requests";
 import type { CaseSearchResponse } from "@models/responses";
+
+export interface UseGetProjectCasesOptions {
+  enabled?: boolean;
+}
 
 /**
  * Custom hook to search cases for a specific project using infinite query.
  *
  * @param {string} projectId - The ID of the project to search cases for.
  * @param {Omit<CaseSearchRequest, 'pagination'>} baseRequest - The search parameters excluding pagination.
+ * @param {UseGetProjectCasesOptions} options - Optional query options.
  * @returns {UseInfiniteQueryResult<CaseSearchResponse, Error>} The infinite query result object.
  */
 export default function useGetProjectCases(
   projectId: string,
   baseRequest: Omit<CaseSearchRequest, "pagination">,
+  options?: UseGetProjectCasesOptions,
 ): UseInfiniteQueryResult<InfiniteData<CaseSearchResponse>, Error> {
   const logger = useLogger();
 
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useInfiniteQuery<CaseSearchResponse, Error>({
-    queryKey: [
-      ApiQueryKeys.PROJECT_CASES,
-      projectId,
-      baseRequest,
-      isMockEnabled,
-    ],
+    queryKey: [ApiQueryKeys.PROJECT_CASES, projectId, baseRequest],
     queryFn: async ({ pageParam = 0 }): Promise<CaseSearchResponse> => {
       const requestBody: CaseSearchRequest = {
         ...baseRequest,
@@ -63,34 +62,9 @@ export default function useGetProjectCases(
       logger.debug(
         `Fetching cases for project: ${projectId} with params:`,
         requestBody,
-        `mock: ${isMockEnabled}`,
       );
 
-      if (isMockEnabled) {
-        await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-
-        const { offset = 0, limit = 10 } = requestBody.pagination;
-        const filteredCases = mockCases.filter(
-          (cases) => cases.project.id === projectId || projectId === "all",
-        );
-
-        // slice for pagination
-        const pagedCases = filteredCases.slice(offset, offset + limit);
-
-        const response: CaseSearchResponse = {
-          cases: pagedCases.length > 0 ? pagedCases : mockCases.slice(0, limit),
-          totalRecords:
-            filteredCases.length > 0 ? filteredCases.length : mockCases.length,
-          offset,
-          limit,
-        };
-
-        logger.debug("Cases fetched successfully (mock)", response);
-        return response;
-      }
-
       try {
-        const idToken = await getIdToken();
         const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
         if (!baseUrl) {
@@ -99,9 +73,9 @@ export default function useGetProjectCases(
 
         const requestUrl = `${baseUrl}/projects/${projectId}/cases/search`;
 
-        const response = await fetch(requestUrl, {
+        const response = await authFetch(requestUrl, {
           method: "POST",
-          headers: addApiHeaders(idToken),
+
           body: JSON.stringify(requestBody),
         });
 
@@ -128,7 +102,8 @@ export default function useGetProjectCases(
       const nextOffset = lastPage.offset + lastPage.limit;
       return nextOffset < lastPage.totalRecords ? nextOffset : undefined;
     },
-    enabled: !!projectId && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled:
+      (options?.enabled ?? true) && !!projectId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });

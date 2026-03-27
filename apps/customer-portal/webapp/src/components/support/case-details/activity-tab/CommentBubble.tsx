@@ -16,20 +16,24 @@
 
 import {
   Avatar,
-  Chip,
   Stack,
   Typography,
   alpha,
   useTheme,
 } from "@wso2/oxygen-ui";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { CaseComment } from "@models/responses";
 import {
   getInitials,
+  hasSingleCodeWrapper,
   stripCodeWrapper,
+  stripAllCodeBlocks,
+  convertCodeTagsToHtml,
+  trimLeadingBr,
   stripCustomerCommentAddedLabel,
   replaceInlineImageSources,
   formatCommentDate,
+  INLINE_COMMENT_HTML_PURIFY,
 } from "@utils/support";
 import DOMPurify from "dompurify";
 import ChatMessageCard from "@case-details-activity/ChatMessageCard";
@@ -38,7 +42,12 @@ export interface CommentBubbleProps {
   comment: CaseComment;
   isCurrentUser: boolean;
   primaryBg: string;
-  userDetails?: { email?: string; firstName?: string; lastName?: string } | null;
+  onImageClick?: (src: string) => void;
+  userDetails?: {
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
 }
 
 /**
@@ -51,19 +60,38 @@ export default function CommentBubble({
   comment,
   isCurrentUser,
   primaryBg,
+  onImageClick,
   userDetails,
 }: CommentBubbleProps): import("react").JSX.Element {
   const theme = useTheme();
-  const [expanded, setExpanded] = useState(false);
   const rawContent = comment.content ?? "";
-  const stripped = stripCodeWrapper(rawContent);
-  const withoutLabel = stripCustomerCommentAddedLabel(stripped);
-  const withImages = replaceInlineImageSources(
-    withoutLabel,
-    comment.inlineAttachments,
-  );
-  const htmlContent = DOMPurify.sanitize(withImages);
-  const displayName = isCurrentUser ? null : (comment.createdBy || "Unknown");
+  const isFullCodeWrap = hasSingleCodeWrapper(rawContent);
+  const codeBlockCount = rawContent.match(/\[code\]/gi)?.length ?? 0;
+  const afterCode = isFullCodeWrap
+    ? stripCodeWrapper(rawContent)
+    : codeBlockCount > 1
+      ? stripAllCodeBlocks(rawContent)
+      : convertCodeTagsToHtml(rawContent);
+  const trimmedBr = trimLeadingBr(afterCode);
+  const withoutLabel = stripCustomerCommentAddedLabel(trimmedBr);
+  const withImages = replaceInlineImageSources(withoutLabel, comment.inlineAttachments);
+  const htmlContent = DOMPurify.sanitize(withImages, INLINE_COMMENT_HTML_PURIFY);
+  const displayName = useMemo(() => {
+    if (isCurrentUser && userDetails) {
+      const { firstName, lastName, email } = userDetails;
+      const fromName =
+        firstName != null || lastName != null
+          ? [firstName, lastName].filter(Boolean).join(" ").trim()
+          : "";
+      if (fromName) return fromName;
+      if (email) return email;
+    }
+    if (!isCurrentUser) {
+      return comment.createdBy || "Unknown";
+    }
+    return null;
+  }, [isCurrentUser, comment.createdBy, userDetails]);
+
   const initials = useMemo(() => {
     if (isCurrentUser && userDetails) {
       const { firstName, lastName, email } = userDetails;
@@ -85,10 +113,10 @@ export default function CommentBubble({
   return (
     <Stack
       direction="row"
-      spacing={1.5}
       alignItems="flex-start"
       sx={{
         flexDirection: isRight ? "row-reverse" : "row",
+        gap: 2,
       }}
     >
       <Avatar
@@ -108,20 +136,21 @@ export default function CommentBubble({
         {initials}
       </Avatar>
       <Stack
-        spacing={1}
+        spacing={0.75}
         sx={{
-          flex: 1,
+          width: "100%",
+          maxWidth: 1000,
           minWidth: 0,
           alignItems: isRight ? "flex-end" : "flex-start",
         }}
       >
         <Stack
           direction="row"
-          spacing={1}
           alignItems="center"
           flexWrap="wrap"
           sx={{
             flexDirection: isRight ? "row-reverse" : "row",
+            gap: 1,
             minHeight: 32,
           }}
         >
@@ -133,24 +162,12 @@ export default function CommentBubble({
           <Typography variant="caption" color="text.secondary">
             {formatCommentDate(comment.createdOn)}
           </Typography>
-          {!isCurrentUser && (
-            <Chip
-              label="Support Engineer"
-              size="small"
-              variant="outlined"
-              sx={{
-                height: 20,
-                fontSize: "0.75rem",
-              }}
-            />
-          )}
         </Stack>
         <ChatMessageCard
           htmlContent={htmlContent}
-          isExpanded={expanded}
-          onToggleExpand={() => setExpanded((prev) => !prev)}
           isCurrentUser={isCurrentUser}
           primaryBg={primaryBg}
+          onImageClick={onImageClick}
         />
       </Stack>
     </Stack>

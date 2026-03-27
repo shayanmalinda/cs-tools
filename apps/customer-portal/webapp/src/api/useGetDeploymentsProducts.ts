@@ -16,16 +16,19 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useMockConfig } from "@providers/MockConfigProvider";
+import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys, API_MOCK_DELAY } from "@constants/apiConstants";
-import { addApiHeaders } from "@utils/apiUtils";
-import { getMockDeploymentProducts } from "@models/mockFunctions";
-import type { DeploymentProductItem } from "@models/responses";
+import { ApiQueryKeys } from "@constants/apiConstants";
+import type {
+  DeploymentProductItem,
+  DeployedProductsResponsePayload,
+} from "@models/responses";
+import { isDeployedProductsResponse } from "@models/responses";
+
+export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
 export interface FetchDeploymentProductsOptions {
-  getIdToken: () => Promise<string>;
-  isMockEnabled: boolean;
+  fetchFn: FetchFn;
 }
 
 /**
@@ -33,33 +36,31 @@ export interface FetchDeploymentProductsOptions {
  * useQueries when fetching products for multiple deployments.
  *
  * @param {string} deploymentId - The deployment ID.
- * @param {FetchDeploymentProductsOptions} options - getIdToken and isMockEnabled.
- * @returns {Promise<DeploymentProductItem[]>} Deployment products array.
+ * @param {FetchDeploymentProductsOptions} options - fetchFn.
+ * @returns {Promise<DeployedProductsResponse>} Deployment products response.
  */
 export async function fetchDeploymentProducts(
   deploymentId: string,
-  options: FetchDeploymentProductsOptions,
-): Promise<DeploymentProductItem[]> {
-  const { getIdToken, isMockEnabled } = options;
+  options: FetchDeploymentProductsOptions & {
+    offset?: number;
+    limit?: number;
+  },
+): Promise<DeployedProductsResponsePayload> {
+  const { fetchFn, offset = 0, limit = 10 } = options;
 
-  if (isMockEnabled) {
-    await new Promise((resolve) => setTimeout(resolve, API_MOCK_DELAY));
-    return getMockDeploymentProducts(deploymentId);
-  }
-
-  const idToken = await getIdToken();
   const baseUrl = window.config?.CUSTOMER_PORTAL_BACKEND_BASE_URL;
 
   if (!baseUrl) {
     throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
   }
 
-  const requestUrl = `${baseUrl}/deployments/${deploymentId}/products`;
+  const searchParams = new URLSearchParams();
+  searchParams.set("offset", String(offset));
+  searchParams.set("limit", String(limit));
 
-  const response = await fetch(requestUrl, {
-    method: "GET",
-    headers: addApiHeaders(idToken),
-  });
+  const requestUrl = `${baseUrl}/deployments/${deploymentId}/products?${searchParams.toString()}`;
+
+  const response = await fetchFn(requestUrl, { method: "GET" });
 
   if (!response.ok) {
     throw new Error(
@@ -67,7 +68,7 @@ export async function fetchDeploymentProducts(
     );
   }
 
-  const data: DeploymentProductItem[] = await response.json();
+  const data = (await response.json()) as DeployedProductsResponsePayload;
   return data;
 }
 
@@ -83,27 +84,38 @@ export function useGetDeploymentsProducts(
   deploymentId: string,
 ): UseQueryResult<DeploymentProductItem[], Error> {
   const logger = useLogger();
-  const { getIdToken, isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
-  const { isMockEnabled } = useMockConfig();
+  const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
+  const authFetch = useAuthApiClient();
 
   return useQuery<DeploymentProductItem[], Error>({
-    queryKey: [ApiQueryKeys.DEPLOYMENT_PRODUCTS, deploymentId, isMockEnabled],
+    queryKey: [ApiQueryKeys.DEPLOYMENT_PRODUCTS, deploymentId],
     queryFn: async (): Promise<DeploymentProductItem[]> => {
       logger.debug(
-        `Fetching deployment products for deployment ID: ${deploymentId}, mock: ${isMockEnabled}`,
+        `Fetching deployment products for deployment ID: ${deploymentId}`,
       );
       const data = await fetchDeploymentProducts(deploymentId, {
-        getIdToken,
-        isMockEnabled,
+        fetchFn: authFetch,
       });
       logger.debug(
         `Deployment products fetched for deployment ID: ${deploymentId}`,
         data,
       );
-      return data;
+
+      if (Array.isArray(data)) {
+        return data;
+      }
+
+      if (isDeployedProductsResponse(data)) {
+        return data.deployedProducts;
+      }
+
+      logger.warn(
+        "Unexpected deployment products response shape, returning empty array.",
+        data,
+      );
+      return [];
     },
-    enabled:
-      !!deploymentId && (isMockEnabled || (isSignedIn && !isAuthLoading)),
+    enabled: !!deploymentId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000,
   });
 }

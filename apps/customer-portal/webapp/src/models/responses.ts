@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { type TimeTrackingBadgeType } from "@constants/projectDetailsConstants";
+
 // Basic project definition returned in search list responses.
 export interface ProjectListItem {
   id: string;
@@ -21,21 +23,57 @@ export interface ProjectListItem {
   key: string;
   createdOn: string;
   description: string;
+  type?: {
+    id: string;
+    label: string;
+  };
+  hasAgent: boolean;
+  hasKbReferences?: boolean;
+  activeCasesCount: number;
+  activeChatsCount: number;
+  slaStatus: string;
 }
 
-// Detailed project information including subscription details.
+/** Account nested in project details response. */
+export interface ProjectDetailsAccount {
+  id: string;
+  hasAgent?: boolean;
+  name: string;
+  activationDate?: string | null;
+  deactivationDate?: string | null;
+  supportTier?: string;
+  region?: string | null;
+  ownerEmail?: string | null;
+  technicalOwnerEmail?: string | null;
+}
+
+/** Detailed project information including account/subscription details. */
 export interface ProjectDetails {
   id: string;
-  name: string;
   key: string;
+  name: string;
   description: string;
   createdOn: string;
-  type: string;
-  subscription: {
-    startDate: string | null;
-    endDate: string | null;
-    supportTier: string | null;
+  hasAgent?: boolean;
+  type: {
+    id: string;
+    label: string;
   };
+  sfId?: string;
+  hasSr: boolean;
+  startDate?: string;
+  endDate?: string;
+  account?: ProjectDetailsAccount;
+  totalQueryHours?: number;
+  consumedQueryHours?: number;
+  remainingQueryHours?: number;
+  goLiveDate?: string | null;
+  goLivePlanDate?: string | null;
+  totalOnboardingHours?: number;
+  consumedOnboardingHours?: number;
+  remainingOnboardingHours?: number;
+  onboardingExpiryDate?: string | null;
+  onboardingStatus?: string | null;
 }
 
 // Project Search Response.
@@ -60,37 +98,145 @@ export interface UserDetails {
   lastName: string;
   firstName: string;
   timeZone: string;
+  phoneNumber?: string | null;
+  avatar?: string | null;
+  roles?: string[];
+  lastPasswordUpdateTime?: string;
+}
+
+// Project user (invited/registered) for project users list.
+export interface ProjectUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: "Invited" | "Registered";
+}
+
+// Response from POST /projects/:projectId/contacts/validate.
+export interface ValidateContactResponse {
+  isContactValid: boolean;
+  message: string;
+  contactDetails?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    isCsAdmin: boolean;
+    isCsIntegrationUser: boolean;
+    account?: {
+      id: string;
+      domainList: string | null;
+      classification: string;
+      isPartner: boolean;
+    };
+  };
+}
+
+// Global metadata response.
+export interface PortalMetadataResponse {
+  timeZones: Array<{ id: string; label: string }>;
+  featureFlags?: {
+    usageMetricsEnabled: boolean;
+  };
+}
+
+// Project contact from GET /projects/:projectId/contacts.
+export interface ProjectContact {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isCsAdmin: boolean;
+  isCsIntegrationUser: boolean;
+  isSecurityContact: boolean;
+  membershipStatus: string;
+  account?: {
+    id: string;
+    domainList?: string[] | null;
+    classification: string;
+    isPartner: boolean;
+  };
+}
+
+// Case creation form metadata (projects, products, severity levels, conversation summary, etc.).
+export interface CaseCreationMetadata {
+  projects: string[];
+  products: string[];
+  deploymentTypes: string[];
+  issueTypes: string[];
+  severityLevels: {
+    id: string;
+    label: string;
+    description: string;
+  }[];
+  conversationSummary: {
+    messagesExchanged: number;
+    troubleshootingAttempts: number;
+    kbArticlesReviewed: number;
+  };
 }
 
 // Project support statistics.
 export interface ProjectSupportStats {
-  totalCases: number;
-  activeChats: number;
-  sessionChats: number;
+  ongoingCases: number;
+  resolvedPast30DaysCasesCount: number;
   resolvedChats: number;
+  activeChats: number;
 }
 
-// Project cases statistics.
+export interface CaseSeverity {
+  id: number;
+  label: string;
+  count: number;
+}
+
+export interface CaseState {
+  id: string;
+  label: string;
+  count: number;
+}
+
+export interface CaseType {
+  id: string;
+  label: string;
+  count: number;
+}
+
+export interface EngagementTypeCount {
+  id: string;
+  label: string;
+  count: number;
+}
+
+export interface CasesTrendPeriod {
+  period: string;
+  severities: CaseSeverity[];
+}
+
 export interface ProjectCasesStats {
   totalCases: number;
-  openCases: number;
+  totalCount?: number;
+  activeCount?: number;
+  outstandingCount?: number;
   averageResponseTime: number;
-  activeCases: {
-    workInProgress: number;
-    waitingOnClient: number;
-    waitingOnWso2: number;
-    total: number;
-  };
-  outstandingCases: {
-    medium: number;
-    high: number;
-    critical: number;
-    total: number;
-  };
   resolvedCases: {
     total: number;
     currentMonth: number;
+    pastThirtyDays?: number;
   };
+  /** Percentage change vs last period for trend display. */
+  changeRate?: {
+    resolvedEngagements?: number;
+    averageResponseTime?: number;
+  };
+  stateCount: CaseState[];
+  severityCount: CaseSeverity[];
+  outstandingSeverityCount: CaseSeverity[];
+  caseTypeCount: CaseType[];
+  casesTrend: CasesTrendPeriod[];
+  engagementTypeCount?: EngagementTypeCount[];
+  outstandingEngagementTypeCount?: EngagementTypeCount[];
 }
 
 // Project time tracking statistics.
@@ -138,10 +284,13 @@ export interface CaseListItem {
   internalId: string;
   number: string;
   createdOn: string;
+  createdBy?: string;
   title: string;
   description: string;
-  /** API may return string or { id, label } object. */
-  assignedEngineer: string | { id: string; label: string } | null;
+  assignedEngineer:
+    | string
+    | { id: string; label?: string; name?: string }
+    | null;
   project: {
     id: string;
     label: string;
@@ -166,6 +315,124 @@ export interface CaseListItem {
     id: string;
     label: string;
   } | null;
+  /** Case type from API (type or caseTypes). */
+  type?: { id: string; label: string } | null;
+  caseTypes?: {
+    id: string;
+    label: string;
+  } | null;
+}
+
+// Change Request Item
+export interface ChangeRequestItem {
+  id: string;
+  number: string;
+  title: string;
+  project: {
+    id: string;
+    label: string;
+    number: string | null;
+  } | null;
+  case: {
+    id: string;
+    label: string;
+    number: string | null;
+  } | null;
+  deployment: {
+    id: string;
+    label: string;
+    number?: string | null;
+  } | null;
+  deployedProduct: {
+    id: string;
+    label: string;
+    number?: string | null;
+  } | null;
+  product: {
+    id: string;
+    label: string;
+    number?: string | null;
+  } | null;
+  assignedEngineer: {
+    id: string;
+    label: string;
+  } | null;
+  assignedTeam: {
+    id: string;
+    label: string;
+  } | null;
+  startDate: string;
+  endDate: string;
+  duration: string | null;
+  hasServiceOutage: boolean;
+  impact: {
+    id: string;
+    label: string;
+  } | null;
+  state: {
+    id: string;
+    label: string;
+  } | null;
+  type: {
+    id: string;
+    label: string;
+  } | null;
+  createdOn: string;
+  updatedOn: string;
+}
+
+// Change Request Details
+export interface ChangeRequestDetails extends ChangeRequestItem {
+  description: string | null;
+  createdBy: string;
+  justification: string | null;
+  impactDescription: string | null;
+  serviceOutage: string | null;
+  communicationPlan: string | null;
+  rollbackPlan: string | null;
+  testPlan: string | null;
+  hasCustomerApproved: boolean;
+  hasCustomerReviewed: boolean;
+  approvedBy: {
+    id: string;
+    label: string;
+  } | null;
+  approvedOn: string | null;
+}
+
+// Change Request Search Response
+export interface ChangeRequestSearchResponse {
+  changeRequests: ChangeRequestItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+// Change Request Stats
+export interface ChangeRequestStats {
+  totalRequests: number;
+  scheduled: number;
+  inProgress: number;
+  completed: number;
+}
+
+// Response from PATCH /change-requests/:id (update planned start).
+export interface PatchChangeRequestResponse {
+  id: string;
+  updatedBy: string;
+  updatedOn: string;
+}
+
+// Change Request Stats API Response
+export interface ChangeRequestStatsResponse {
+  totalCount: number;
+  activeCount?: number;
+  outstandingCount?: number;
+  stateCount: Array<{
+    id: string;
+    label: string;
+    count: number;
+  }>;
 }
 
 // Case Search Response
@@ -180,21 +447,34 @@ export interface CaseSearchResponse {
   }[];
 }
 
+// Id-label reference used across case details response.
+export interface IdLabelRef {
+  id: string;
+  label: string;
+}
+
 // Case details
 export interface CaseDetailsAccount {
   type: string | null;
   id: string;
-  name: string | null;
+  label: string;
 }
 
 export interface CaseDetailsProject {
   id: string;
-  name: string | null;
+  label: string;
 }
 
-export interface CaseStatus {
-  id: number;
-  label: string | null;
+export interface CaseDetailsDeployedProduct {
+  id: string;
+  label: string;
+  version?: string | null;
+}
+
+export interface CaseDetailsClosedBy {
+  id: string;
+  label?: string | null;
+  name?: string | null;
 }
 
 export interface CaseDetails {
@@ -206,16 +486,33 @@ export interface CaseDetails {
   title: string | null;
   description: string | null;
   slaResponseTime: string | null;
-  product: string | null;
+  product: IdLabelRef | null;
   account: CaseDetailsAccount | null;
-  csManager: string | null;
-  assignedEngineer: string | null;
+  csManager: IdLabelRef | string | null;
+  assignedEngineer:
+    | string
+    | { id: string; label?: string; name?: string }
+    | null;
   project: CaseDetailsProject | null;
-  deployment: { id: string; label: string } | null;
-  deployedProduct: string | null;
-  issueType: string | null;
-  state: CaseStatus | null;
-  severity: CaseStatus | null;
+  type: IdLabelRef | null;
+  deployedProduct: CaseDetailsDeployedProduct | null;
+  parentCase: IdLabelRef | null;
+  conversation: unknown;
+  issueType: IdLabelRef | null;
+  catalog?: IdLabelRef | null;
+  catalogItem?: IdLabelRef | null;
+  /** Filled variables for service requests (from backend). */
+  variables?: { name: string; value: string }[];
+  deployment: IdLabelRef | null;
+  severity: IdLabelRef | null;
+  status: IdLabelRef | null;
+  closedOn: string | null;
+  closedBy: CaseDetailsClosedBy | null;
+  closeNotes: string | null;
+  hasAutoClosed: boolean | null;
+  engineerEmail: string | null;
+  findingsResolved: number | null;
+  findingsTotal: number | null;
 }
 
 // Inline attachment for comment images (API shape).
@@ -257,16 +554,16 @@ export interface CaseCommentsResponse {
 // Project Stats Response
 export interface ProjectStatsResponse {
   projectStats: {
+    openCases: number;
     activeChats: number;
     deployments: number;
-    openCases: number;
     slaStatus: string;
   };
   recentActivity: {
+    totalHours: number;
     billableHours: number;
     lastDeploymentOn: string;
-    systemHealth: string;
-    totalTimeLogged: number;
+    systemHealth?: string;
   };
 }
 
@@ -279,9 +576,17 @@ export interface MetadataItem {
 // Response for case metadata (fetching possible statuses, severities, types)
 export interface CaseMetadataResponse {
   statuses?: MetadataItem[];
+  caseStates?: MetadataItem[];
   severities?: MetadataItem[];
   issueTypes?: MetadataItem[];
-  deployments?: MetadataItem[];
+  deploymentTypes?: MetadataItem[];
+  callRequestStates?: MetadataItem[];
+  changeRequestStates?: MetadataItem[];
+  changeRequestImpacts?: MetadataItem[];
+  caseTypes?: MetadataItem[];
+  conversationStates?: MetadataItem[];
+  timeCardStates?: MetadataItem[];
+  severityBasedAllocationTime?: Record<string, number>;
 }
 
 // Chat history list item (support chat session summary).
@@ -299,12 +604,114 @@ export interface ChatHistoryResponse {
   chatHistory: ChatHistoryItem[];
 }
 
+// Conversation statistics response.
+export interface ConversationStats {
+  abandonedCount: number;
+  openCount: number;
+  resolvedCount: number;
+}
+
+// Conversation from POST /projects/:projectId/conversations/search.
+export interface Conversation {
+  id: string;
+  number: string;
+  initialMessage: string;
+  messageCount: number;
+  createdOn: string;
+  createdBy: string;
+  project: { id: string; label: string };
+  case: { id: string; number: string; label: string } | null;
+  state: { id: string; label: string };
+}
+
+// Response for conversations search.
+export interface ConversationSearchResponse {
+  conversations: Conversation[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+export interface ConversationMessage {
+  id: string;
+  content: string;
+  type: string;
+  createdOn: string;
+  createdBy: string;
+  isEscalated: boolean;
+  hasInlineAttachments: boolean;
+  inlineAttachments: CaseCommentInlineAttachment[];
+}
+
+export interface ConversationMessagesResponse {
+  comments: ConversationMessage[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+// Filter values for conversations search (state filter uses statuses from filters API).
+export interface AllConversationsFilterValues {
+  stateId?: string;
+}
+
+// Interface for items in the time tracking logs.
+export interface TimeTrackingLogBadge {
+  text: string;
+  type: TimeTrackingBadgeType;
+}
+
+export interface TimeTrackingLog {
+  id: string;
+  badges: TimeTrackingLogBadge[];
+  description: string | null;
+  user: string | null;
+  role: string | null;
+  date: string | null;
+  hours: number | null;
+}
+
+// Response for project time tracking details.
+export interface TimeTrackingDetailsResponse {
+  timeLogs: TimeTrackingLog[];
+}
+
+// Time card from projects/:projectId/time-cards/search.
+export interface TimeCard {
+  id: string;
+  totalTime: number;
+  createdOn: string;
+  hasBillable: boolean;
+  state: { id: string; label: string } | null;
+  approvedBy: { id: string; label: string } | null;
+  project: { id: string; label: string };
+  case: {
+    number: string;
+    id: string;
+    label: string;
+  };
+}
+
+// Response for project time cards search.
+export interface TimeCardSearchResponse {
+  timeCards: TimeCard[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
 // Interface for all cases filters state
 export interface AllCasesFilterValues {
   statusId?: string;
   severityId?: string;
   issueTypes?: string;
   deploymentId?: string;
+}
+
+// Interface for change requests filters state
+export interface ChangeRequestFilterValues {
+  stateId?: string;
+  impactId?: string;
 }
 
 // Product deployed in an environment.
@@ -321,14 +728,37 @@ export interface DeploymentProduct {
   updateLevel: string;
 }
 
+/** Response for GET /deployments/:deploymentId/attachments. */
+export interface DeploymentAttachmentsResponse {
+  limit: number;
+  offset: number;
+  attachments: DeploymentDocument[];
+  totalRecords: number;
+}
+
 // Document attached to a deployment.
 export interface DeploymentDocument {
   id: string;
   name: string;
-  category: string;
-  sizeBytes: number;
-  uploadedAt: string;
-  uploadedBy: string;
+  description?: string | null;
+  category?: string;
+  sizeBytes?: number;
+  size?: number;
+  uploadedAt?: string;
+  createdOn?: string;
+  uploadedBy?: string;
+  createdBy?: string;
+  content?: string | null;
+  downloadUrl?: string;
+}
+
+// Response for POST /deployments/:deploymentId/attachments.
+export interface PostDeploymentAttachmentResponse {
+  id: string;
+  createdBy: string;
+  createdOn: string;
+  downloadUrl: string;
+  size: number;
 }
 
 // Single deployment environment.
@@ -345,9 +775,49 @@ export interface Deployment {
   uptimePercent: number;
 }
 
-// Response for project deployments list.
-export interface DeploymentsResponse {
-  deployments: Deployment[];
+export interface ProjectDeploymentsListResponse {
+  deployments: ProjectDeploymentItem[];
+  totalRecords?: number;
+  offset?: number;
+  limit?: number;
+}
+
+// Product from GET /products.
+export interface ProductItem {
+  id: string;
+  label?: string;
+  name?: string;
+}
+
+// Product version from POST /products/:productId/versions/search.
+export interface ProductVersionItem {
+  id: string;
+  version: string;
+  currentSupportStatus?: string | null;
+  releaseDate?: string;
+  supportEolDate?: string;
+  earliestPossibleSupportEolDate?: string;
+  product?: { id: string; label: string };
+}
+
+export interface ProductsResponse {
+  products: ProductItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+export interface ProductVersionsSearchResponse {
+  versions: ProductVersionItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+export interface ProductUpdate {
+  updateLevel: number;
+  date: string;
+  details?: string | null;
 }
 
 // Single item from GET /projects/:projectId/deployments (array response).
@@ -362,6 +832,35 @@ export interface ProjectDeploymentItem {
   type: { id: string; label: string };
 }
 
+// Response for GET /deployments/:deploymentId/products (paginated).
+export interface DeployedProductsResponse {
+  deployedProducts: DeploymentProductItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+/**
+ * Union type for the deployment products endpoint response.
+ * Some backend versions return a paginated object, others return a plain array.
+ */
+export type DeployedProductsResponsePayload =
+  | DeploymentProductItem[]
+  | DeployedProductsResponse;
+
+/**
+ * Type guard for DeployedProductsResponse.
+ */
+export function isDeployedProductsResponse(
+  payload: unknown,
+): payload is DeployedProductsResponse {
+  return (
+    typeof payload === "object" &&
+    payload !== null &&
+    Array.isArray((payload as { deployedProducts?: unknown }).deployedProducts)
+  );
+}
+
 // Single item from GET /deployments/:deploymentId/products (array response).
 export interface DeploymentProductItem {
   id: string;
@@ -370,6 +869,26 @@ export interface DeploymentProductItem {
   description: string | null;
   product: { id: string; label: string };
   deployment: { id: string; label: string };
+  version?: { id: string; label: string } | string | null;
+  cores?: number | null;
+  tps?: number | null;
+  releasedOn?: string | null;
+  endOfLifeOn?: string | null;
+  updates?: ProductUpdate[] | null;
+}
+
+// GET /attachments/:id — full payload with base64 or data URL in `content`.
+export interface AttachmentDownloadResponse {
+  content: string;
+  id: string;
+  referenceId?: string;
+  name: string;
+  type: string;
+  sizeBytes?: number;
+  createdBy?: string;
+  createdOn?: string;
+  downloadUrl?: string | null;
+  description?: string | null;
 }
 
 // Case attachment item (GET /cases/:id/attachments).
@@ -377,9 +896,11 @@ export interface CaseAttachment {
   id: string;
   name: string;
   type: string;
+  description?: string | null;
   size?: number;
   sizeBytes?: string;
-  downloadUrl: string;
+  content?: string | null;
+  downloadUrl?: string | null;
   createdOn: string;
   createdBy: string;
 }
@@ -402,17 +923,32 @@ export interface UpdatesStats {
   securityUpdatesPending: number | null;
 }
 
+// Single product recommended update level item.
+export interface RecommendedUpdateLevelItem {
+  productName: string;
+  productBaseVersion: string;
+  channel: string;
+  startingUpdateLevel: number;
+  endingUpdateLevel: number;
+  installedUpdatesCount: number;
+  installedSecurityUpdatesCount: number;
+  timestamp: number;
+  recommendedUpdateLevel: number;
+  availableUpdatesCount: number;
+  availableSecurityUpdatesCount: number;
+}
+
 // Product update levels.
 export interface ProductUpdateLevelEntry {
-  "product-base-version": string;
+  productBaseVersion: string;
   channel: string;
-  "update-levels": number[];
+  updateLevels: number[];
 }
 
 // One product's update levels.
 export interface ProductUpdateLevelsItem {
-  "product-name": string;
-  "product-update-levels": ProductUpdateLevelEntry[];
+  productName: string;
+  productUpdateLevels: ProductUpdateLevelEntry[];
 }
 
 // Product update levels response.
@@ -422,7 +958,7 @@ export type ProductUpdateLevelsResponse = ProductUpdateLevelsItem[];
 export interface CaseClassificationResponse {
   issueType: string;
   severityLevel: string;
-  case_info: {
+  caseInfo: {
     description: string;
     shortDescription: string;
     productName: string;
@@ -433,7 +969,250 @@ export interface CaseClassificationResponse {
   };
 }
 
-// Response for creating a support case (POST /cases). Used to navigate to case details.
+/** Slot option definition for select-type user input collection. */
+export interface SelectSlotOption {
+  slot: string;
+  label: string;
+  options: string[];
+  type: "select";
+}
+
+/** Slot option definition for free-text user input collection. */
+export interface TextSlotOption {
+  slot: string;
+  label: string;
+  type: "text";
+  freeText?: true;
+}
+
+/** Slot option union for user input collection. */
+export type SlotOption = SelectSlotOption | TextSlotOption;
+
+/** Slot state containing filled/missing slots and available options. */
+export interface SlotState {
+  intentId?: string;
+  filledSlots?: Record<string, string>;
+  missingSlots?: string[];
+  isComplete?: boolean;
+  slotOptions?: SlotOption[];
+}
+
+/** Intent information from conversation response. */
+export interface ConversationIntent {
+  intentId?: string;
+  intentLabel?: string;
+  confidence?: number;
+  severity?: string;
+  caseType?: string;
+}
+
+/** Response from POST /projects/:projectId/conversations (Novera chat). */
+export interface ConversationResponse {
+  message: string;
+  sessionId: string;
+  conversationId: string;
+  intent?: ConversationIntent;
+  slotState?: SlotState;
+  actions: unknown;
+  recommendations?: {
+    query: string;
+    recommendations: Array<{ title: string; articleId: string; score: number }>;
+  } | null;
+  resolved: unknown;
+}
+
+// Response for creating a support case. Used to navigate to case details.
+// Backend returns additional fields that can be used to populate SR display.
 export interface CreateCaseResponse {
   id: string;
+  internalId?: string;
+  number?: string;
+  createdBy?: string;
+  createdOn?: string;
+  state?: { id: string; label: string };
+  type?: { id: string; label: string };
+}
+
+// Product vulnerability item from search response.
+export interface ProductVulnerability {
+  id: string;
+  cveId: string;
+  vulnerabilityId: string;
+  severity: { id: string | number; label: string };
+  componentName: string;
+  version: string;
+  type: string;
+  useCase: string | null;
+  justification: string | null;
+  resolution: string | null;
+  componentType?: string;
+  updateLevel?: string;
+  /** Optional status/state if returned by API. */
+  status?: { id: string | number; label: string } | null;
+}
+
+// Response for product vulnerabilities metadata (GET /products/vulnerabilities/meta).
+export interface VulnerabilitiesMetaResponse {
+  severities: { id: string; label: string }[];
+}
+
+// Response for product vulnerabilities search.
+export interface ProductVulnerabilitiesSearchResponse {
+  productVulnerabilities: ProductVulnerability[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+// Response for creating a deployment.
+export interface CreateDeploymentResponse {
+  createdBy: string;
+  createdOn: string;
+  id: string;
+}
+
+// Call request structure (from POST /cases/:caseId/call-requests/search).
+export interface CallRequest {
+  id: string;
+  case: { id: string; label: string };
+  reason: string;
+  preferredTimes: string[];
+  durationMin?: number | null;
+  scheduleTime: string;
+  createdOn: string;
+  updatedOn: string;
+  state: { id: string; label: string };
+}
+
+export interface CallRequestsResponse {
+  callRequests: CallRequest[];
+  totalRecords?: number;
+  offset?: number;
+  limit?: number;
+}
+
+// Response for creating or updating a call request (POST/PATCH).
+export interface CreateCallResponse {
+  id: string;
+}
+
+/** Alias for create/update call request response (shared shape). */
+export type CallRequestResponse = CreateCallResponse;
+
+// Security advisory item inside an update description level.
+export interface SecurityAdvisory {
+  id: string;
+  overview: string;
+  severity: string;
+  description: string;
+  impact: string;
+  solution: string;
+  notes: string;
+  credits: string;
+}
+
+// Single update description entry within an update level.
+export interface UpdateDescriptionLevel {
+  updateLevel: number;
+  productName: string;
+  productVersion: string;
+  channel: string;
+  updateType: string;
+  updateNumber: number;
+  description: string;
+  instructions: string;
+  bugFixes: string;
+  filesAdded: string;
+  filesModified: string;
+  filesRemoved: string;
+  bundlesInfoChanges: string | null;
+  dependantReleases: string | null;
+  timestamp: number;
+  securityAdvisories: SecurityAdvisory[];
+}
+
+// Entry for a single update level key from POST /updates/levels/search.
+export interface UpdateLevelEntry {
+  updateType: string;
+  updateDescriptionLevels: UpdateDescriptionLevel[];
+}
+
+// Response for POST /updates/levels/search (map keyed by update level string).
+export type UpdateLevelsSearchResponse = Record<string, UpdateLevelEntry>;
+
+// Catalog item within a catalog (from POST /deployments/products/:id/catalogs/search).
+export interface CatalogItem {
+  id: string;
+  label: string;
+}
+
+// Catalog with its items (from POST /deployments/products/:id/catalogs/search).
+export interface Catalog {
+  id: string;
+  name: string;
+  catalogItems: CatalogItem[];
+}
+
+// Response for POST /deployments/products/:id/catalogs/search.
+export interface CatalogSearchResponse {
+  catalogs: Catalog[];
+  totalRecords: number;
+  limit?: number;
+  offset?: number;
+}
+
+// Variable definition for a catalog item (from GET /catalogs/:catalogId/items/:itemId).
+export interface CatalogItemVariable {
+  id: string;
+  questionText: string;
+  order: number;
+  type: string;
+}
+
+// Response for GET /catalogs/:catalogId/items/:itemId.
+export interface CatalogItemVariablesResponse {
+  variables: CatalogItemVariable[];
+}
+
+// Registry token from POST /projects/projectId/registry-tokens/search.
+export interface RegistryToken {
+  id?: number;
+  name: string;
+  displayName?: string;
+  description: string;
+  creationTime?: string;
+  tokenType?: "User" | "Service";
+  createdFor?: string;
+  createdBy?: string;
+  expiresAt?: number;
+  disable?: boolean;
+  duration?: number;
+  permissions?: { namespace: string }[];
+}
+
+// Response for POST /projects/projectId/registry-tokens (create token).
+export interface RegistryTokenCreationResponse {
+  secret: string;
+}
+
+// Integration user from GET /projects/projectId/integration-users.
+export interface IntegrationUser {
+  id: string;
+  email: string;
+}
+
+// Subscription data within license response.
+export interface SubscriptionData {
+  deploymentId: string;
+  deploymentName: string;
+  subscriptionKey: string;
+  clientId: string;
+  clientSecret: string;
+  secrets: string;
+}
+
+// License response from POST /projects/:projectId/deployments/:deploymentId/license.
+export interface DeploymentLicense {
+  subscriptionData: SubscriptionData;
+  signature: string;
 }

@@ -16,26 +16,23 @@
 
 import { Card, Typography, Box, Skeleton, colors } from "@wso2/oxygen-ui";
 import {
-  BarChart,
-  Bar,
+  PieChart,
+  Pie,
+  Cell,
   ResponsiveContainer,
 } from "@wso2/oxygen-ui-charts-react";
 import type { JSX } from "react";
-import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
-import {
-  CASES_TREND_CHART_DATA,
-  TREND_CHART_ERROR_PLACEHOLDER_DATA,
-} from "@constants/dashboardConstants";
+import { OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA } from "@constants/dashboardConstants";
 import { ChartLegend } from "@components/dashboard/charts/ChartLegend";
 
 interface CasesTrendChartProps {
-  data: Array<{
-    name: string;
-    TypeA: number;
-    TypeB: number;
-    TypeC: number;
-    TypeD: number;
-  }>;
+  data: {
+    categories: Array<{
+      name: string;
+      value: number;
+    }>;
+    total: number;
+  };
   isLoading?: boolean;
   isError?: boolean;
 }
@@ -50,93 +47,162 @@ export const CasesTrendChart = ({
   isLoading,
   isError,
 }: CasesTrendChartProps): JSX.Element => {
-  const chartData = isError ? TREND_CHART_ERROR_PLACEHOLDER_DATA : data || [];
+  const chartSource = OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA;
+  const colorByLabel = new Map(
+    chartSource.map((item) => [item.name.toLowerCase(), item.color]),
+  );
+  const fallbackColors = chartSource.map((item) => item.color);
+
+  const safeData =
+    data ??
+    ({
+      categories: [],
+      total: 0,
+    } as const);
+
+  const chartData =
+    isLoading || isError
+      ? chartSource.map((item) => ({
+          name: item.name,
+          value: 0,
+          color:
+            isError && !isLoading
+              ? (colors.grey?.[300] ?? "#D1D5DB")
+              : item.color,
+        }))
+      : [
+          ...safeData.categories.map((category, index) => ({
+            name: category.name,
+            value: category.value,
+            color:
+              colorByLabel.get(category.name.toLowerCase()) ??
+              fallbackColors[index % fallbackColors.length] ??
+              (colors.grey?.[500] ?? "#9CA3AF"),
+          })),
+        ];
+
+  const total = !isError && !isLoading ? safeData.total : 0;
 
   return (
     <Card sx={{ p: 2, height: "100%" }}>
       {/* Title */}
       <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
-        Cases trend
+        Outstanding Engagements
       </Typography>
       {isLoading ? (
-        <Box sx={{ height: 240 }}>
-          <Skeleton variant="rectangular" width="100%" height="100%" />
-        </Box>
+        <>
+          <Box
+            sx={{
+              height: 240,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Skeleton variant="circular" width={160} height={160} />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 2,
+              mt: 2,
+            }}
+          >
+            {chartSource.map((_, index) => (
+              <Skeleton key={index} variant="rounded" width={80} height={20} />
+            ))}
+          </Box>
+        </>
       ) : (
-        <Box sx={{ height: 240, position: "relative" }}>
-          {isError && (
+        <>
+          <Box
+            sx={{
+              height: 240,
+              position: "relative",
+            }}
+          >
+            <Box
+              sx={{
+                height: "100%",
+                opacity: isError ? 0.3 : 1,
+                filter: isError ? "grayscale(1)" : "none",
+                "& *:focus": { outline: "none" },
+                position: "relative",
+              }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart
+                  legend={{ show: false }}
+                  tooltip={{ show: !isError, wrapperStyle: { zIndex: 1000 } }}
+                >
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={0}
+                    minAngle={15}
+                    dataKey="value"
+                    nameKey="name"
+                    startAngle={90}
+                    endAngle={-270}
+                    label={false}
+                    labelLine={false}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
+                        stroke={colors.common.white}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+            {/* Center content: total value or error indicator */}
             <Box
               sx={{
                 position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1,
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                textAlign: "center",
                 pointerEvents: "none",
               }}
             >
-              <ErrorIndicator entityName="cases trend" />
+              {isError ? (
+                <>
+                  <Typography variant="h4" color="text.disabled">
+                    --
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    Total
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography variant="h4">
+                    {chartData.length > 0 ? total : "N/A"}
+                  </Typography>
+                  <Typography variant="caption">Total</Typography>
+                </>
+              )}
             </Box>
-          )}
-          <Box
-            sx={{
-              height: "100%",
-              opacity: isError ? 0.3 : 1,
-              filter: isError ? "grayscale(1)" : "none",
-            }}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              {/* Bar chart */}
-              <BarChart
-                data={chartData}
-                grid={{ show: true }}
-                xAxis={{ show: true }}
-                yAxis={{ show: true }}
-                tooltip={{ show: !isError }}
-                legend={{ show: false }}
-                margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
-              >
-                {CASES_TREND_CHART_DATA.map((item) => (
-                  <Bar
-                    key={item.key}
-                    dataKey={item.key}
-                    stackId="a"
-                    fill={isError ? colors.grey[300] : item.color}
-                    radius={item.radius}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
           </Box>
-        </Box>
-      )}
-      {/* Custom Trend Legend */}
-      {isLoading ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 2,
-            mt: 2,
-          }}
-        >
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} variant="rounded" width={60} height={20} />
-          ))}
-        </Box>
-      ) : (
-        <ChartLegend
-          data={CASES_TREND_CHART_DATA.map((item) => ({
-            name: item.name,
-            value: 0,
-            color: item.color,
-          }))}
-          isError={isError}
-        />
+          {/* Legend */}
+          <ChartLegend
+            data={chartData.map((item) => ({
+              name: item.name,
+              value: item.value,
+              color: item.color,
+            }))}
+            isError={isError}
+            showValues
+          />
+        </>
       )}
     </Card>
   );
