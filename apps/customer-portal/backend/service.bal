@@ -792,7 +792,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     #
     # + id - ID of the project
     # + return - Project statistics response or error
-    resource function get projects/[entity:IdString id]/stats(http:RequestContext ctx, entity:CaseType[]? caseTypes)
+    resource function get projects/[entity:IdString id]/stats(http:RequestContext ctx, entity:CaseType[]? caseTypes,
+        entity:StatsFilter? createdBy)
         returns types:ProjectStatsResponse|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -806,7 +807,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
 
         // Fetch case stats
         entity:ProjectCaseStatsResponse|error caseStats =
-            entity:getCaseStatsForProject(userInfo.idToken, id, caseTypes);
+            entity:getCaseStatsForProject(userInfo.idToken, id, caseTypes, createdBy);
         if caseStats is error {
             log:printError(ERR_MSG_CASES_STATISTICS, caseStats);
             // To return other stats even if case stats retrieval fails, error will not be returned.
@@ -814,7 +815,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
 
         // Fetch conversation stats
         entity:ProjectConversationStatsResponse|error conversationStats =
-            entity:getConversationStatsForProject(userInfo.idToken, id);
+            entity:getConversationStatsForProject(userInfo.idToken, id, createdBy);
         if conversationStats is error {
             log:printError(ERR_MSG_CONVERSATION_STATISTICS, conversationStats);
             // To return other stats even if conversation stats retrieval fails, error will not be returned.
@@ -860,7 +861,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the project
     # + return - Project statistics overview or error response
     resource function get projects/[entity:IdString id]/stats/cases(http:RequestContext ctx,
-            entity:CaseType[]? caseTypes)
+            entity:CaseType[]? caseTypes, entity:StatsFilter? createdBy)
         returns types:ProjectCaseStats|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -873,7 +874,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         }
 
         entity:ProjectCaseStatsResponse|error caseStats =
-            entity:getCaseStatsForProject(userInfo.idToken, id, caseTypes);
+            entity:getCaseStatsForProject(userInfo.idToken, id, caseTypes, createdBy);
         if caseStats is error {
             log:printError(ERR_MSG_CASES_STATISTICS, caseStats);
             return <http:InternalServerError>{
@@ -897,7 +898,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     #
     # + id - ID of the project
     # + return - Conversation statistics overview or error response
-    resource function get projects/[entity:IdString id]/stats/conversations(http:RequestContext ctx)
+    resource function get projects/[entity:IdString id]/stats/conversations(http:RequestContext ctx,
+        entity:StatsFilter? createdBy)
         returns types:ConversationStats|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -910,7 +912,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         }
 
         entity:ProjectConversationStatsResponse|error conversationStats =
-            entity:getConversationStatsForProject(userInfo.idToken, id);
+            entity:getConversationStatsForProject(userInfo.idToken, id, createdBy);
         if conversationStats is error {
             if getStatusCode(conversationStats) == http:STATUS_UNAUTHORIZED {
                 log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
@@ -949,7 +951,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the project
     # + return - Project support statistics or error response
     resource function get projects/[entity:IdString id]/stats/support(http:RequestContext ctx,
-            entity:CaseType[]? caseTypes)
+            entity:CaseType[]? caseTypes, entity:StatsFilter? createdBy)
         returns types:ProjectSupportStats|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -963,7 +965,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
 
         // Fetch case stats 
         entity:ProjectCaseStatsResponse|error caseStats =
-            entity:getCaseStatsForProject(userInfo.idToken, id, caseTypes);
+            entity:getCaseStatsForProject(userInfo.idToken, id, caseTypes, createdBy);
         if caseStats is error {
             log:printError(ERR_MSG_CASES_STATISTICS, caseStats);
             // To return other stats even if case stats retrieval fails, error will not be returned.
@@ -971,7 +973,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
 
         // Fetch conversation stats
         entity:ProjectConversationStatsResponse|error conversationStats =
-            entity:getConversationStatsForProject(userInfo.idToken, id);
+            entity:getConversationStatsForProject(userInfo.idToken, id, createdBy);
         if conversationStats is error {
             log:printError(ERR_MSG_CONVERSATION_STATISTICS, conversationStats);
             // To return other stats even if conversation stats retrieval fails, error will not be returned.

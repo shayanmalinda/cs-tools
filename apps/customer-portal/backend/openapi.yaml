@@ -406,6 +406,12 @@ paths:
           nullable: true
           items:
             $ref: '#/components/schemas/CaseType'
+      - name: createdBy
+        in: query
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/StatsFilter'
       responses:
         "200":
           description: Ok
@@ -443,6 +449,12 @@ paths:
           nullable: true
           items:
             $ref: '#/components/schemas/CaseType'
+      - name: createdBy
+        in: query
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/StatsFilter'
       responses:
         "200":
           description: Ok
@@ -473,6 +485,12 @@ paths:
         required: true
         schema:
           $ref: '#/components/schemas/IdString'
+      - name: createdBy
+        in: query
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/StatsFilter'
       responses:
         "200":
           description: Ok
@@ -510,6 +528,12 @@ paths:
           nullable: true
           items:
             $ref: '#/components/schemas/CaseType'
+      - name: createdBy
+        in: query
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/StatsFilter'
       responses:
         "200":
           description: Ok
@@ -4905,6 +4929,10 @@ components:
       enum:
       - desc
       - asc
+    StatsFilter:
+      type: string
+      enum:
+      - me
     SubscriptionData:
       required:
       - clientId

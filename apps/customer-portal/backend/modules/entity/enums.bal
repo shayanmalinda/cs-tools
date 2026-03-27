@@ -60,3 +60,8 @@ public enum CaseType {
 public enum TimeCardState {
     APPROVED = "Approved"
 }
+
+# Stats filter enum
+public enum StatsFilter {
+    ME = "me"
+}

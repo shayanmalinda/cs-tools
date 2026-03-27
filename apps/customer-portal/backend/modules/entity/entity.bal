@@ -84,12 +84,21 @@ public isolated function getProjectActivityStats(string idToken, string id) retu
 # + idToken - ID token for authorization
 # + id - Unique ID of the project
 # + caseTypes - Optional array of case types to filter statistics
+# + createdBy - Optional filter for cases created by a specific user
 # + return - Project cases statistics or error
-public isolated function getCaseStatsForProject(string idToken, string id, CaseType[]? caseTypes)
-    returns ProjectCaseStatsResponse|error {
+public isolated function getCaseStatsForProject(string idToken, string id, CaseType[]? caseTypes,
+        StatsFilter? createdBy) returns ProjectCaseStatsResponse|error {
 
     if caseTypes is CaseType[] {
+        if createdBy is StatsFilter {
+            return csEntityClient->/projects/[id]/cases/stats.get(generateHeaders(idToken), caseTypes = caseTypes,
+                createdBy = createdBy
+            );
+        }
         return csEntityClient->/projects/[id]/cases/stats.get(generateHeaders(idToken), caseTypes = caseTypes);
+    }
+    if createdBy is StatsFilter {
+        return csEntityClient->/projects/[id]/cases/stats.get(generateHeaders(idToken), createdBy = createdBy);
     }
     return csEntityClient->/projects/[id]/cases/stats.get(generateHeaders(idToken));
 }
@@ -98,10 +107,14 @@ public isolated function getCaseStatsForProject(string idToken, string id, CaseT
 #
 # + idToken - ID token for authorization
 # + id - Unique ID of the project
+# + createdBy - Optional filter for conversations created by a specific user
 # + return - Project conversations statistics or error
-public isolated function getConversationStatsForProject(string idToken, string id)
+public isolated function getConversationStatsForProject(string idToken, string id, StatsFilter? createdBy)
     returns ProjectConversationStatsResponse|error {
 
+    if createdBy is StatsFilter {
+        return csEntityClient->/projects/[id]/conversations/stats.get(generateHeaders(idToken), createdBy = createdBy);
+    }
     return csEntityClient->/projects/[id]/conversations/stats.get(generateHeaders(idToken));
 }
 
@@ -235,10 +248,11 @@ public isolated function deleteAttachment(string idToken, IdString attachmentId)
 # + 'limit - Limit for pagination
 # + return - Products response or error
 public isolated function getDeployedProducts(string idToken, string deploymentId, int offset = DEFAULT_OFFSET,
-    int 'limit = DEFAULT_LIMIT) returns DeployedProductsResponse|error {
+        int 'limit = DEFAULT_LIMIT) returns DeployedProductsResponse|error {
 
     return csEntityClient->/deployed\-products/search.post({deploymentId, pagination: {offset, 'limit}},
-        generateHeaders(idToken));
+        generateHeaders(idToken)
+    );
 }
 
 # Create a deployed product.
@@ -476,7 +490,7 @@ public isolated function getProjectTimeCardStats(string idToken, string projectI
 }
 
 # Get change request by ID.
-# 
+#
 # + idToken - ID token for authorization
 # + changeRequestId - Unique ID of the change request to be retrieved
 # + return - Change request response containing details of the retrieved change request or error
@@ -498,7 +512,7 @@ public isolated function searchChangeRequests(string idToken, ChangeRequestSearc
 }
 
 # Update a change request.
-# 
+#
 # + idToken - ID token for authorization
 # + changeRequestId - Unique ID of the change request to be updated
 # + payload - Change request update payload containing details to be updated in the change request
@@ -508,6 +522,7 @@ public isolated function updateChangeRequest(string idToken, string changeReques
 
     return csEntityClient->/change\-requests/[changeRequestId].patch(payload, generateHeaders(idToken));
 }
+
 # Search catalogs.
 #
 # + idToken - ID token for authorization
