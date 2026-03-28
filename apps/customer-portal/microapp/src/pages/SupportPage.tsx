@@ -33,7 +33,7 @@ import EmptyState from "../components/shared/EmptyState";
 
 export const TAB_CONFIG = {
   case: { title: "Open Cases", subtitle: "Active support tickets" },
-  chat: { title: "Chat History", subtitle: "Recent Novera coversations" },
+  chat: { title: "Chat History", subtitle: "Recent Novera conversations" },
   service: { title: "Service Requests", subtitle: "Managed cloud service requests" },
   change: { title: "Change Requests", subtitle: "Scheduled and pending changes" },
 };
@@ -119,7 +119,7 @@ export default function SupportPage() {
       >
         <Tab label="Cases" value="case" disableRipple />
         <Tab label="Chats" value="chat" disableRipple />
-        <Tab label="Services Requests" value="service" disableRipple />
+        <Tab label="Service Requests" value="service" disableRipple />
         <Tab label="Change Requests" value="change" disableRipple />
       </Tabs>
       <Card component={Stack} p={2} mt={2} gap={0.5}>
