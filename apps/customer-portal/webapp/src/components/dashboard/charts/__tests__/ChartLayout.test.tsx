@@ -134,4 +134,13 @@ describe("ChartLayout", () => {
       "srOnly",
     );
   });
+
+  it("should default operationsChartMode to srAndCr on ActiveCasesChart", () => {
+    render(<ChartLayout {...mockProps} />);
+
+    expect(screen.getByTestId("active-cases-chart")).toHaveAttribute(
+      "data-variant",
+      "srAndCr",
+    );
+  });
 });
