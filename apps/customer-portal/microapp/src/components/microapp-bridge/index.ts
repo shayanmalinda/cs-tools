@@ -29,7 +29,14 @@ const TOPIC = {
   ALERT: "alert",
   CONFIRM_ALERT: "confirm_alert",
   TOTP: "totp",
+  OPEN_URL: "open_url",
 };
+
+export interface BrowserConfiguration {
+  url: string;
+  presentationStyle: string;
+  dismissButtonStyle?: string;
+}
 
 declare global {
   interface Window {
@@ -51,6 +58,8 @@ declare global {
       rejectGetLocalData: (error: string) => void;
       resolveTotpQrMigrationData: (encodedData: { data: string }) => void;
       rejectTotpQrMigrationData: (error: string) => void;
+      resolveOpenUrl?: () => void;
+      rejectOpenUrl?: (error: any) => void;
     };
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
@@ -260,5 +269,19 @@ export const requestDeviceSafeAreaInsets = (callback: Callback<{ insets: EdgeIns
   } else {
     Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE + " to fetch device safe area insets");
     callback();
+  }
+};
+
+// Open URL in Browser
+export const openUrl = (config: BrowserConfiguration): void => {
+  if (window.nativebridge && window.ReactNativeWebView) {
+    const alertData = JSON.stringify({
+      topic: TOPIC.OPEN_URL,
+      data: { config },
+    });
+
+    window.ReactNativeWebView.postMessage(alertData);
+  } else {
+    console.error("Native bridge is not available");
   }
 };

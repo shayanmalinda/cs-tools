@@ -28,6 +28,7 @@ export function SettingListItem({
   description,
   suffix,
   to,
+  onClick,
 }: {
   name: string;
   icon: LucideIcon;
@@ -37,6 +38,7 @@ export function SettingListItem({
   description?: string;
   suffix?: "chevron" | ReactNode;
   to?: string;
+  onClick?: () => void;
 }) {
   const theme = useTheme();
   const Icon = icon;
@@ -49,6 +51,7 @@ export function SettingListItem({
       bgcolor="background.paper"
       sx={{ cursor: "pointer", textDecoration: "none", color: "inherit" }}
       p={1.5}
+      onClick={onClick}
       {...(to && { component: Link, to })}
     >
       <Stack direction="row" alignItems="center" gap={1.5} width="100%">

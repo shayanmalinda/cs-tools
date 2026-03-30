@@ -14,10 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// TODO: This page currently contains placeholder values and static content.
-//       All displayed data (names, avatars, dates, etc.) will be replaced
-//       with dynamic values in the future.
-
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { Card, Divider, Skeleton, Stack, Switch, Typography, colors } from "@wso2/oxygen-ui";
 import { Bell, BookOpen, Bot, Clock4, Lock, Mail, Phone, User } from "@wso2/oxygen-ui-icons-react";
@@ -30,6 +26,8 @@ import { useProject } from "../context/project";
 import { projects } from "../services/projects";
 import { useNotify } from "../context/snackbar";
 import { metadata } from "../services/metadata";
+import { openUrl } from "../components/microapp-bridge";
+import { CHANGE_PASSWORD_URL } from "../config/endpoints";
 
 export default function ProfilePage() {
   const layout = useLayout();
@@ -106,7 +104,18 @@ export default function ProfilePage() {
       </SectionCard>
 
       <SectionCard title="Settings">
-        <SettingListItem name="Change Password" suffix="chevron" icon={Lock} />
+        <SettingListItem
+          name="Change Password"
+          suffix="chevron"
+          icon={Lock}
+          onClick={() =>
+            openUrl({
+              url: CHANGE_PASSWORD_URL,
+              presentationStyle: "FormSheet",
+              dismissButtonStyle: "close",
+            })
+          }
+        />
         <SettingListItem name="Update Profile" suffix="chevron" icon={User} to="/profile/update" />
       </SectionCard>
 
