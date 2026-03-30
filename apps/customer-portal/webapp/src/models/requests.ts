@@ -266,7 +266,9 @@ export interface ValidateContactRequest {
 
 // Request body for PATCH /change-requests/:id (update planned start).
 export interface PatchChangeRequestRequest {
-  plannedStartOn: string;
+  plannedStartOn?: string;
+  isCustomerApproved?: boolean;
+  isCustomerReviewed?: boolean;
 }
 
 // Request body for PATCH /projects/:id.
