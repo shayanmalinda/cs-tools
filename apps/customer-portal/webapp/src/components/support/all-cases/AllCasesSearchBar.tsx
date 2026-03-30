@@ -21,6 +21,7 @@ import {
   TextField,
   InputAdornment,
   Divider,
+  Skeleton,
 } from "@wso2/oxygen-ui";
 import {
   Search,
@@ -52,6 +53,7 @@ export interface AllCasesSearchBarProps {
   onFilterChange: (field: string, value: string) => void;
   onClearFilters: () => void;
   excludeS0?: boolean;
+  isProjectContextLoading?: boolean;
 }
 
 /**
@@ -71,12 +73,26 @@ export default function AllCasesSearchBar({
   onFilterChange,
   onClearFilters,
   excludeS0 = false,
+  isProjectContextLoading = false,
 }: AllCasesSearchBarProps): JSX.Element {
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     onSearchChange(event.target.value);
   };
 
-  const hasActiveFilters = Object.values(filters).some((value) => !!value);
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    Object.values(filters).some((value) => !!value);
+
+  if (isProjectContextLoading) {
+    return (
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Skeleton variant="rounded" height={40} sx={{ flex: 1 }} />
+          <Skeleton variant="rounded" width={100} height={36} />
+        </Box>
+      </Paper>
+    );
+  }
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>

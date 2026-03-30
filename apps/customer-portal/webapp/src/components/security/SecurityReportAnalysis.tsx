@@ -173,6 +173,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
 
   const handleClearFilters = () => {
     setFilters({});
+    setSearchTerm("");
     setPage(1);
   };
 
@@ -192,7 +193,10 @@ const SecurityReportAnalysis = (): JSX.Element => {
     setPage(value);
   };
 
-  const hasActiveFilters = !!filters.statusId || !!filters.deploymentId;
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    !!filters.statusId ||
+    !!filters.deploymentId;
 
   const reportViewTabs = useMemo(
     () => [

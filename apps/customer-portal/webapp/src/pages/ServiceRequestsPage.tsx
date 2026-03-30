@@ -311,6 +311,9 @@ export default function ServiceRequestsPage(): JSX.Element {
       <ServiceRequestsList
         serviceRequests={paginatedServiceRequests}
         isLoading={isCasesAreaLoading}
+        hasListRefinement={
+          searchTerm.trim().length > 0 || statusFilter !== "all"
+        }
         onServiceRequestClick={(sr) =>
           navigate(`/projects/${projectId}/${basePath}/service-requests/${sr.id}`)
         }

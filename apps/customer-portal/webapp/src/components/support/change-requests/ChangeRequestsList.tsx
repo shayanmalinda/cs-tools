@@ -20,6 +20,8 @@ import type { JSX } from "react";
 import type { ChangeRequestItem } from "@models/responses";
 import ChangeRequestsListSkeleton from "@components/support/change-requests/ChangeRequestsListSkeleton";
 import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import EmptyIcon from "@components/common/empty-state/EmptyIcon";
+import SearchNoResultsIcon from "@components/common/empty-state/SearchNoResultsIcon";
 import { formatDateTime, formatDuration } from "@utils/support";
 import {
   getChangeRequestStateColor,
@@ -32,6 +34,7 @@ export interface ChangeRequestsListProps {
   changeRequests: ChangeRequestItem[];
   isLoading: boolean;
   isError?: boolean;
+  hasListRefinement?: boolean;
   onChangeRequestClick?: (item: ChangeRequestItem) => void;
 }
 
@@ -45,6 +48,7 @@ export default function ChangeRequestsList({
   changeRequests,
   isLoading,
   isError = false,
+  hasListRefinement = false,
   onChangeRequestClick,
 }: ChangeRequestsListProps): JSX.Element {
   if (isLoading) {
@@ -63,10 +67,50 @@ export default function ChangeRequestsList({
   }
 
   if (changeRequests.length === 0) {
+    if (hasListRefinement) {
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            py: 6,
+          }}
+        >
+          <SearchNoResultsIcon
+            style={{
+              width: 200,
+              maxWidth: "100%",
+              height: "auto",
+              marginBottom: 16,
+            }}
+          />
+          <Typography variant="body1" color="text.secondary">
+            No change requests found. Try adjusting your filters or search
+            query.
+          </Typography>
+        </Box>
+      );
+    }
     return (
-      <Box sx={{ textAlign: "center", py: 6 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          py: 6,
+        }}
+      >
+        <EmptyIcon
+          style={{
+            width: 200,
+            maxWidth: "100%",
+            height: "auto",
+            marginBottom: 16,
+          }}
+        />
         <Typography variant="body1" color="text.secondary">
-          No change requests found. Try adjusting your filters or search query.
+          No change requests yet.
         </Typography>
       </Box>
     );

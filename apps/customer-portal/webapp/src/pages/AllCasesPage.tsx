@@ -40,7 +40,7 @@ import useGetProjectDetails from "@api/useGetProjectDetails";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
 import { useGetDeployments } from "@api/useGetDeployments";
-import { isS0Case } from "@utils/support";
+import { hasListSearchOrFilters, isS0Case } from "@utils/support";
 import { CaseType } from "@constants/supportConstants";
 import {
   getProjectPermissions,
@@ -142,8 +142,12 @@ export default function AllCasesPage(): JSX.Element {
   // Show loader only for initial load (until first stats + cases response), not for background refetches or fetchNextPage.
   const hasStatsResponse = stats !== undefined;
   const hasCasesResponse = data !== undefined;
+  const isProjectContextLoading = isProjectLoading;
   const isStatsLoading =
-    isStatsQueryLoading || (!!projectId && !hasStatsResponse);
+    isProjectContextLoading ||
+    isStatsQueryLoading ||
+    (!!projectId && !hasStatsResponse);
+
   const isCasesAreaLoading =
     isCasesQueryLoading ||
     (!!projectId && !hasCasesResponse) ||
@@ -206,6 +210,7 @@ export default function AllCasesPage(): JSX.Element {
 
   const handleClearFilters = () => {
     setFilters({});
+    setSearchTerm("");
     setPage(1);
   };
 
@@ -238,6 +243,8 @@ export default function AllCasesPage(): JSX.Element {
       setFilters((prev) => ({ ...prev, deploymentId: undefined }));
     }
   }, [projectDetailsReady, permissions.hasDeployments, filters.deploymentId]);
+
+  const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
 
   return (
     <Stack spacing={3}>
@@ -278,13 +285,14 @@ export default function AllCasesPage(): JSX.Element {
         filters={filters}
         filterMetadata={filterMetadata}
         deployments={
-          permissions.hasDeployments
-            ? deploymentsData?.deployments ?? []
+          projectDetailsReady && permissions.hasDeployments
+            ? (deploymentsData?.deployments ?? [])
             : []
         }
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
         excludeS0={excludeS0}
+        isProjectContextLoading={isProjectContextLoading}
       />
 
       {/* Sort and results count */}
@@ -357,6 +365,7 @@ export default function AllCasesPage(): JSX.Element {
         cases={paginatedCases}
         isLoading={isCasesAreaLoading && !isCasesError}
         isError={isCasesError}
+        hasListRefinement={listHasRefinement}
         onCaseClick={(c) =>
           navigate(`/projects/${projectId}/support/cases/${c.id}`)
         }

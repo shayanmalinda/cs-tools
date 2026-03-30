@@ -39,6 +39,7 @@ import useGetProjectCases from "@api/useGetProjectCases";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { CaseType } from "@constants/supportConstants";
 import { shouldExcludeS0 } from "@utils/subscriptionUtils";
+import { hasListSearchOrFilters } from "@utils/support";
 import type { AllCasesFilterValues } from "@models/responses";
 import { isS0Case } from "@utils/support";
 import AllCasesList from "@components/support/all-cases/AllCasesList";
@@ -172,6 +173,7 @@ export default function EngagementsPage(): JSX.Element {
 
   const handleClearFilters = () => {
     setFilters({});
+    setSearchTerm("");
     setPage(1);
   };
 
@@ -184,6 +186,8 @@ export default function EngagementsPage(): JSX.Element {
     setSearchTerm(value);
     setPage(1);
   };
+
+  const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
 
   return (
     <Stack spacing={3}>
@@ -242,6 +246,7 @@ export default function EngagementsPage(): JSX.Element {
         cases={paginatedCases}
         isLoading={isCasesAreaLoading}
         isError={isCasesError}
+        hasListRefinement={listHasRefinement}
         onCaseClick={
           projectId
             ? (caseItem) =>

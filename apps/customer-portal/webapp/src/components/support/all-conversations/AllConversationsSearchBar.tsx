@@ -65,7 +65,9 @@ export default function AllConversationsSearchBar({
     onSearchChange(event.target.value);
   };
 
-  const hasActiveFilters = Object.values(filters).some((value) => !!value);
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    Object.values(filters).some((value) => !!value);
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>

@@ -34,6 +34,7 @@ import { CaseType } from "@constants/supportConstants";
 import type { AnnouncementFilterValues } from "@constants/supportConstants";
 import AnnouncementsSearchBar from "@components/support/announcements/AnnouncementsSearchBar";
 import AnnouncementList from "@components/support/announcements/AnnouncementList";
+import { hasListSearchOrFilters } from "@utils/support";
 import AllCasesListSkeleton from "@components/support/all-cases/AllCasesListSkeleton";
 
 /**
@@ -104,8 +105,11 @@ export default function AnnouncementsPage(): JSX.Element {
 
   const handleClearFilters = () => {
     setFilters({});
+    setSearchTerm("");
     setPage(1);
   };
+
+  const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
 
   return (
     <Stack spacing={3}>
@@ -178,6 +182,7 @@ export default function AnnouncementsPage(): JSX.Element {
         <AnnouncementList
           cases={cases}
           isLoading={false}
+          hasListRefinement={listHasRefinement}
           onCaseClick={(c) => navigate(`/projects/${projectId}/announcements/${c.id}`)}
         />
       )}

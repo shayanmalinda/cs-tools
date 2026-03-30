@@ -46,6 +46,7 @@ import type { AllConversationsStatKey } from "@constants/supportConstants";
 import AllConversationsStatCards from "@components/support/all-conversations/AllConversationsStatCards";
 import AllConversationsSearchBar from "@components/support/all-conversations/AllConversationsSearchBar";
 import AllConversationsList from "@components/support/all-conversations/AllConversationsList";
+import { hasListSearchOrFilters } from "@utils/support";
 
 /**
  * AllConversationsPage component to display all conversations with filters, search, and pagination.
@@ -163,6 +164,7 @@ export default function AllConversationsPage(): JSX.Element {
 
   const handleClearFilters = () => {
     setFilters({});
+    setSearchTerm("");
     setPage(1);
   };
 
@@ -180,6 +182,8 @@ export default function AllConversationsPage(): JSX.Element {
     setSearchTerm(value);
     setPage(1);
   };
+
+  const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
 
   return (
     <Stack spacing={3}>
@@ -279,6 +283,7 @@ export default function AllConversationsPage(): JSX.Element {
         conversations={conversations}
         isLoading={isConversationsAreaLoading}
         isError={isConversationsError}
+        hasListRefinement={listHasRefinement}
         onConversationClick={handleConversationClick}
       />
 

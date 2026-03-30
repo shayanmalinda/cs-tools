@@ -52,6 +52,7 @@ import ChangeRequestsList from "@components/support/change-requests/ChangeReques
 import ChangeRequestsCalendarView from "@components/support/change-requests/ChangeRequestsCalendarView";
 import TabBar from "@components/common/tab-bar/TabBar";
 import { generateChangeRequestsSchedulePdf } from "@utils/changeRequestsSchedulePdf";
+import { hasListSearchOrFilters } from "@utils/support";
 
 /**
  * ChangeRequestsPage component to display all change requests with stats, filters, and search.
@@ -217,6 +218,7 @@ export default function ChangeRequestsPage(): JSX.Element {
 
   const handleClearFilters = () => {
     setFilters({});
+    setSearchTerm("");
     setPage(1);
   };
 
@@ -240,6 +242,8 @@ export default function ChangeRequestsPage(): JSX.Element {
     ],
     [],
   );
+
+  const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
 
   return (
     <Stack spacing={3}>
@@ -345,6 +349,7 @@ export default function ChangeRequestsPage(): JSX.Element {
             changeRequests={changeRequests}
             isLoading={isLoading}
             isError={isError}
+            hasListRefinement={listHasRefinement}
             onChangeRequestClick={handleChangeRequestClick}
           />
 
