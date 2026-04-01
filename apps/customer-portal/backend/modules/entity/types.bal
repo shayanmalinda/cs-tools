@@ -1002,7 +1002,7 @@ public type DeploymentSearchPayload record {|
     # Filter criteria
     record {|
         # Project IDs
-        IdString[] projectIds;
+        IdString[] projectIds?;
         # Consumption based filters
         ConsumptionFilter consumption?;
     |} filters?;
