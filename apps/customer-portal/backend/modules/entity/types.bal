@@ -850,10 +850,8 @@ public type DeployedProductSearchPayload record {|
     IdString deploymentId?;
     # Filters
     record {
-        # Start date of consumption
-        Date consumptionStartDate?;
-        # End date of consumption
-        Date consumptionEndDate?;
+        # Consumtion based filters
+        ConsumptionFilter consumption?;
     } filters?;
     # Pagination details
     Pagination pagination?;
@@ -1003,17 +1001,23 @@ public type UpdatedDeployedProduct record {|
 public type DeploymentSearchPayload record {|
     # Filter criteria
     record {|
-        # Project ID
+        # Project IDs
         IdString[] projectIds;
-        # Filters deployments by consumed state.
-        boolean consumed?;
-        # Start date of consumption
-        Date consumptionStartDate?;
-        # End date of consumption
-        Date consumptionEndDate?;
+        # Consumtion based filters
+        ConsumptionFilter consumption?;
     |} filters?;
     # Pagination details
     Pagination pagination?;
+|};
+
+# Consumption filter.
+public type ConsumptionFilter record {|
+    # Indicates whether to filter based on consumption (true to filter)
+    boolean include?;
+    # Start date of consumption
+    Date startDate?;
+    # End date of consumption
+    Date endDate?;
 |};
 
 # Deployment data.

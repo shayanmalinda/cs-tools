@@ -3340,6 +3340,18 @@ components:
           limit:
             type: integer
             format: int64
+    ConsumptionFilter:
+      type: object
+      properties:
+        include:
+          type: boolean
+          description: Consumption include or not
+        startDate:
+          $ref: '#/components/schemas/Date'
+        endDate:
+          $ref: '#/components/schemas/Date'
+      additionalProperties: false
+      description: Consumption filter.
     Contact:
       required:
       - email
@@ -3853,10 +3865,8 @@ components:
         filters:
           type: object
           properties:
-            consumptionStartDate:
-              $ref: '#/components/schemas/Date'
-            consumptionEndDate:
-              $ref: '#/components/schemas/Date'
+            consumption:
+              $ref: '#/components/schemas/ConsumptionFilter'
           description: Filters
         pagination:
           $ref: '#/components/schemas/Pagination'
@@ -3992,13 +4002,8 @@ components:
         filters:
           type: object
           properties:
-            consumed:
-              type: boolean
-              description: Filters deployments by consumed state.
-            consumptionStartDate:
-              $ref: '#/components/schemas/Date'
-            consumptionEndDate:
-              $ref: '#/components/schemas/Date'
+            consumption:
+              $ref: '#/components/schemas/ConsumptionFilter'
           additionalProperties: false
           description: Filter criteria
         pagination:

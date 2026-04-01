@@ -571,12 +571,8 @@ public type AttachmentUpdatePayload record {|
 public type DeploymentSearchPayload record {|
     # Filter criteria
     record {|
-        # Filters deployments by consumed state.
-        boolean consumed?;
-        # Start date of consumption
-        entity:Date consumptionStartDate?;
-        # End date of consumption
-        entity:Date consumptionEndDate?;
+        # Consumtion based filters
+        entity:ConsumptionFilter consumption?;
     |} filters?;
     # Pagination details
     entity:Pagination pagination?;
@@ -619,10 +615,8 @@ public type DeploymentsResponse record {|
 public type DeployedProductSearchPayload record {|
     # Filters
     record {
-        # Start date of consumption
-        entity:Date consumptionStartDate?;
-        # End date of consumption
-        entity:Date consumptionEndDate?;
+        # Consumtion based filters
+        entity:ConsumptionFilter consumption?;
     } filters?;
     # Pagination details
     entity:Pagination pagination?;

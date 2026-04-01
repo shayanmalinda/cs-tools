@@ -464,9 +464,11 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 {
                     filters: {
                         projectIds: [id],
-                        consumed: payload.filters?.consumed,
-                        consumptionStartDate: payload.filters?.consumptionStartDate,
-                        consumptionEndDate: payload.filters?.consumptionEndDate
+                        consumption: {
+                            include: payload.filters?.consumption?.include,
+                            startDate: payload.filters?.consumption?.startDate,
+                            endDate: payload.filters?.consumption?.endDate
+                        }
                     },
                     pagination: payload.pagination
                 });
@@ -2246,8 +2248,10 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 {
                     deploymentId: id,
                     filters: {
-                        consumptionStartDate: payload.filters?.consumptionStartDate,
-                        consumptionEndDate: payload.filters?.consumptionEndDate
+                        consumption: {
+                            startDate: payload.filters?.consumption?.startDate,
+                            endDate: payload.filters?.consumption?.endDate
+                        }
                     },
                     pagination: payload.pagination
                 });
