@@ -847,7 +847,7 @@ public type ProductUpdate record {|
 # Deployed product search payload
 public type DeployedProductSearchPayload record {|
     # Deployment ID
-    IdString deploymentId?;
+    IdString deploymentId;
     # Filters
     record {
         # Consumption based filters
