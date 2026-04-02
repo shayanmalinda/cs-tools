@@ -15,28 +15,19 @@
 // under the License.
 
 import {
-  FilterSlotBuilder,
+  CaseListContent,
+  ChangeRequestListContent,
+  ChatListContent,
   FilterSlotBuilderSkeleton,
-  ItemCardExtended,
+  FilterSlotContent,
   ItemCardExtendedSkeleton,
+  ServiceRequestListContent,
   type ItemCardProps,
 } from "@components/features/support";
-import { InfiniteScroll } from "@components/shared";
-import { Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
+import { Skeleton, Stack } from "@wso2/oxygen-ui";
 import { useSearchParams } from "react-router-dom";
 import { useLayout } from "@context/layout";
-import { Fragment, Suspense, useLayoutEffect } from "react";
-import { useInfiniteQuery, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { cases } from "@src/services/cases";
-import { useProject } from "@context/project";
-import { chats } from "@src/services/chats";
-import { changeRequests } from "@src/services/changes";
-
-import { ITEM_DETAIL_PATHS } from "@pages/SupportPage";
-import { serviceRequests } from "../services/services";
-import type { GetCasesRequestDTO, GetChangeRequestsRquestDTO } from "../types";
-import type { GetChatsRequestDTO } from "../types/chat.dto";
-import EmptyState from "../components/shared/EmptyState";
+import { Suspense, useLayoutEffect } from "react";
 import { ErrorBoundary } from "../components/core";
 
 export default function AllItemsPage({ type }: { type: ItemCardProps["type"] }) {
@@ -53,6 +44,21 @@ export default function AllItemsPage({ type }: { type: ItemCardProps["type"] }) 
   );
 }
 
+function ItemsListContent({ type, filter, search }: { type: ItemCardProps["type"]; filter: string; search: string }) {
+  switch (type) {
+    case "case":
+      return <CaseListContent filter={filter} search={search} />;
+    case "chat":
+      return <ChatListContent filter={filter} search={search} />;
+    case "service":
+      return <ServiceRequestListContent filter={filter} search={search} />;
+    case "change":
+      return <ChangeRequestListContent filter={filter} search={search} />;
+    default:
+      return null;
+  }
+}
+
 export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] }) {
   return (
     <ErrorBoundary fallback={<FilterSlotBuilderSkeleton />}>
@@ -63,244 +69,7 @@ export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] }) {
   );
 }
 
-function FilterSlotContent({ type }: { type: ItemCardProps["type"] }) {
-  const { projectId } = useProject();
-  const { data: filters } = useSuspenseQuery(cases.filters(projectId!));
-
-  const SEARCH_PLACEHOLDER_CONFIG: Record<typeof type, string> = {
-    case: "Search Cases",
-    chat: "Search Chats",
-    service: "Search Service Requests",
-    change: "Search Change Requests",
-  };
-
-  const tabs = (() => {
-    switch (type) {
-      case "chat":
-        return filters.conversationStates;
-      case "change":
-        return filters.changeRequestStates;
-      default:
-        return filters.caseStates;
-    }
-  })().map((filter) => ({ label: filter.label, value: filter.id }));
-
-  return <FilterSlotBuilder searchPlaceholder={SEARCH_PLACEHOLDER_CONFIG[type]} tabs={tabs} />;
-}
-
-function ItemsListContent({ type, filter, search }: { type: ItemCardProps["type"]; filter: string; search: string }) {
-  switch (type) {
-    case "case":
-      return <CaseListContent filter={filter} search={search} />;
-    case "chat":
-      return <ChatListContent filter={filter} search={search} />;
-    case "service":
-      return <ServiceRequestsListContent filter={filter} search={search} />;
-    case "change":
-      return <ChangeRequestsListContent filter={filter} search={search} />;
-    default:
-      return null;
-  }
-}
-
-function CaseListContent({ filter, search }: { filter: string; search: string }) {
-  const { projectId } = useProject();
-
-  const filters: GetCasesRequestDTO["filters"] = {};
-
-  if (filter !== "all") {
-    filters.statusIds = [Number(filter)];
-  }
-
-  if (search) {
-    filters.searchQuery = search;
-  }
-
-  const totalQuery = useQuery(cases.all(projectId!));
-  const query = useInfiniteQuery(cases.paginated(projectId!, { filters }));
-
-  const total = totalQuery.data?.pagination.totalRecords;
-  const count = query.data?.pages[0].pagination.totalRecords;
-
-  useSubtitleOverride(count, total);
-
-  return (
-    <InfiniteScroll
-      {...query}
-      sentinel={<ItemsListContentSkeleton />}
-      tail={
-        count === 0 ? (
-          <EmptyState />
-        ) : (
-          <Typography variant="subtitle2" textAlign="center">
-            You're all caught up!
-          </Typography>
-        )
-      }
-    >
-      {(data) => (
-        <>
-          {data &&
-            data.pages.map((page, pageIndex) => (
-              <Fragment key={pageIndex}>
-                {page.map((item) => (
-                  <ItemCardExtended key={item.id} type="case" to={ITEM_DETAIL_PATHS.case(item.id)} {...item} />
-                ))}
-              </Fragment>
-            ))}
-        </>
-      )}
-    </InfiniteScroll>
-  );
-}
-
-function ChatListContent({ filter, search }: { filter: string; search: string }) {
-  const { projectId } = useProject();
-
-  const filters: GetChatsRequestDTO["filters"] = {};
-
-  if (filter !== "all") {
-    filters.stateKeys = [Number(filter)];
-  }
-
-  if (search) {
-    filters.searchQuery = search;
-  }
-  const totalQuery = useQuery(chats.all(projectId!));
-  const query = useInfiniteQuery(chats.paginated(projectId!, { filters }));
-
-  const total = totalQuery.data?.pagination.totalRecords;
-  const count = query.data?.pages[0].pagination.totalRecords;
-
-  useSubtitleOverride(count, total);
-
-  return (
-    <InfiniteScroll
-      {...query}
-      sentinel={<ItemsListContentSkeleton />}
-      tail={
-        count === 0 ? (
-          <EmptyState />
-        ) : (
-          <Typography variant="subtitle2" textAlign="center">
-            You're all caught up!
-          </Typography>
-        )
-      }
-    >
-      {(data) => (
-        <>
-          {data &&
-            data.pages.map((page) =>
-              page.map((item) => (
-                <ItemCardExtended key={item.id} type="chat" to={ITEM_DETAIL_PATHS.chat(item.id)} {...item} />
-              )),
-            )}
-        </>
-      )}
-    </InfiniteScroll>
-  );
-}
-
-function ChangeRequestsListContent({ filter, search }: { filter: string; search: string }) {
-  const { projectId } = useProject();
-
-  const filters: GetChangeRequestsRquestDTO["filters"] = {};
-
-  if (filter !== "all") {
-    filters.stateKeys = [Number(filter)];
-  }
-
-  if (search) {
-    filters.searchQuery = search;
-  }
-
-  const totalQuery = useQuery(changeRequests.all(projectId!));
-  const query = useInfiniteQuery(changeRequests.paginated(projectId!, { filters }));
-
-  const total = totalQuery.data?.pagination.totalRecords;
-  const count = query.data?.pages[0].pagination.totalRecords;
-
-  useSubtitleOverride(count, total);
-
-  return (
-    <InfiniteScroll
-      {...query}
-      sentinel={<ItemsListContentSkeleton />}
-      tail={
-        count === 0 ? (
-          <EmptyState />
-        ) : (
-          <Typography variant="subtitle2" textAlign="center">
-            You're all caught up!
-          </Typography>
-        )
-      }
-    >
-      {(data) => (
-        <>
-          {data &&
-            data.pages.map((page) =>
-              page.map((item) => (
-                <ItemCardExtended key={item.id} type="change" to={ITEM_DETAIL_PATHS.change(item.id)} {...item} />
-              )),
-            )}
-        </>
-      )}
-    </InfiniteScroll>
-  );
-}
-
-function ServiceRequestsListContent({ filter, search }: { filter: string; search: string }) {
-  const { projectId } = useProject();
-
-  const filters: GetCasesRequestDTO["filters"] = {};
-
-  if (filter !== "all") {
-    filters.statusIds = [Number(filter)];
-  }
-
-  if (search) {
-    filters.searchQuery = search;
-  }
-
-  const totalQuery = useQuery(serviceRequests.all(projectId!));
-  const query = useInfiniteQuery(serviceRequests.paginated(projectId!, { filters }));
-
-  const total = totalQuery.data?.pagination.totalRecords;
-  const count = query.data?.pages[0].pagination.totalRecords;
-
-  useSubtitleOverride(count, total);
-
-  return (
-    <InfiniteScroll
-      {...query}
-      sentinel={<ItemsListContentSkeleton />}
-      tail={
-        count === 0 ? (
-          <EmptyState />
-        ) : (
-          <Typography variant="subtitle2" textAlign="center">
-            You're all caught up!
-          </Typography>
-        )
-      }
-    >
-      {(data) => (
-        <>
-          {data &&
-            data.pages.map((page) =>
-              page.map((item) => (
-                <ItemCardExtended key={item.id} type="service" to={ITEM_DETAIL_PATHS.service(item.id)} {...item} />
-              )),
-            )}
-        </>
-      )}
-    </InfiniteScroll>
-  );
-}
-
-function ItemsListContentSkeleton() {
+export function ItemsListContentSkeleton() {
   return (
     <>
       {Array.from({ length: 10 }).map((_, index) => (
@@ -310,7 +79,7 @@ function ItemsListContentSkeleton() {
   );
 }
 
-function useSubtitleOverride(count?: number, total?: number) {
+export function usePaginationSubtitleOverride(count?: number, total?: number) {
   const layout = useLayout();
   const data = count !== undefined && total !== undefined;
 
