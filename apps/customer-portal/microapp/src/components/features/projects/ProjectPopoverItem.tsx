@@ -21,17 +21,12 @@ import type { Project } from "@src/types";
 
 import { PROJECT_STATUS_META } from "@config/constants";
 
-export function ProjectPopoverItem({
-  name,
-  type,
-  status,
-  metrics,
-  active = false,
-  onClick,
-}: Pick<Project, "name" | "type" | "status" | "metrics"> & {
+type ProjectPopoverItemProps = Pick<Project, "name" | "type" | "status" | "metrics"> & {
   active?: boolean;
   onClick: () => void;
-}) {
+};
+
+export function ProjectPopoverItem({ name, type, status, metrics, active = false, onClick }: ProjectPopoverItemProps) {
   const theme = useTheme();
   const statusChipColorVariant = status ? PROJECT_STATUS_META[status].color : "default";
 
