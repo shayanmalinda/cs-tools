@@ -18,6 +18,9 @@ import type { ReactElement } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
+import LoggerProvider from "@context/logger/LoggerProvider";
+import { ErrorBannerProvider } from "@context/error-banner/ErrorBannerContext";
 import ProjectDeployments from "@components/project-details/deployments/ProjectDeployments";
 import { useGetDeployments } from "@api/useGetDeployments";
 
@@ -112,7 +115,13 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false 
 
 function renderWithProviders(ui: ReactElement) {
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <QueryClientProvider client={queryClient}>
+      <LoggerProvider config={{ level: "ERROR", prefix: "Test" }}>
+        <ErrorBannerProvider>
+          <MemoryRouter>{ui}</MemoryRouter>
+        </ErrorBannerProvider>
+      </LoggerProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -163,7 +172,9 @@ describe("ProjectDeployments", () => {
     expect(
       screen.getByRole("heading", { name: "Production" }),
     ).toBeInTheDocument();
-    expect(screen.getAllByTestId("error-indicator").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: /Create Service Request/i }),
+    ).toBeDisabled();
   });
 
   it("should show Invalid Project ID when projectId is empty", () => {
