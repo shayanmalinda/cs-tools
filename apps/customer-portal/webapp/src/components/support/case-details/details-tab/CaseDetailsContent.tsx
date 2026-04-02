@@ -15,7 +15,7 @@
 // under the License.
 
 import { Box, Paper, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
-import { useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { useLocation } from "react-router";
 import type { CaseDetails } from "@models/responses";
 import { useGetCaseAttachments } from "@api/useGetCaseAttachments";
@@ -28,11 +28,14 @@ import {
   getInitials,
   isSecurityReportAnalysisType,
 } from "@utils/support";
+import {
+  CALL_SCHEDULABLE_CASE_STATUSES,
+  type CaseStatus,
+} from "@constants/supportConstants";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import CaseDetailsBackButton from "@case-details/CaseDetailsBackButton";
 import CaseDetailsHeader from "@case-details/CaseDetailsHeader";
 import CaseDetailsActionRow from "@case-details/CaseDetailsActionRow";
-import SecurityReportAnalysisHeader from "@case-details/SecurityReportAnalysisHeader";
 import CaseDetailsTabs from "@case-details/CaseDetailsTabs";
 import CaseDetailsTabPanels from "@case-details/CaseDetailsTabPanels";
 import CaseDetailsSkeleton from "@case-details/CaseDetailsSkeleton";
@@ -72,6 +75,9 @@ export default function CaseDetailsContent({
   const [focusMode, setFocusMode] = useState(false);
 
   const isEngagementRoute = location.pathname.includes("/engagements/");
+  const isSecurityReportAnalysisRoute = location.pathname.includes(
+    "security-report-analysis",
+  );
 
   const statusLabel = data?.status?.label;
   const severityLabel = data?.severity?.label;
@@ -123,6 +129,28 @@ export default function CaseDetailsContent({
   const engineerInitials = getInitials(assignedEngineer);
 
   const isSecurityReportAnalysis = isSecurityReportAnalysisType(data?.type);
+  const hideAssignedEngineer =
+    isSecurityReportAnalysis || isSecurityReportAnalysisRoute;
+
+  const isCallSchedulingAllowed =
+    statusLabel != null &&
+    CALL_SCHEDULABLE_CASE_STATUSES.includes(statusLabel as CaseStatus);
+
+  const hideCallsTab =
+    isSecurityReportAnalysis || !isCallSchedulingAllowed;
+
+  useEffect(() => {
+    if (!hideCallsTab) return;
+    if (activeTab > 3) {
+      setActiveTab(3);
+    }
+  }, [hideCallsTab, activeTab]);
+
+  const resolvedPanelIndex = useMemo(() => {
+    if (!hideCallsTab) return activeTab;
+    if (activeTab <= 2) return activeTab;
+    return 4;
+  }, [activeTab, hideCallsTab]);
 
   if (isLoading) {
     return (
@@ -135,6 +163,7 @@ export default function CaseDetailsContent({
           <CaseDetailsSkeleton
             hideActionRow={hideActionRow}
             showEngineerOnly={showEngineerOnly}
+            hideAssignedEngineer={hideAssignedEngineer}
           />
         </Paper>
       </Box>
@@ -195,24 +224,22 @@ export default function CaseDetailsContent({
                 statusChipIcon={statusChipIcon}
                 statusChipSx={statusChipSx}
                 isLoading={isLoading}
+                showSeverityChip={!isSecurityReportAnalysis}
               />
 
-              {isSecurityReportAnalysis ? (
-                <SecurityReportAnalysisHeader data={data} />
-              ) : (
-                (!hideActionRow || showEngineerOnly) && (
-                  <CaseDetailsActionRow
-                    assignedEngineer={assignedEngineer}
-                    engineerInitials={engineerInitials}
-                    statusLabel={statusLabel}
-                    closedOn={data?.closedOn}
-                    onOpenRelatedCase={onOpenRelatedCase}
-                    projectId={resolvedProjectId}
-                    caseId={caseId}
-                    isLoading={isLoading}
-                    showOnlyEngineer={showEngineerOnly}
-                  />
-                )
+              {(!hideActionRow || showEngineerOnly) && (
+                <CaseDetailsActionRow
+                  assignedEngineer={assignedEngineer}
+                  engineerInitials={engineerInitials}
+                  statusLabel={statusLabel}
+                  closedOn={data?.closedOn}
+                  onOpenRelatedCase={onOpenRelatedCase}
+                  projectId={resolvedProjectId}
+                  caseId={caseId}
+                  isLoading={isLoading}
+                  showOnlyEngineer={showEngineerOnly}
+                  hideAssignedEngineer={hideAssignedEngineer}
+                />
               )}
             </>
           )
@@ -225,6 +252,7 @@ export default function CaseDetailsContent({
           onFocusModeToggle={() => setFocusMode((prev) => !prev)}
           attachmentCount={attachmentCount}
           callCount={callCount}
+          hideCallsTab={hideCallsTab}
         />
       </Paper>
 
@@ -236,14 +264,14 @@ export default function CaseDetailsContent({
           mt: 2,
           display: "flex",
           flexDirection: "column",
-          overflow: activeTab === 0 ? "hidden" : "auto",
-          p: activeTab === 0 ? 0 : 3,
+          overflow: resolvedPanelIndex === 0 ? "hidden" : "auto",
+          p: resolvedPanelIndex === 0 ? 0 : 3,
           pt: 0,
           WebkitOverflowScrolling: "touch",
         }}
       >
         <CaseDetailsTabPanels
-          activeTab={activeTab}
+          panelIndex={resolvedPanelIndex}
           caseId={caseId}
           data={data}
           isError={isError}
