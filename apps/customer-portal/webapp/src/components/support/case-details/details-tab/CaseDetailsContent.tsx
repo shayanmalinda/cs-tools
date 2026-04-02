@@ -15,7 +15,7 @@
 // under the License.
 
 import { Box, Paper, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
-import { useEffect, useMemo, useState, type JSX } from "react";
+import { useMemo, useState, type JSX } from "react";
 import { useLocation } from "react-router";
 import type { CaseDetails } from "@models/responses";
 import { useGetCaseAttachments } from "@api/useGetCaseAttachments";
@@ -50,6 +50,7 @@ export interface CaseDetailsContentProps {
   projectId?: string;
   hideActionRow?: boolean;
   showEngineerOnly?: boolean;
+  isServiceRequest?: boolean;
 }
 
 /**
@@ -68,6 +69,7 @@ export default function CaseDetailsContent({
   projectId = "",
   hideActionRow = false,
   showEngineerOnly = false,
+  isServiceRequest = false,
 }: CaseDetailsContentProps): JSX.Element {
   const theme = useTheme();
   const location = useLocation();
@@ -130,7 +132,7 @@ export default function CaseDetailsContent({
 
   const isSecurityReportAnalysis = isSecurityReportAnalysisType(data?.type);
   const hideAssignedEngineer =
-    isSecurityReportAnalysis || isSecurityReportAnalysisRoute;
+    isSecurityReportAnalysis || isSecurityReportAnalysisRoute || isServiceRequest;
 
   const isCallSchedulingAllowed =
     statusLabel != null &&
@@ -138,19 +140,24 @@ export default function CaseDetailsContent({
 
   const hideCallsTab =
     isSecurityReportAnalysis || !isCallSchedulingAllowed;
+  const hideKnowledgeBaseTab =
+    isSecurityReportAnalysis || isEngagementRoute || isServiceRequest;
 
-  useEffect(() => {
-    if (!hideCallsTab) return;
-    if (activeTab > 3) {
-      setActiveTab(3);
-    }
-  }, [hideCallsTab, activeTab]);
+  const visibleTabs = useMemo(
+    () => [
+      0,
+      1,
+      2,
+      ...(hideCallsTab ? [] : [3]),
+      ...(hideKnowledgeBaseTab ? [] : [4]),
+    ],
+    [hideCallsTab, hideKnowledgeBaseTab],
+  );
+  const clampedActiveTab = Math.min(activeTab, Math.max(0, visibleTabs.length - 1));
 
   const resolvedPanelIndex = useMemo(() => {
-    if (!hideCallsTab) return activeTab;
-    if (activeTab <= 2) return activeTab;
-    return 4;
-  }, [activeTab, hideCallsTab]);
+    return visibleTabs[clampedActiveTab] ?? visibleTabs[0] ?? 0;
+  }, [visibleTabs, clampedActiveTab]);
 
   if (isLoading) {
     return (
@@ -203,10 +210,17 @@ export default function CaseDetailsContent({
               py: 2,
             }}
           >
-            <ErrorIndicator entityName="case details" size="medium" />
+            <ErrorIndicator
+              entityName={
+                isServiceRequest ? "service request details" : "case details"
+              }
+              size="medium"
+            />
             <Box>
               <Typography variant="body1" color="error" fontWeight={500}>
-                Failed to load case details
+                {isServiceRequest
+                  ? "Failed to load service request details"
+                  : "Failed to load case details"}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Something went wrong while fetching the information.
@@ -247,12 +261,13 @@ export default function CaseDetailsContent({
 
         <CaseDetailsTabs
           focusMode={focusMode}
-          value={activeTab}
+          value={clampedActiveTab}
           onChange={(_e, newValue) => setActiveTab(newValue)}
           onFocusModeToggle={() => setFocusMode((prev) => !prev)}
           attachmentCount={attachmentCount}
           callCount={callCount}
           hideCallsTab={hideCallsTab}
+          hideKnowledgeBaseTab={hideKnowledgeBaseTab}
         />
       </Paper>
 
@@ -278,6 +293,7 @@ export default function CaseDetailsContent({
           projectId={projectId}
           focusMode={focusMode}
           isEngagement={isEngagementRoute}
+          isServiceRequest={isServiceRequest}
         />
       </Box>
     </Box>

@@ -31,6 +31,7 @@ export interface CaseDetailsTabPanelsProps {
   projectId?: string;
   focusMode?: boolean;
   isEngagement?: boolean;
+  isServiceRequest?: boolean;
 }
 
 /**
@@ -47,6 +48,7 @@ export default function CaseDetailsTabPanels({
   projectId = "",
   focusMode = false,
   isEngagement = false,
+  isServiceRequest = false,
 }: CaseDetailsTabPanelsProps): JSX.Element | null {
   switch (panelIndex) {
     case 0: {
@@ -84,6 +86,7 @@ export default function CaseDetailsTabPanels({
           data={data}
           isError={isError}
           isEngagement={isEngagement}
+          isServiceRequest={isServiceRequest}
         />
       );
     case 2:

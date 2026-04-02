@@ -27,6 +27,7 @@ export interface CaseDetailsTabsProps {
   attachmentCount?: number;
   callCount?: number;
   hideCallsTab?: boolean;
+  hideKnowledgeBaseTab?: boolean;
 }
 
 /**
@@ -43,10 +44,17 @@ export default function CaseDetailsTabs({
   attachmentCount,
   callCount,
   hideCallsTab = false,
+  hideKnowledgeBaseTab = false,
 }: CaseDetailsTabsProps): JSX.Element {
-  const tabs = hideCallsTab
-    ? CASE_DETAILS_TABS.filter((t) => !t.label.startsWith("Calls"))
-    : CASE_DETAILS_TABS;
+  const tabs = CASE_DETAILS_TABS.filter((t) => {
+    if (hideCallsTab && t.label.startsWith("Calls")) {
+      return false;
+    }
+    if (hideKnowledgeBaseTab && t.label.startsWith("Knowledge Base")) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <Box

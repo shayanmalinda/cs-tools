@@ -505,6 +505,12 @@ export interface CaseDetails {
   catalogItem?: IdLabelRef | null;
   /** Filled variables for service requests (from backend). */
   variables?: { name: string; value: string }[];
+  changeRequests?: IdLabelRef[];
+  createdBy?: string | null;
+  duration?: string | null;
+  assignedTeam?: IdLabelRef | null;
+  engagementStartDate?: string | null;
+  engagementEndDate?: string | null;
   deployment: IdLabelRef | null;
   severity: IdLabelRef | null;
   status: IdLabelRef | null;
