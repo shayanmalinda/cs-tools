@@ -32,6 +32,11 @@ import {
 } from "@wso2/oxygen-ui";
 import { X } from "@wso2/oxygen-ui-icons-react";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
+import { SelectMenuLoadMoreRow } from "@components/common/select-menu-load-more-row/SelectMenuLoadMoreRow";
+import {
+  EMPTY_DROPDOWN_PLACEHOLDER,
+  paginatedSelectMenuListProps,
+} from "@constants/dropdownConstants";
 import type { SelectChangeEvent } from "@wso2/oxygen-ui";
 import { useMemo, useState, type JSX, type ChangeEvent, type UIEvent } from "react";
 
@@ -182,30 +187,36 @@ const FilterPopover = <T extends Record<string, unknown>>({
                     value={(tempFilters[field.id] as string) || ""}
                     label={field.label}
                     onChange={handleSelectChange(field.id)}
-                    MenuProps={{
-                      MenuListProps: {
-                        onScroll: (e: UIEvent<HTMLElement>) => {
-                          if (
-                            !field.onLoadMore ||
-                            !field.hasMore ||
-                            field.isFetchingMore
-                          ) {
-                            return;
+                    MenuProps={
+                      field.onLoadMore
+                        ? {
+                            MenuListProps: paginatedSelectMenuListProps(
+                              (e: UIEvent<HTMLElement>) => {
+                                if (
+                                  !field.onLoadMore ||
+                                  !field.hasMore ||
+                                  field.isFetchingMore
+                                ) {
+                                  return;
+                                }
+                                const el = e.currentTarget;
+                                const threshold = 24;
+                                const isNearBottom =
+                                  el.scrollHeight - el.scrollTop - el.clientHeight <
+                                  threshold;
+                                if (isNearBottom) field.onLoadMore();
+                              },
+                            ),
                           }
-                          const el = e.currentTarget;
-                          const threshold = 24;
-                          const isNearBottom =
-                            el.scrollHeight - el.scrollTop - el.clientHeight <
-                            threshold;
-                          if (isNearBottom) field.onLoadMore();
-                        },
-                      },
-                    }}
+                        : undefined
+                    }
                   >
                     {/* filter popover select menu item */}
                     <MenuItem value="">
                       <Typography variant="caption" color="text.disabled">
-                        {field.placeholder || `Select ${field.label}`}
+                        {(field.options?.length ?? 0) === 0
+                          ? EMPTY_DROPDOWN_PLACEHOLDER
+                          : field.placeholder || `Select ${field.label}`}
                       </Typography>
                     </MenuItem>
                     {/* filter popover select menu items */}
@@ -220,6 +231,14 @@ const FilterPopover = <T extends Record<string, unknown>>({
                         </MenuItem>
                       );
                     })}
+                    <SelectMenuLoadMoreRow
+                      visible={Boolean(
+                        field.onLoadMore &&
+                          field.hasMore &&
+                          field.isFetchingMore &&
+                          (field.options?.length ?? 0) > 0,
+                      )}
+                    />
                   </Select>
                 </FormControl>
               ) : (
