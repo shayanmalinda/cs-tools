@@ -591,10 +591,6 @@ public type Deployment record {|
     ReferenceItem? project;
     # Type
     ReferenceItem? 'type;
-    # Count of deployed products associated with the deployment
-    int deployedProductCount?;
-    # Count of instances associated with the deployment
-    int instanceCount?;
 |};
 
 # Deployments response.

@@ -1069,10 +1069,6 @@ public type Deployment record {|
     ReferenceTableItem? project;
     # Type
     ChoiceListItem? 'type;
-    # Count of deployed products associated with the deployment
-    int deployedProductCount?;
-    # Count of instances associated with the deployment
-    int instanceCount?;
     json...;
 |};
 
