@@ -93,6 +93,7 @@ export default function AddProductModal({
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [versions, setVersions] = useState<ProductVersionItem[]>([]);
   const previousProductIdRef = useRef<string>("");
+  const [cachedProductsTotalRecords, setCachedProductsTotalRecords] = useState<
 
   const {
     data: productsPage,
@@ -102,6 +103,19 @@ export default function AddProductModal({
     offset: productOffset,
     limit: 10,
   });
+
+  const [productsLoadMorePending, setProductsLoadMorePending] = useState(false);
+  const [versionsLoadMorePending, setVersionsLoadMorePending] = useState(false);
+  const accumulatedProductsLengthRef = useRef(0);
+  const accumulatedVersionsLengthRef = useRef(0);
+  accumulatedProductsLengthRef.current = products.length;
+  accumulatedVersionsLengthRef.current = versions.length;
+
+  useEffect(() => {
+    if (!isFetchingProducts) {
+      setProductsLoadMorePending(false);
+    }
+  }, [isFetchingProducts]);
 
   const {
     data: versionsPage,
