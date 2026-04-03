@@ -25,6 +25,7 @@ import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
+import { addApiHeaders } from "@utils/apiUtils";
 import type { DeployedProductSearchRequest } from "@models/requests";
 import type {
   DeploymentProductItem,
@@ -36,6 +37,33 @@ import { isDeployedProductsResponse } from "@models/responses";
 const DEFAULT_PAGE_SIZE = 10;
 
 export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
+
+function mergeAuthHeadersIntoFetchInit(
+  idToken: string,
+  initHeaders?: HeadersInit,
+): Headers {
+  const merged = new Headers(initHeaders ?? undefined);
+  for (const [key, value] of Object.entries(addApiHeaders(idToken))) {
+    merged.set(key, value);
+  }
+  return merged;
+}
+
+/**
+ * Returns a fetch-compatible function that applies Bearer + x-user-id-token while
+ * preserving caller headers (e.g. Content-Type for JSON POST body binding).
+ * Use when `useAuthApiClient` cannot be used (e.g. token from `getIdToken()` inside useQueries).
+ *
+ * @param {string} idToken - Asgardeo ID token.
+ * @returns {FetchFn} Wrapped global fetch.
+ */
+export function createFetchWithMergedAuthHeaders(idToken: string): FetchFn {
+  return (url, init) =>
+    fetch(url, {
+      ...init,
+      headers: mergeAuthHeadersIntoFetchInit(idToken, init?.headers),
+    });
+}
 
 /**
  * Builds a JSON body that matches backend DeployedProductSearchPayload only
