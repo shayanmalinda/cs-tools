@@ -15,8 +15,9 @@
 // under the License.
 
 import { Box, Paper, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
-import { useMemo, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { useLocation } from "react-router";
+import { useFloatingNoveraVisibility } from "@context/floating-novera-visibility/FloatingNoveraVisibilityContext";
 import type { CaseDetails } from "@models/responses";
 import { useGetCaseAttachments } from "@api/useGetCaseAttachments";
 import { useGetCallRequests } from "@api/useGetCallRequests";
@@ -73,6 +74,7 @@ export default function CaseDetailsContent({
 }: CaseDetailsContentProps): JSX.Element {
   const theme = useTheme();
   const location = useLocation();
+  const { setHideForDetailsActivityTab } = useFloatingNoveraVisibility();
   const [activeTab, setActiveTab] = useState(0);
   const [focusMode, setFocusMode] = useState(false);
 
@@ -158,6 +160,37 @@ export default function CaseDetailsContent({
   const resolvedPanelIndex = useMemo(() => {
     return visibleTabs[clampedActiveTab] ?? visibleTabs[0] ?? 0;
   }, [visibleTabs, clampedActiveTab]);
+
+  const suppressFloatingNoveraOnActivityTab = useMemo(() => {
+    const isSupportCaseDetail =
+      /\/projects\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname) ||
+      /\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname);
+    return (
+      isServiceRequest ||
+      isEngagementRoute ||
+      isSecurityReportAnalysisRoute ||
+      isSupportCaseDetail
+    );
+  }, [
+    isServiceRequest,
+    isEngagementRoute,
+    isSecurityReportAnalysisRoute,
+    location.pathname,
+  ]);
+
+  useEffect(() => {
+    if (!suppressFloatingNoveraOnActivityTab) {
+      return;
+    }
+    setHideForDetailsActivityTab(resolvedPanelIndex === 0);
+    return () => {
+      setHideForDetailsActivityTab(false);
+    };
+  }, [
+    suppressFloatingNoveraOnActivityTab,
+    resolvedPanelIndex,
+    setHideForDetailsActivityTab,
+  ]);
 
   if (isLoading) {
     return (

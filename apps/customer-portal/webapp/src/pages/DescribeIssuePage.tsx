@@ -195,7 +195,7 @@ export default function DescribeIssuePage(): JSX.Element {
                   value={value}
                   onChange={setValue}
                   placeholder={ISSUE_PLACEHOLDER}
-                  minHeight={250}
+                  minHeight={240}
                   maxHeight="none"
                   showToolbar
                   toolbarVariant="describeIssue"

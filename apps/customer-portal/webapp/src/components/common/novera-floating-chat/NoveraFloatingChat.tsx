@@ -17,7 +17,6 @@
 import {
   Box,
   Card,
-  CardContent,
   Divider,
   IconButton,
   TextField,
@@ -40,7 +39,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
+import { useFloatingNoveraVisibility } from "@context/floating-novera-visibility/FloatingNoveraVisibilityContext";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import { usePostProjectDeploymentsSearchAll } from "@api/usePostProjectDeploymentsSearch";
 import { useAllDeploymentProducts } from "@hooks/useAllDeploymentProducts";
@@ -65,6 +65,8 @@ const WELCOME_MESSAGE =
  * @returns {JSX.Element | null} Floating widget, or null when not applicable.
  */
 export default function NoveraFloatingChat(): JSX.Element | null {
+  const location = useLocation();
+  const { hideForDetailsActivityTab } = useFloatingNoveraVisibility();
   const { projectId } = useParams<{ projectId: string }>();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -308,6 +310,14 @@ export default function NoveraFloatingChat(): JSX.Element | null {
     return null;
   }
 
+  const isSupportChatRoute =
+    /\/projects\/[^/]+\/support\/chat(\/|$)/.test(location.pathname) ||
+    /\/[^/]+\/support\/chat(\/|$)/.test(location.pathname);
+
+  if (isSupportChatRoute || hideForDetailsActivityTab) {
+    return null;
+  }
+
   if (!isOpen) {
     return (
       <Box sx={{ position: "fixed", right: 24, bottom: 60, zIndex: 1300 }}>
@@ -345,6 +355,7 @@ export default function NoveraFloatingChat(): JSX.Element | null {
             py: 1.5,
             color: "common.white",
             background: "linear-gradient(90deg, #ff8f00 0%, #f57c00 100%)",
+            borderRadius: isMinimized ? "inherit" : "unset",
           }}
         >
           <Box
@@ -399,14 +410,8 @@ export default function NoveraFloatingChat(): JSX.Element | null {
             </Box>
           </Box>
         </Box>
-
-        {isMinimized ? (
-          <CardContent sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Chat with Novera AI - Click to expand
-            </Typography>
-          </CardContent>
-        ) : (
+  
+        {!isMinimized && (
           <>
             <Box
               sx={{
@@ -425,7 +430,7 @@ export default function NoveraFloatingChat(): JSX.Element | null {
               )}
               <div ref={messagesEndRef} />
             </Box>
-
+  
             <Divider />
             <Box sx={{ p: 1.5, bgcolor: "background.paper" }}>
               <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
