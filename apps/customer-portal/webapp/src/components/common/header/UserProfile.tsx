@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Skeleton, UserMenu } from "@wso2/oxygen-ui";
+import { UserMenu } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -50,23 +50,31 @@ export default function UserProfile(): JSX.Element {
     }
   };
 
-  if (isLoading || isAuthLoading) {
-    return <Skeleton variant="circular" width={36} height={36} />;
-  }
+  const isProfilePending = isLoading || isAuthLoading;
+  const useErrorFallback = isError && !userDetails;
 
-  const name = isError
-    ? "Unknown User"
-    : userDetails?.firstName || userDetails?.lastName
-      ? `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim()
-      : "--";
+  const name = isProfilePending
+    ? ""
+    : useErrorFallback
+      ? "Unknown User"
+      : userDetails?.firstName || userDetails?.lastName
+        ? `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim()
+        : "--";
 
-  const email = isError ? "--" : userDetails?.email || "--";
+  const email = isProfilePending
+    ? "\u00a0"
+    : useErrorFallback
+      ? "--"
+      : userDetails?.email || "--";
+
+  const headerName = isProfilePending ? "Loading…" : name;
+  const headerEmail = isProfilePending ? "\u00a0" : email;
 
   return (
     <>
       <UserMenu>
         <UserMenu.Trigger name={name} />
-        <UserMenu.Header name={name} email={email} />
+        <UserMenu.Header name={headerName} email={headerEmail} />
         <UserMenu.Divider />
         <UserMenu.Item
           icon={<User size={18} />}

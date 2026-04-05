@@ -37,6 +37,7 @@ import {
   getSidebarCollapsed,
   setSidebarCollapsed,
 } from "@utils/settingsStorage";
+
 /**
  * AppLayout component.
  *
@@ -46,11 +47,15 @@ interface AppLayoutProps {
   children?: ReactNode;
 }
 
+/**
+ * AppLayout component providing the main structure, navigation, and global UI elements.
+ */
 export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation();
   const mainContentRef = useRef<HTMLDivElement>(null);
   const { isLoading: isAuthLoading } = useAsgardeo();
 
+  // Scroll to top on route change
   useEffect(() => {
     if (mainContentRef.current) {
       mainContentRef.current.scrollTop = 0;
@@ -66,7 +71,7 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
     "Authenticating…" | "Fetching user info…" | "Please wait…"
   >("Authenticating…");
 
-  // Animate loading message in the center of the page.
+  // Animate loading message during authentication
   useEffect(() => {
     if (!isAuthLoading) return;
 
@@ -86,41 +91,47 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
     };
   }, [isAuthLoading]);
 
-  // Persist sidebar collapsed state to localStorage
+  // Persist sidebar state
   useEffect(() => {
     setSidebarCollapsed(shellState.sidebarCollapsed);
   }, [shellState.sidebarCollapsed]);
 
+  // Path Logic Constants
   const isProjectHub = location.pathname === "/" || location.pathname === "";
+  
   const isCaseDetailsPage =
-    /\/projects\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname) ||
-    /\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname);
+    /\/(?:projects\/[^/]+|[^/]+)\/support\/cases\/[^/]+$/.test(location.pathname);
+  
+  const isServiceRequestCreatePage = location.pathname.endsWith(
+    "/service-requests/create",
+  );
+
+  // Resolved: Regex matches details but uses negative lookahead to exclude 'create'
   const isServiceRequestDetailsPage =
-    /\/projects\/[^/]+\/(?:support|operations)\/service-requests\/(?!create$)[^/]+$/.test(
+    /\/(?:projects\/[^/]+|[^/]+)\/(?:support|operations)\/service-requests\/(?!create$)[^/]+$/.test(
       location.pathname,
-    ) ||
-    /\/[^/]+\/(?:support|operations)\/service-requests\/(?!create$)[^/]+$/.test(
-      location.pathname,
-    );
+    ) && !isServiceRequestCreatePage;
+
   const isEngagementDetailsPage = location.pathname.includes("/engagements/");
+
   const isSecurityReportAnalysisDetailsPage =
-    /\/projects\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
-      location.pathname,
-    ) ||
-    /\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
+    /\/(?:projects\/[^/]+|[^/]+)\/security-center\/security-report-analysis\/[^/]+$/.test(
       location.pathname,
     );
+
   const isVulnerabilityDetailsPage =
-    (/\/projects\/[^/]+\/security-center\/[^/]+$/.test(location.pathname) ||
-      /\/[^/]+\/security-center\/[^/]+$/.test(location.pathname)) &&
+    (/\/(?:projects\/[^/]+|[^/]+)\/security-center\/[^/]+$/.test(location.pathname)) &&
     !location.pathname.includes("security-report-analysis");
+
   const isPendingUpdatesPage =
-    /\/projects\/[^/]+\/updates\/pending$/.test(location.pathname) ||
-    /\/[^/]+\/updates\/pending$/.test(location.pathname);
+    /\/(?:projects\/[^/]+|[^/]+)\/updates\/pending$/.test(location.pathname);
+
   const isUpdateLevelDetailsPage =
-    /\/projects\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(
+    /\/(?:projects\/[^/]+|[^/]+)\/updates\/pending\/level\/[^/]+$/.test(
       location.pathname,
-    ) || /\/[^/]+\/updates\/pending\/level\/[^/]+$/.test(location.pathname);
+    );
+
+  // Pages that should have the 'Details' layout (zero padding, etc.)
   const isDetailsStylePage =
     isCaseDetailsPage ||
     isServiceRequestDetailsPage ||
@@ -134,7 +145,6 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
     <IdleTimeoutProvider>
       <GlobalNotificationBanner visible={notificationBannerConfig.visible} />
       <AppShell>
-        {/* Header component. */}
         <AppShell.Navbar>
           <Header
             onToggleSidebar={shellActions.toggleSidebar}
@@ -142,7 +152,6 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
           />
         </AppShell.Navbar>
 
-        {/* Side bar component. */}
         {!isProjectHub && (
           <AppShell.Sidebar>
             <SideBar
@@ -154,7 +163,6 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
           </AppShell.Sidebar>
         )}
 
-        {/* Main content. */}
         <AppShell.Main>
           <FloatingNoveraVisibilityProvider>
             <Box
@@ -231,7 +239,6 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
           </FloatingNoveraVisibilityProvider>
         </AppShell.Main>
 
-        {/* Footer component. */}
         <AppShell.Footer>
           <Footer />
         </AppShell.Footer>

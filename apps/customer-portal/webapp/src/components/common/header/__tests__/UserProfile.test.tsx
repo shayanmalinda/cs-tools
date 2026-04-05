@@ -16,6 +16,7 @@
 
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 import UserProfile from "@components/common/header/UserProfile";
 
 const mockUserDetails = {
@@ -26,38 +27,49 @@ const mockUserDetails = {
   timeZone: "UTC",
 };
 
-// Mock UserMenu and Skeleton from @wso2/oxygen-ui
-vi.mock("@wso2/oxygen-ui", () => ({
-  UserMenu: ({ user }: { user: any }) => (
-    <div data-testid="user-menu">
-      <span data-testid="user-name">{user.name}</span>
-      <span data-testid="user-email">{user.email}</span>
-    </div>
-  ),
-  Skeleton: () => <div data-testid="skeleton" />,
-  colors: {
-    blue: { 700: "#1D4ED8" },
-    purple: { 400: "#A78BFA" },
-  },
+vi.mock("@components/common/header/UserProfileModal", () => ({
+  default: () => null,
 }));
 
-// Mock icons (include TriangleAlert for ErrorIndicator when mock path differs)
+// Mock UserMenu compound components from @wso2/oxygen-ui
+vi.mock("@wso2/oxygen-ui", () => {
+  function Trigger({ name }: { name: string }) {
+    return (
+      <button type="button" data-testid="user-menu-trigger" aria-label="Account">
+        <span data-testid="trigger-name">{name.length === 0 ? "" : name}</span>
+      </button>
+    );
+  }
+  function Header({ name, email }: { name: string; email: string }) {
+    return (
+      <div data-testid="user-menu-header">
+        <span data-testid="header-name">{name}</span>
+        <span data-testid="header-email">{email}</span>
+      </div>
+    );
+  }
+  function UserMenuRoot({ children }: { children: ReactNode }) {
+    return <div data-testid="user-menu">{children}</div>;
+  }
+  const UserMenu = Object.assign(UserMenuRoot, {
+    Trigger,
+    Header,
+    Divider: () => <hr data-testid="user-menu-divider" />,
+    Item: () => null,
+    Logout: () => null,
+  });
+  return {
+    UserMenu,
+    colors: {
+      blue: { 700: "#1D4ED8" },
+      purple: { 400: "#A78BFA" },
+    },
+  };
+});
+
 vi.mock("@wso2/oxygen-ui-icons-react", () => ({
   User: () => <svg data-testid="user-icon" />,
-  Shield: () => <svg data-testid="shield-icon" />,
-  Info: () => <svg data-testid="info-icon" />,
-  Clock: () => <svg data-testid="clock-icon" />,
-  Server: () => <svg data-testid="server-icon" />,
-  CircleAlert: () => <svg data-testid="circle-alert-icon" />,
-  Rocket: () => <svg data-testid="rocket-icon" />,
-  TriangleAlert: () => <svg data-testid="triangle-alert-icon" />,
-}));
-
-// Mock ErrorIndicator (path must match import: @components/common/error-indicator)
-vi.mock("@components/common/error-indicator/ErrorIndicator", () => ({
-  default: ({ entityName }: any) => (
-    <div data-testid="error-indicator">Error: {entityName}</div>
-  ),
+  LogOut: () => <svg data-testid="logout-icon" />,
 }));
 
 // Mock react-router
@@ -73,7 +85,7 @@ vi.mock("@asgardeo/react", () => ({
 
 // Mock useGetUserDetails and generic logger
 const mockUseGetUserDetails = vi.fn();
-vi.mock("@/api/useGetUserDetails", () => ({
+vi.mock("@api/useGetUserDetails", () => ({
   default: () => mockUseGetUserDetails(),
 }));
 
@@ -98,8 +110,9 @@ describe("UserProfile", () => {
     render(<UserProfile />);
 
     const expectedName = `${mockUserDetails.firstName} ${mockUserDetails.lastName}`;
-    expect(screen.getByTestId("user-name")).toHaveTextContent(expectedName);
-    expect(screen.getByTestId("user-email")).toHaveTextContent(
+    expect(screen.getByTestId("trigger-name")).toHaveTextContent(expectedName);
+    expect(screen.getByTestId("header-name")).toHaveTextContent(expectedName);
+    expect(screen.getByTestId("header-email")).toHaveTextContent(
       mockUserDetails.email,
     );
   });
@@ -111,15 +124,43 @@ describe("UserProfile", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("should render skeletons when loading", () => {
+  it("should keep the account menu trigger available while auth is loading", () => {
     mockUseAsgardeo.mockReturnValue({ isSignedIn: true, isLoading: true });
     render(<UserProfile />);
 
-    // Two skeletons expected: name and email
-    expect(screen.getAllByTestId("skeleton")).toHaveLength(2);
+    expect(screen.getByTestId("user-menu-trigger")).toBeInTheDocument();
+    expect(screen.getByTestId("header-name")).toHaveTextContent("Loading…");
   });
 
-  it("should render error indicator when error occurs", () => {
+  it("should keep the account menu trigger available while profile (useGetUserDetails) is loading", () => {
+    mockUseGetUserDetails.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
+    render(<UserProfile />);
+
+    expect(screen.getByTestId("user-menu-trigger")).toBeInTheDocument();
+    expect(screen.getByTestId("header-name")).toHaveTextContent("Loading…");
+  });
+
+  it("should show cached name and email when isError but userDetails data exists", () => {
+    mockUseGetUserDetails.mockReturnValue({
+      data: mockUserDetails,
+      isLoading: false,
+      isError: true,
+      error: new Error("stale"),
+    });
+    render(<UserProfile />);
+
+    const expectedName = `${mockUserDetails.firstName} ${mockUserDetails.lastName}`;
+    expect(screen.getByTestId("header-name")).toHaveTextContent(expectedName);
+    expect(screen.getByTestId("header-email")).toHaveTextContent(
+      mockUserDetails.email,
+    );
+  });
+
+  it("should show Unknown User in the menu header when user details fail to load", () => {
     mockUseGetUserDetails.mockReturnValue({
       data: null,
       isLoading: false,
@@ -128,8 +169,7 @@ describe("UserProfile", () => {
     });
 
     render(<UserProfile />);
-    expect(screen.getByTestId("error-indicator")).toHaveTextContent(
-      "Error: user",
-    );
+    expect(screen.getByTestId("header-name")).toHaveTextContent("Unknown User");
+    expect(screen.getByTestId("header-email")).toHaveTextContent("--");
   });
 });

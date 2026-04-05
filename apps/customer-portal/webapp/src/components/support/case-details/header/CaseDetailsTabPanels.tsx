@@ -108,25 +108,15 @@ export default function CaseDetailsTabPanels({
         );
       }
       return (
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "auto",
-          }}
-        >
-          <CallsPanel
-            projectId={resolvedProjectId}
-            caseId={caseId}
-            isCaseClosed={
-              !!data?.closedOn || data?.status?.label === "Closed"
-            }
-            caseStatusLabel={data?.status?.label}
-            caseSeverityId={data?.severity?.id}
-          />
-        </Box>
+        <CallsPanel
+          projectId={resolvedProjectId}
+          caseId={caseId}
+          isCaseClosed={
+            !!data?.closedOn || data?.status?.label === "Closed"
+          }
+          caseStatusLabel={data?.status?.label}
+          caseSeverityId={data?.severity?.id}
+        />
       );
     }
     case 4:

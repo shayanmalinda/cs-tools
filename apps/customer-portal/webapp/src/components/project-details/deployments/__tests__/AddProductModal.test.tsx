@@ -306,4 +306,51 @@ describe("AddProductModal", () => {
       screen.getByRole("combobox", { name: /Product Name/ }),
     ).not.toHaveTextContent("WSO2 API Manager");
   });
+
+  it("should show a fresh product list when remounted with a new key after close", async () => {
+    const { rerender } = renderWithProviders(
+      <AddProductModal
+        key={0}
+        open={true}
+        deploymentId="dep-1"
+        projectId="proj-1"
+        onClose={mockOnClose}
+      />,
+    );
+
+    const productCombobox = screen.getByRole("combobox", {
+      name: /Product Name/,
+    });
+    fireEvent.mouseDown(productCombobox);
+    fireEvent.click(
+      await screen.findByRole("option", {
+        name: /WSO2 API Manager/,
+        hidden: true,
+      }),
+    );
+    expect(productCombobox).toHaveTextContent(/WSO2 API Manager/);
+
+    rerender(
+      <AddProductModal
+        key={0}
+        open={false}
+        deploymentId="dep-1"
+        projectId="proj-1"
+        onClose={mockOnClose}
+      />,
+    );
+    rerender(
+      <AddProductModal
+        key={1}
+        open={true}
+        deploymentId="dep-1"
+        projectId="proj-1"
+        onClose={mockOnClose}
+      />,
+    );
+
+    expect(
+      screen.getByRole("combobox", { name: /Product Name/ }),
+    ).not.toHaveTextContent("WSO2 API Manager");
+  });
 });
