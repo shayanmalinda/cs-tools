@@ -34,18 +34,26 @@ service class ErrorInterceptor {
     # + err - The error occurred during request processing
     # + ctx - The HTTP request context
     # + return - Bad request response or error
-    remote function interceptResponseError(error err, http:RequestContext ctx) returns http:BadRequest|error {
+    remote function interceptResponseError(error err, http:RequestContext ctx)
+        returns http:BadRequest|http:InternalServerError {
 
         if err is http:PayloadBindingError {
             string customError = "Failed to bind request payload to the expected schema.";
             log:printError(customError, err);
-            return {
+            return <http:BadRequest>{
                 body: {
                     message: customError
                 }
             };
         }
-        return err;
+
+        // Log and handle other errors
+        log:printError("Unexpected error occurred during request processing", err);
+        return <http:InternalServerError>{
+            body: {
+                message: "An unexpected error occurred. Please try again later."
+            }
+        };
     }
 }
 
@@ -140,22 +148,20 @@ service / on new http:Listener(9090) {
     # + req - HTTP request object
     # + payload - Deployment search request payload with filters
     # + return - http:Ok with deployments search results or Error
-    resource function post deployments/search(http:Request req, entity:DeploymentSearchPayload? payload)
+    resource function post deployments/search(http:Request req, entity:DeploymentSearchPayload payload)
         returns http:Ok|HttpErrorResponse {
 
         string|http:HeaderNotFoundError token = req.getHeader(USER_ID_TOKEN);
         if token is http:HeaderNotFoundError {
-            log:printError(string `${ERR_MSG_CS_ENTITY} ${ERR_MSG_INVOKER_HEADER}`);
+            log:printError(string `${ERR_MSG_CUSTOMER_SERVICE} ${ERR_MSG_INVOKER_HEADER}`);
             return <http:Unauthorized>{
                 body: {
-                    message: string `${ERR_MSG_CS_ENTITY} ${ERR_MSG_INVOKER_HEADER}`
+                    message: string `${ERR_MSG_CUSTOMER_SERVICE} ${ERR_MSG_INVOKER_HEADER}`
                 }
             };
         }
 
-        entity:DeploymentSearchPayload searchPayload = payload ?: {};
-
-        entity:DeploymentsResponse|error deployments = entity:searchDeployments(token, searchPayload);
+        entity:DeploymentsResponse|error deployments = entity:searchDeployments(token, payload);
         if deployments is error {
             log:printError("Error while searching deployments", deployments);
             return mapErrorToHttp(deployments);
@@ -173,10 +179,10 @@ service / on new http:Listener(9090) {
 
         string|http:HeaderNotFoundError token = req.getHeader(USER_ID_TOKEN);
         if token is http:HeaderNotFoundError {
-            log:printError(string `${ERR_MSG_CS_ENTITY} ${ERR_MSG_INVOKER_HEADER}`);
+            log:printError(string `${ERR_MSG_CUSTOMER_SERVICE} ${ERR_MSG_INVOKER_HEADER}`);
             return <http:Unauthorized>{
                 body: {
-                    message: string `${ERR_MSG_CS_ENTITY} ${ERR_MSG_INVOKER_HEADER}`
+                    message: string `${ERR_MSG_CUSTOMER_SERVICE} ${ERR_MSG_INVOKER_HEADER}`
                 }
             };
         }
