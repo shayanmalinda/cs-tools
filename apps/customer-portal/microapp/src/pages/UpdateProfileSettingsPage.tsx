@@ -38,6 +38,7 @@ import { useFormik } from "formik";
 import { useNotify } from "../context/snackbar";
 import * as Yup from "yup";
 import { metadata } from "../services/metadata";
+import type { EditMeDto } from "../types";
 
 type UpdateProfileFormValues = {
   phoneNumber: string;
@@ -83,7 +84,17 @@ export default function UpdateProfileSettingsPage() {
     validateOnChange: true,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        await mutation.mutateAsync({ phoneNumber: values.phoneNumber, timeZone: values.timeZone });
+        const payload: Partial<EditMeDto> = {};
+
+        if (values.phoneNumber !== me.phoneNumber) {
+          payload.phoneNumber = values.phoneNumber;
+        }
+
+        if (values.timeZone !== me.timezone) {
+          payload.timeZone = values.timeZone;
+        }
+
+        await mutation.mutateAsync(payload);
       } finally {
         setSubmitting(false);
       }
