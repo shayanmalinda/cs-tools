@@ -32,12 +32,12 @@ service class ErrorInterceptor {
     # Intercepts the response error.
     #
     # + err - The error occurred during request processing
+    # + ctx - The HTTP request context
     # + return - Bad request response or error
-    remote function interceptResponseError(error err) returns http:BadRequest|error {
+    remote function interceptResponseError(error err, http:RequestContext ctx) returns http:BadRequest|error {
 
-        // Handle data-binding errors.
         if err is http:PayloadBindingError {
-            string customError = "Payload binding failed!";
+            string customError = "Failed to bind request payload to the expected schema.";
             log:printError(customError, err);
             return {
                 body: {
@@ -54,6 +54,11 @@ service class ErrorInterceptor {
     id: "integrations/customer-service"
 }
 service / on new http:Listener(9090) {
+
+    # Response error interceptor.
+    #
+    # + return - ErrorInterceptor
+    public function createInterceptors() returns http:Interceptor[] => [new ErrorInterceptor()];
 
     # Initialize the service.
     #
