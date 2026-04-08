@@ -923,7 +923,7 @@ public isolated function mapInstancesResponse(entity:InstancesResponse response)
         let entity:ReferenceTableItem? product = instance.product
         select {
             id: instance.id,
-            instance: instance.instance,
+            key: instance.key,
             createdOn: instance.createdOn,
             updatedOn: instance.updatedOn,
             project: project != () ? {id: project.id, label: project.name} : (),
@@ -934,4 +934,62 @@ public isolated function mapInstancesResponse(entity:InstancesResponse response)
         };
 
     return {instances, totalRecords: response.totalRecords, 'limit: response.'limit, offset: response.offset};
+}
+
+# Map instance metrics response to the desired structure.
+#
+# + response - Instance metrics response from the entity service
+# + return - Mapped instance metrics response
+public isolated function mapInstanceMetrics(entity:InstanceMetricsResponse response)
+    returns types:InstanceMetricsResponse {
+
+    types:InstanceMetric[] metrics = from entity:InstanceMetric metric in response.metrics
+        let entity:ReferenceTableItem? project = metric.project
+        let entity:ReferenceTableItem? deployment = metric.deployment
+        let entity:ReferenceTableItem? product = metric.product
+        let entity:ReferenceTableItem? deployedProduct = metric.deployedProduct
+        select {
+            instanceId: metric.instanceId,
+            instanceKey: metric.instanceKey,
+            project: project != () ? {id: project.id, label: project.name} : (),
+            deployment: deployment != () ? {id: deployment.id, label: deployment.name} : (),
+            product: product != () ? {id: product.id, label: product.name} : (),
+            deployedProduct: deployedProduct != () ? {id: deployedProduct.id, label: deployedProduct.name} : (),
+            dataPoints: metric.dataPoints
+        };
+    return {
+        metrics,
+        totalInstances: response.totalInstances,
+        startDate: response.startDate,
+        endDate: response.endDate
+    };
+}
+
+# Map instance usage response to the desired structure.
+#
+# + response - Instance usage response from the entity service
+# + return - Mapped instance usage response
+public isolated function mapInstanceUsages(entity:InstanceUsageResponse response)
+    returns types:InstanceUsageResponse {
+
+    types:InstanceUsageEntry[] usages = from entity:InstanceUsageEntry usage in response.usages
+        let entity:ReferenceTableItem? project = usage.project
+        let entity:ReferenceTableItem? deployment = usage.deployment
+        let entity:ReferenceTableItem? product = usage.product
+        let entity:ReferenceTableItem? deployedProduct = usage.deployedProduct
+        select {
+            instanceId: usage.instanceId,
+            instanceKey: usage.instanceKey,
+            project: project != () ? {id: project.id, label: project.name} : (),
+            deployment: deployment != () ? {id: deployment.id, label: deployment.name} : (),
+            product: product != () ? {id: product.id, label: product.name} : (),
+            deployedProduct: deployedProduct != () ? {id: deployedProduct.id, label: deployedProduct.name} : (),
+            dailySummaries: usage.dailySummaries
+        };
+    return {
+        usages,
+        totalInstances: response.totalInstances,
+        startDate: response.startDate,
+        endDate: response.endDate
+    };
 }

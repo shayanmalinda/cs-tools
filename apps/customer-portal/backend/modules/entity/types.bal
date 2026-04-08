@@ -1027,8 +1027,8 @@ public type InstanceMetadata record {|
 public type Instance record {|
     # ID
     IdString id;
-    # Instance name
-    string instance;
+    # Key
+    string key;
     # Associated project information
     ReferenceTableItem? project;
     # Associated deployment information
@@ -1054,6 +1054,128 @@ public type InstancesResponse record {|
     int totalRecords;
     *Pagination;
     json...;
+|};
+
+# Payload for fetching instance metrics.
+public type InstanceMetricsPayload record {|
+    # Filter criteria — startDate and endDate are required
+    record {|
+        # Start date
+        Date startDate;
+        # End date
+        Date endDate;
+        # List of project IDs
+        IdString[] projectIds?;
+        # List of deployment IDs
+        IdString[] deploymentIds?;
+        # List of deployed product IDs
+        IdString[] deployedProductIds?;
+    |} filters;
+|};
+
+# A single metric data point for an instance.
+public type InstanceDataPoint record {|
+    # Date of the data point
+    string date;
+    # Created date and time
+    string createdOn;
+    # Core count at this data point
+    int? coreCount;
+    # JDK version at this data point
+    string? jdkVersion;
+    # Number of updates at this data point
+    int? updates;
+    # Deployment-specific metadata
+    map<json>? deploymentMetadata;
+    json...;
+|};
+
+# Per-node metrics entry.
+public type InstanceMetric record {|
+    # ID
+    string instanceId;
+    # Instance key
+    string instanceKey;
+    # Associated project information
+    ReferenceTableItem? project;
+    # Associated deployment information
+    ReferenceTableItem? deployment;
+    # Associated product information
+    ReferenceTableItem? product;
+    # Associated deployed product information
+    ReferenceTableItem? deployedProduct;
+    # Data points ordered newest to oldest; empty if no changes in window
+    InstanceDataPoint[] dataPoints;
+    json...;
+|};
+
+# Metrics response.
+public type InstanceMetricsResponse record {|
+    # List of per-node metric entries
+    InstanceMetric[] metrics;
+    # Total number of nodes
+    int totalInstances;
+    # Start date of the queried range
+    string startDate;
+    # End date of the queried range
+    string endDate;
+|};
+
+# Single daily summary entry for an instance.
+public type InstanceDailySummary record {|
+    # Date of the summary
+    string date;
+    # Pivoted counts keyed by count type (e.g. TOTAL_USERS, TRANSACTION_COUNT)
+    map<int> counts;
+    json...;
+|};
+
+# Per-node usage entry.
+public type InstanceUsageEntry record {|
+    # ID
+    string instanceId;
+    # Instance key
+    string instanceKey;
+    # Associated project information
+    ReferenceTableItem? project;
+    # Associated deployment information
+    ReferenceTableItem? deployment;
+    # Associated product information
+    ReferenceTableItem? product;
+    # Associated deployed product information
+    ReferenceTableItem? deployedProduct;
+    # Daily summaries ordered by date; empty if no rows in the date range
+    InstanceDailySummary[] dailySummaries;
+    json...;
+|};
+
+# Daily usage summary response.
+public type InstanceUsageResponse record {|
+    # List of per-node usage entries
+    InstanceUsageEntry[] usages;
+    # Total number of nodes
+    int totalInstances;
+    # Start date of the queried range
+    string startDate;
+    # End date of the queried range
+    string endDate;
+|};
+
+# Payload for fetching instance usage.
+public type InstanceUsagePayload record {|
+    # Filter criteria
+    record {|
+        # Start date
+        Date startDate;
+        # End date
+        Date endDate;
+        # List of project IDs
+        IdString[] projectIds?;
+        # List of deployment IDs
+        IdString[] deploymentIds?;
+        # List of deployed product IDs
+        IdString[] deployedProductIds?;
+    |} filters;
 |};
 
 # Deployment data.

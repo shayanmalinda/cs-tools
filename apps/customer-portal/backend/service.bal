@@ -52,7 +52,7 @@ service class ErrorInterceptor {
     }
 }
 
-configurable int wsPort = 9091;
+configurable int wsPort = 9095;
 
 http:ListenerConfiguration listenerConf = {
     requestLimits: {
@@ -4765,6 +4765,384 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
         return mapUsageStats(statsResponse);
+    }
+
+    # Search instance metrics for a specific project based on provided filters.
+    #
+    # + id - ID of the project
+    # + payload - Instance metrics search payload containing filter criteria
+    # + return - List of instance metrics matching the criteria or an error response
+    resource function post projects/[entity:IdString id]/instances/metrics/search(http:RequestContext ctx,
+            types:InstanceMetricsPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:InstanceMetricsResponse|error response = entity:searchInstanceMetrics(userInfo.idToken,
+                {
+                    filters: {
+                        projectIds: [id],
+                        startDate: payload.filters.startDate,
+                        endDate: payload.filters.endDate
+                    }
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching instance metrics for the project."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+
+            string customError = "Failed to search instance metrics for the project.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{body: mapInstanceMetrics(response)};
+    }
+
+    # Search instance metrics for a specific deployment based on provided filters.
+    #
+    # + id - ID of the deployment
+    # + payload - Instance metrics search payload containing filter criteria
+    # + return - List of instance metrics matching the criteria or an error response
+    resource function post deployments/[entity:IdString id]/instances/metrics/search(http:RequestContext ctx,
+            types:InstanceMetricsPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:InstanceMetricsResponse|error response = entity:searchInstanceMetrics(userInfo.idToken,
+                {
+                    filters: {
+                        deploymentIds: [id],
+                        startDate: payload.filters.startDate,
+                        endDate: payload.filters.endDate
+                    }
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching instance metrics for a deployment."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+
+            string customError = "Failed to search instance metrics for the deployment.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{body: mapInstanceMetrics(response)};
+    }
+
+    # Search instance metrics for a specific deployed product based on provided filters.
+    #
+    # + id - ID of the deployed product
+    # + payload - Instance metrics search payload containing filter criteria
+    # + return - List of instance metrics matching the criteria or an error response
+    resource function post products/[entity:IdString id]/instances/metrics/search(http:RequestContext ctx,
+            types:InstanceMetricsPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:InstanceMetricsResponse|error response = entity:searchInstanceMetrics(userInfo.idToken,
+                {
+                    filters: {
+                        deployedProductIds: [id],
+                        startDate: payload.filters.startDate,
+                        endDate: payload.filters.endDate
+                    }
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching instance metrics for a deployed product."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+
+            string customError = "Failed to search instance metrics for the deployed product.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{body: mapInstanceMetrics(response)};
+    }
+
+    # Search instance usages for a specific project based on provided filters.
+    #
+    # + id - ID of the project
+    # + payload - Instance metrics search payload containing filter criteria
+    # + return - List of instance metrics matching the criteria or an error response
+    resource function post projects/[entity:IdString id]/instances/usages/search(http:RequestContext ctx,
+            types:InstanceMetricsPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:InstanceUsageResponse|error response = entity:searchInstanceUsage(userInfo.idToken,
+                {
+                    filters: {
+                        projectIds: [id],
+                        startDate: payload.filters.startDate,
+                        endDate: payload.filters.endDate
+                    }
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching instance usage for the project."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+
+            string customError = "Failed to search instance usage for the project.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{body: mapInstanceUsages(response)};
+    }
+
+    # Search instance usages for a specific deployment based on provided filters.
+    #
+    # + id - ID of the deployment
+    # + payload - Instance metrics search payload containing filter criteria
+    # + return - List of instance metrics matching the criteria or an error response
+    resource function post deployments/[entity:IdString id]/instances/usages/search(http:RequestContext ctx,
+            types:InstanceMetricsPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:InstanceUsageResponse|error response = entity:searchInstanceUsage(userInfo.idToken,
+                {
+                    filters: {
+                        deploymentIds: [id],
+                        startDate: payload.filters.startDate,
+                        endDate: payload.filters.endDate
+                    }
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching instance usage for the deployment."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+
+            string customError = "Failed to search instance usage for the deployment.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{body: mapInstanceUsages(response)};
+    }
+
+    # Search instance usages for a specific deployed product based on provided filters.
+    #
+    # + id - ID of the deployed product
+    # + payload - Instance metrics search payload containing filter criteria
+    # + return - List of instance metrics matching the criteria or an error response
+    resource function post products/[entity:IdString id]/instances/usages/search(http:RequestContext ctx,
+            types:InstanceMetricsPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:InstanceUsageResponse|error response = entity:searchInstanceUsage(userInfo.idToken,
+                {
+                    filters: {
+                        deploymentIds: [id],
+                        startDate: payload.filters.startDate,
+                        endDate: payload.filters.endDate
+                    }
+                });
+        if response is error {
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching instance usage for the deployed product."
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+
+            string customError = "Failed to search instance usage for the deployed product.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{body: mapInstanceUsages(response)};
     }
 }
 

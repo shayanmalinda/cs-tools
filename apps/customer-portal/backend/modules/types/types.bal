@@ -655,8 +655,8 @@ public type InstanceSearchPayload record {|
 public type Instance record {|
     # ID
     entity:IdString id;
-    # Instance name
-    string instance;
+    # Key
+    string key;
     # Associated project information
     ReferenceItem? project;
     # Associated deployment information
@@ -1449,4 +1449,75 @@ public type UsageStats record {|
     int deployedProductCount;
     # Instance count associated with the project
     int instanceCount;
+|};
+
+# Payload for fetching instance metrics.
+public type InstanceMetricsPayload record {|
+    # Filter criteria
+    record {|
+        # Start date
+        entity:Date startDate;
+        # End date
+        entity:Date endDate;
+    |} filters;
+|};
+
+# Per-node metrics entry.
+public type InstanceMetric record {|
+    # ID
+    string instanceId;
+    # Instance key
+    string instanceKey;
+    # Associated project information
+    ReferenceItem? project;
+    # Associated deployment information
+    ReferenceItem? deployment;
+    # Associated product information
+    ReferenceItem? product;
+    # Associated deployed product information
+    ReferenceItem? deployedProduct;
+    # Data points ordered newest to oldest; empty if no changes in window
+    entity:InstanceDataPoint[] dataPoints;
+|};
+
+# Metrics response.
+public type InstanceMetricsResponse record {|
+    # List of per-node metric entries
+    InstanceMetric[] metrics;
+    # Total number of nodes
+    int totalInstances;
+    # Start date of the queried range
+    string startDate;
+    # End date of the queried range
+    string endDate;
+|};
+
+# Per-node usage entry.
+public type InstanceUsageEntry record {|
+    # ID
+    string instanceId;
+    # Instance key
+    string instanceKey;
+    # Associated project information
+    ReferenceItem? project;
+    # Associated deployment information
+    ReferenceItem? deployment;
+    # Associated product information
+    ReferenceItem? product;
+    # Associated deployed product information
+    ReferenceItem? deployedProduct;
+    # Daily summaries ordered by date; empty if no rows in the date range
+    entity:InstanceDailySummary[] dailySummaries;
+|};
+
+# Daily usage summary response.
+public type InstanceUsageResponse record {|
+    # List of per-node usage entries
+    InstanceUsageEntry[] usages;
+    # Total number of nodes
+    int totalInstances;
+    # Start date of the queried range
+    string startDate;
+    # End date of the queried range
+    string endDate;
 |};
