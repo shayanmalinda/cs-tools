@@ -56,10 +56,10 @@ export default function MeProvider({ children }: { children: React.ReactNode }) 
 
   if (axios.isAxiosError(meError) || axios.isAxiosError(projectsError)) return <AuthorizationFallback />;
 
+  if (!meData) return <AuthorizationFallback />;
+
   return (
-    <MeContext.Provider
-      value={{ roles: meData?.roles ?? [], isAdmin: meData?.roles.includes(ADMIN_USER_ROLE) ?? false }}
-    >
+    <MeContext.Provider value={{ id: meData.id, roles: meData.roles, isAdmin: meData.roles.includes(ADMIN_USER_ROLE) }}>
       {children}
     </MeContext.Provider>
   );

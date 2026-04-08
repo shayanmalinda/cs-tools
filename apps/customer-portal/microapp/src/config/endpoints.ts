@@ -48,10 +48,10 @@ export const CHANGE_REQUEST_DETAILS_ENDPOINT = (id: string) => `/change-requests
 export const CHANGE_REQUEST_STATS_ENDPOINT = (id: string) => `/projects/${id}/stats/change-requests`;
 export const USER_ACTIONS_ENDPOINT = (id: string, email: string) => `/projects/${id}/contacts/${email}`;
 export const METADATA_ENDPOINT = "/metadata";
-export const NOVERA_WEBSOCKET_INITIALIZATION_ENDPOINT = (userId: string) =>
+export const NOVERA_WEBSOCKET_INITIALIZATION_ENDPOINT = (sessionId: string) =>
   import.meta.env.VITE_BACKEND_URL.replace("https://", "wss://").replace(
     "/v1.0",
-    `/websocket/v1.0/ws?sessionId${userId}`,
+    `/websocket/v1.0/ws?sessionId=${sessionId}`,
   );
 
 export const CHANGE_PASSWORD_URL = "https://wso2.com/user/password";

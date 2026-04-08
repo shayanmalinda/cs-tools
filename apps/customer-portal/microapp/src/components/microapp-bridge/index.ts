@@ -64,7 +64,7 @@ declare global {
   }
 }
 
-export const getAccessToken = (callback: Callback<string>): void => {
+export const getAccessTokenFromBridge = (callback: Callback<string>): void => {
   if (window.nativebridge) {
     window.nativebridge.requestToken();
     window.nativebridge.resolveToken = (token: string) => {

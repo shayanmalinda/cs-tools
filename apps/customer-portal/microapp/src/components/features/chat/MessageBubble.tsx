@@ -30,7 +30,8 @@ export interface ChatMessage {
   blocks: MessageBlock[];
   timestamp?: string;
   animated?: boolean;
-  pending?: boolean;
+  thinking?: boolean | string;
+  onAnimationComplete?: () => void;
 }
 
 export function MessageBubble({
@@ -39,7 +40,8 @@ export function MessageBubble({
   timestamp = "Just Now",
   sx,
   animated = true,
-  pending = false,
+  thinking = false,
+  onAnimationComplete,
 }: ChatMessage & { sx?: SxProps<Theme> }) {
   const you = author === "you";
 
@@ -57,29 +59,32 @@ export function MessageBubble({
             <Box color="primary.main">
               <Sparkle size={pxToRem(18)} />
             </Box>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                fontWeight: "medium",
-                background: "linear-gradient(90deg, #aaa 25%, #fff 50%, #aaa 75%)",
-                backgroundSize: "200% 100%",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                animation: "shimmer 1.5s infinite linear",
-                "@keyframes shimmer": {
-                  from: { backgroundPosition: "200% center" },
-                  to: { backgroundPosition: "-200% center" },
-                },
-                opacity: "80%",
-              }}
-            >
-              Thinking
-            </Typography>
-
-            {/* <Typography variant="subtitle2" color="text.disabled">
-              {timestamp}
-            </Typography> */}
+            {thinking ? (
+              <Typography
+                noWrap
+                variant="subtitle2"
+                sx={{
+                  fontWeight: "medium",
+                  background: "linear-gradient(90deg, #aaa 25%, #fff 50%, #aaa 75%)",
+                  backgroundSize: "200% 100%",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  animation: "shimmer 1.5s infinite linear",
+                  "@keyframes shimmer": {
+                    from: { backgroundPosition: "200% center" },
+                    to: { backgroundPosition: "-200% center" },
+                  },
+                  opacity: "80%",
+                }}
+              >
+                {typeof thinking === "string" ? thinking : "Thinking"}
+              </Typography>
+            ) : (
+              <Typography variant="subtitle2" color="text.disabled">
+                {timestamp}
+              </Typography>
+            )}
           </Stack>
         )}
 
@@ -94,7 +99,12 @@ export function MessageBubble({
                     component="span"
                     sx={{ "& > *": { margin: 0, lineHeight: 1.7 } }}
                   >
-                    <TypewriterText tokens={block.value.split("")} animated={animated} pending={pending} />
+                    <TypewriterText
+                      tokens={block.value.split("")}
+                      animated={animated}
+                      pending={!!thinking}
+                      onAnimationComplete={onAnimationComplete}
+                    />
                   </Typography>
                 );
 

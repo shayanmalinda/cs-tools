@@ -25,20 +25,24 @@ import { projects } from "@src/services/projects";
 import { useProject } from "@context/project";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { chats } from "../services/chats";
-import type { MessageDispatchDto } from "../types/chat.dto";
 import { Pin } from "@wso2/oxygen-ui-icons-react";
+import { NOVERA_WEBSOCKET_INITIALIZATION_ENDPOINT } from "../config/endpoints";
+import { useMe } from "../context/me";
+import type { FinalNoveraResponse, NoveraResponse } from "../types/novera.dto";
+import { getAccessToken, getIdToken } from "../services/auth";
 
 dayjs.extend(relativeTime);
 
 export default function ChatPage() {
   const navigate = useNavigate();
   const { projectId } = useProject();
+  const { id: userId } = useMe();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [comment, setComment] = useState("");
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
+      animated: false,
+      thinking: false,
       author: "assistant",
       blocks: [
         {
@@ -50,34 +54,53 @@ export default function ChatPage() {
     },
   ]);
 
-  const { mutate: createConversation, isPending: isCreatingConversation } = useMutation({
-    ...chats.initiate(projectId!),
-    onSuccess: (response) => {
-      setConversationId(response.conversationId);
-      setMessages((prev) => [
-        ...prev,
-        {
-          author: "assistant",
-          blocks: [{ type: "text", value: response.content }],
-          timestamp: dayjs(response.timestamp).fromNow(),
-        },
-      ]);
-    },
-  });
+  const [activeStreamingMessage, setActiveStreamingMessage] = useState<ChatMessage | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
-  const { mutate: createMessage, isPending: isCreatingMessage } = useMutation({
-    ...chats.send(projectId!, conversationId!),
-    onSuccess: (response) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          author: "assistant",
-          blocks: [{ type: "text", value: response.content }],
-          timestamp: dayjs(response.timestamp).fromNow(),
-        },
-      ]);
-    },
-  });
+  useEffect(() => {
+    let websocket: WebSocket;
+
+    const init = async () => {
+      try {
+        const accessToken = getAccessToken();
+        const idToken = getIdToken();
+
+        websocket = new WebSocket(NOVERA_WEBSOCKET_INITIALIZATION_ENDPOINT(projectId!), [
+          "choreo-oauth2-token",
+          accessToken as string,
+          "cs-customer-portal",
+          idToken as string,
+        ]);
+
+        setWs(websocket);
+
+        websocket.onmessage = (event) => {
+          try {
+            const data: NoveraResponse = JSON.parse(event.data);
+            handleNoveraResponse(data);
+          } catch (error) {
+            console.error("Failed to parse Novera response:", error);
+          }
+        };
+
+        websocket.onerror = (error) => {
+          console.error("WebSocket error observed:", error);
+          websocket.close();
+        };
+      } catch (error) {
+        console.error("Initialization failed", error);
+      }
+    };
+
+    init();
+
+    return () => {
+      if (websocket) {
+        websocket.close();
+      }
+    };
+  }, [projectId]);
 
   const { data: deployments = [] } = useQuery(projects.deployments(projectId!));
 
@@ -107,23 +130,90 @@ export default function ChatPage() {
     };
   }, {});
 
-  const handleSend = () => {
-    if (!comment.trim()) return;
+  const [isWaitingForAnimation, setIsWaitingForAnimation] = useState(false);
+  const [pendingFinalData, setPendingFinalData] = useState<FinalNoveraResponse | null>(null);
+
+  const handleNoveraResponse = (response: NoveraResponse) => {
+    switch (response.type) {
+      case "conversation_created":
+        setConversationId(response.conversationId);
+        break;
+
+      case "thinking_start":
+        setActiveStreamingMessage({
+          author: "assistant",
+          blocks: [{ type: "text", value: "" }],
+          thinking: true,
+          animated: true,
+        });
+        break;
+
+      case "thinking_step":
+        setActiveStreamingMessage((prev) => (prev ? { ...prev, thinking: response.label } : null));
+        break;
+
+      case "token":
+        setActiveStreamingMessage((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            blocks: prev.blocks.map((b) => (b.type === "text" ? { ...b, value: b.value + response.content } : b)),
+          };
+        });
+        break;
+
+      case "thinking_end":
+        setActiveStreamingMessage((prev) => (prev ? { ...prev, thinking: false } : null));
+        break;
+
+      case "final":
+        setIsWaitingForAnimation(true);
+        setPendingFinalData(response);
+        break;
+    }
+  };
+
+  const handleAnimationComplete = () => {
+    if (!isWaitingForAnimation || !activeStreamingMessage || !pendingFinalData) return;
+
+    const finalText = pendingFinalData.payload.message;
 
     setMessages((prev) => [
       ...prev,
       {
-        author: "you",
-        blocks: [{ type: "text", value: comment }],
+        ...activeStreamingMessage,
+        animated: false,
+        thinking: false,
+        blocks: [{ type: "text", value: finalText }],
         timestamp: dayjs().fromNow(),
       },
     ]);
 
-    const payload: Omit<MessageDispatchDto, "region" | "tier"> = { message: comment, envProducts: envProducts };
-    setComment("");
+    setActiveStreamingMessage(null);
+    setPendingFinalData(null);
+    setIsWaitingForAnimation(false);
+  };
 
-    if (conversationId) createMessage(payload);
-    else createConversation(payload);
+  const sendMessage = (message: string) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "user_message",
+          accountId: userId,
+          conversationId: conversationId ?? "",
+          message: message,
+          envProducts,
+        }),
+      );
+    }
+  };
+
+  const handleSend = (message: string) => {
+    if (!message.trim()) return;
+
+    sendMessage(message);
+
+    setComment("");
   };
 
   const handleCreateCase = () => {
@@ -143,7 +233,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, activeStreamingMessage]);
 
   return (
     <>
@@ -161,17 +251,22 @@ export default function ChatPage() {
 
       <Stack mb={20} gap={2}>
         {messages.map((message, index) => (
-          <MessageBubble key={index} {...message} animated={index !== 0 && message.author !== "you"} />
+          <MessageBubble key={index} {...message} />
         ))}
+
+        {activeStreamingMessage && (
+          <MessageBubble {...activeStreamingMessage} onAnimationComplete={handleAnimationComplete} />
+        )}
       </Stack>
       <div ref={bottomRef} />
 
       <StickyCommentBar
-        loading={isCreatingConversation || isCreatingMessage}
+        loading={!!activeStreamingMessage}
+        disabled={ws?.readyState === WebSocket.CLOSED}
         value={comment}
         placeholder="Type your message"
         onChange={setComment}
-        onSend={handleSend}
+        onSend={() => handleSend(comment)}
         topSlot={
           messages.length > 2 && (
             <Stack

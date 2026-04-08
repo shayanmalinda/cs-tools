@@ -6,17 +6,21 @@ interface TypewriterProps {
   tokens: string[];
   pending?: boolean;
   animated?: boolean;
+  onAnimationComplete?: () => void;
 }
 
-export function TypewriterText({ tokens, pending = false, animated = true }: TypewriterProps) {
+export function TypewriterText({ tokens, pending = false, animated = true, onAnimationComplete }: TypewriterProps) {
   const fullText = tokens.join("");
   const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
-    if (cursor >= fullText.length) return;
+    if (cursor >= fullText.length) {
+      if (animated) onAnimationComplete?.();
+      return;
+    }
     const t = setTimeout(() => setCursor((c) => c + 1), 50);
     return () => clearTimeout(t);
-  }, [cursor, fullText, animated]);
+  }, [cursor, fullText, animated, onAnimationComplete]);
 
   return (
     <>

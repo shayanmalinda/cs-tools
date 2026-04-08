@@ -24,6 +24,7 @@ interface StickyCommentBarProps {
   placeholder?: string;
   topSlot?: ReactNode;
   loading?: boolean;
+  disabled?: boolean;
 
   onChange: (value: string) => void;
   onSend: () => void;
@@ -34,6 +35,7 @@ export function StickyCommentBar({
   placeholder,
   topSlot,
   loading = false,
+  disabled = false,
   onChange,
   onSend,
 }: StickyCommentBarProps) {
@@ -73,10 +75,10 @@ export function StickyCommentBar({
           sx={{ alignSelf: "center" }}
           onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={loading}
+          disabled={loading || disabled}
           fullWidth
         />
-        <IconButton color="primary" onClick={send} disabled={!hasContent || loading}>
+        <IconButton color="primary" onClick={send} disabled={!hasContent || loading || disabled}>
           {loading ? (
             <CircularProgress size={20} color="primary" />
           ) : (

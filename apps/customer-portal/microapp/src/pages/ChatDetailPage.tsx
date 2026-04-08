@@ -19,7 +19,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Grid, Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
 import { StatusChip } from "@components/features/support";
-import { InfoField, OverlineSlot, StickyCommentBar } from "@components/features/detail";
+import { InfoField, OverlineSlot } from "@components/features/detail";
 import {
   ConversationFeedback,
   MessageBubble,
@@ -29,73 +29,20 @@ import {
 import { useLayout } from "@context/layout";
 import { SectionCard } from "@components/shared";
 import { useParams } from "react-router-dom";
-import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { chats } from "@src/services/chats";
-import { useProject } from "../context/project";
-import type { MessageDispatchDto } from "../types/chat.dto";
-import { projects } from "../services/projects";
 
 dayjs.extend(relativeTime);
 
 export default function ChatDetailPage() {
   const layout = useLayout();
-  const [comment, setComment] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const { id } = useParams();
-  const { projectId } = useProject();
   const { data } = useQuery(chats.get(id!));
   const { data: comments, isLoading: isCommentsLoading } = useQuery(chats.comments(id!));
 
-  const { mutate: createMessage, isPending: isCreatingMessage } = useMutation({
-    ...chats.send(projectId!, id!),
-    onSuccess: (response) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          author: "assistant",
-          blocks: [{ type: "text", value: response.content }],
-          timestamp: dayjs(response.timestamp).fromNow(),
-        },
-      ]);
-    },
-  });
-
-  const { data: deployments = [] } = useQuery(projects.deployments(projectId!));
-
-  const productQueries = useQueries({
-    queries: deployments.map((deployment) => ({
-      ...projects.products(deployment.id),
-      enabled: !!deployment.id,
-    })),
-  });
-
-  const envProducts = deployments.reduce((acc, deployment, index) => {
-    const products = productQueries[index]?.data ?? [];
-    const productNames = products.map((p) => p.name);
-
-    return {
-      ...acc,
-      [deployment.name]: productNames,
-    };
-  }, {});
-
-  const handleSend = () => {
-    if (!comment.trim()) return;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        author: "you",
-        blocks: [{ type: "text", value: comment }],
-        timestamp: dayjs().fromNow(),
-      },
-    ]);
-
-    const payload: Omit<MessageDispatchDto, "region" | "tier"> = { message: comment, envProducts: envProducts };
-    createMessage(payload);
-    setComment("");
-  };
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMessages(
@@ -105,6 +52,8 @@ export default function ChatDetailPage() {
         timestamp: dayjs(comment.createdOn).fromNow(),
       })) || [],
     );
+
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments]);
 
   const ref = useRef<HTMLSpanElement>(null);
@@ -179,20 +128,20 @@ export default function ChatDetailPage() {
           ) : (
             <Stack gap={2} mt={1}>
               {messages.map((message, index) => (
-                <MessageBubble key={index} {...message} sx={{ bgcolor: "background.default" }} />
+                <MessageBubble
+                  key={index}
+                  {...message}
+                  sx={{ bgcolor: "background.default" }}
+                  thinking={false}
+                  animated={false}
+                />
               ))}
             </Stack>
           )}
         </SectionCard>
         <ConversationFeedback />
       </Stack>
-      <StickyCommentBar
-        loading={isCreatingMessage}
-        placeholder="Continue with the chat"
-        value={comment}
-        onChange={setComment}
-        onSend={handleSend}
-      />
+      <div ref={bottomRef} />
     </>
   );
 }
