@@ -17,15 +17,15 @@
 import { useProject } from "@root/src/context/project";
 import { Fab as MuiFab, useTheme } from "@wso2/oxygen-ui";
 import { MessageSquareIcon } from "@wso2/oxygen-ui-icons-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export function Fab() {
+  const navigate = useNavigate();
   const theme = useTheme();
   const { noveraEnabled } = useProject();
 
   return (
     <MuiFab
-      component={Link}
       role="link"
       size="medium"
       variant="circular"
@@ -36,7 +36,10 @@ export function Fab() {
         right: 10,
         bottom: "calc(var(--tab-bar-height) + 60px)",
       }}
-      to={noveraEnabled ? "/chat" : "/create"}
+      onClick={(event) => {
+        event.preventDefault();
+        navigate(noveraEnabled ? "/chat" : "/create");
+      }}
     >
       <MessageSquareIcon fill={theme.palette.primary.contrastText} />
     </MuiFab>

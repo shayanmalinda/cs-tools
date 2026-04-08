@@ -131,7 +131,7 @@ export default function ChatPage() {
   }, {});
 
   const [isWaitingForAnimation, setIsWaitingForAnimation] = useState(false);
-  const [pendingFinalData, setPendingFinalData] = useState<FinalNoveraResponse | null>(null);
+  const [pendingFinalData, setPendingFinalData] = useState<NoveraResponse | null>(null);
 
   const handleNoveraResponse = (response: NoveraResponse) => {
     switch (response.type) {
@@ -162,36 +162,30 @@ export default function ChatPage() {
         });
         break;
 
-      case "thinking_end":
-        setActiveStreamingMessage((prev) => (prev ? { ...prev, thinking: false } : null));
-        break;
-
       case "final":
         setIsWaitingForAnimation(true);
         setPendingFinalData(response);
+
         break;
     }
   };
 
   const handleAnimationComplete = () => {
-    if (!isWaitingForAnimation || !activeStreamingMessage || !pendingFinalData) return;
-
-    const finalText = pendingFinalData.payload.message;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        ...activeStreamingMessage,
-        animated: false,
-        thinking: false,
-        blocks: [{ type: "text", value: finalText }],
-        timestamp: dayjs().fromNow(),
-      },
-    ]);
-
-    setActiveStreamingMessage(null);
-    setPendingFinalData(null);
-    setIsWaitingForAnimation(false);
+    if (isWaitingForAnimation && activeStreamingMessage && pendingFinalData) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          animated: false,
+          thinking: false,
+          author: "assistant",
+          blocks: [{ type: "text", value: (pendingFinalData as FinalNoveraResponse).payload.message }],
+          timestamp: dayjs().fromNow(),
+        },
+      ]);
+      setActiveStreamingMessage(null);
+      setIsWaitingForAnimation(false);
+      setPendingFinalData(null);
+    }
   };
 
   const sendMessage = (message: string) => {
@@ -208,12 +202,23 @@ export default function ChatPage() {
     }
   };
 
-  const handleSend = (message: string) => {
-    if (!message.trim()) return;
+  const handleSend = () => {
+    if (!comment.trim()) return;
 
-    sendMessage(message);
+    setMessages((prev) => [
+      ...prev,
+      {
+        animated: false,
+        thinking: false,
+        author: "you",
+        blocks: [{ type: "text", value: comment }],
+        timestamp: dayjs().fromNow(),
+      },
+    ]);
 
     setComment("");
+
+    sendMessage(comment);
   };
 
   const handleCreateCase = () => {
@@ -266,7 +271,7 @@ export default function ChatPage() {
         value={comment}
         placeholder="Type your message"
         onChange={setComment}
-        onSend={() => handleSend(comment)}
+        onSend={handleSend}
         topSlot={
           messages.length > 2 && (
             <Stack
