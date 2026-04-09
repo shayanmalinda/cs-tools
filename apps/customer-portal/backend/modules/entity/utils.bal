@@ -89,13 +89,10 @@ public isolated function validateCallRequestUpdatePayload(CallRequestUpdatePaylo
     boolean hasUtcTimes = utcTimes !is () && utcTimes.length() > 0;
 
     if stateKey == PENDING_ON_WSO2 {
-        if !hasUtcTimes {
-            return "UTC times should be provided when the status is Pending on WSO2.";
+        if !hasUtcTimes && durationInMinutes is () {
+            return "Either UTC times or duration should be provided when the status is Pending on WSO2.";
         }
-        if durationInMinutes is () {
-            return "Duration is required when the status is Pending on WSO2.";
-        }
-        if durationInMinutes <= 0 {
+        if durationInMinutes is int && durationInMinutes <= 0 {
             return "Duration should be greater than 0.";
         }
         if cancellationReason !is () {
