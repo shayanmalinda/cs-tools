@@ -96,15 +96,15 @@ public isolated function validateCallRequestUpdatePayload(CallRequestUpdatePaylo
             return "Cancellation reason should not be provided when the status is Pending on WSO2.";
         }
     } else if stateKey == CUSTOMER_REJECTED {
-        if utcTimes !is () {
-            return "UTC times should not be provided when the status is Customer Rejected.";
+        if utcTimes !is () || durationInMinutes !is () {
+            return "UTC times or duration should not be provided when the status is Customer Rejected.";
         }
         if cancellationReason !is () {
             return "Cancellation reason should not be provided when the status is Customer Rejected.";
         }
     } else if stateKey == CANCELED {
-        if utcTimes !is () {
-            return "UTC times should not be provided when the status is Canceled.";
+        if utcTimes !is () || durationInMinutes !is () {
+            return "UTC times or duration should not be provided when the status is Canceled.";
         }
         if cancellationReason is () || cancellationReason.trim().length() == 0 {
             return "Cancellation reason is required when the status is Canceled.";
