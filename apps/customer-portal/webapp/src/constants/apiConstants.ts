@@ -58,6 +58,16 @@ export const ApiQueryKeys = {
   REGISTRY_TOKENS_SEARCH: "registry-tokens-search",
   INTEGRATION_USERS: "integration-users",
   METADATA: "metadata",
+  PROJECT_USAGE_STATS: "project-usage-stats",
+  DEPLOYMENT_INSTANCES_SEARCH: "deployment-instances-search",
+  DEPLOYED_PRODUCT_INSTANCES_SEARCH: "deployed-product-instances-search",
+  PROJECT_INSTANCES_SEARCH: "project-instances-search",
+  PROJECT_INSTANCE_USAGES: "project-instance-usages",
+  DEPLOYED_PRODUCT_INSTANCE_USAGES: "deployed-product-instance-usages",
+  DEPLOYMENT_INSTANCE_USAGES: "deployment-instance-usages",
+  PROJECT_INSTANCE_METRICS: "project-instance-metrics",
+  DEPLOYMENT_INSTANCE_METRICS: "deployment-instance-metrics",
+  DEPLOYED_PRODUCT_INSTANCE_METRICS: "deployed-product-instance-metrics",
 } as const;
 
 // Constants for API-related mutation keys.

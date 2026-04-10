@@ -1240,3 +1240,115 @@ export interface DeploymentLicense {
   subscriptionData: SubscriptionData;
   signature: string;
 }
+
+// Response for GET /projects/:projectId/stats/usage.
+export interface UsageStatsResponse {
+  deploymentCount: number;
+  deployedProductCount: number;
+  instanceCount: number;
+}
+
+// Reference item used in instance responses.
+export interface InstanceReferenceItem {
+  id: string;
+  label: string;
+}
+
+// Deployment metadata within instance metadata.
+export interface InstanceDeploymentMetadata {
+  os?: string;
+  osVersion?: string;
+  osArchitecture?: string;
+  jdkVersion?: string;
+  jdkVendor?: string;
+  updateLevel?: string;
+  numberOfCores?: string;
+}
+
+// Instance metadata nested inside an InstanceItem.
+export interface InstanceMetadata {
+  id: string;
+  coreCount: number | null;
+  updates: number | null;
+  jdkVersion: string | null;
+  deploymentMetadata: InstanceDeploymentMetadata | null;
+  createdOn: string;
+  updatedOn: string;
+  customCreatedOn: string | null;
+  customUpdatedOn: string | null;
+}
+
+// Single instance object from POST .../instances/search.
+export interface InstanceItem {
+  id: string;
+  key: string;
+  project: InstanceReferenceItem | null;
+  deployment: InstanceReferenceItem | null;
+  product: InstanceReferenceItem | null;
+  deployedProduct: InstanceReferenceItem | null;
+  createdOn: string;
+  updatedOn: string;
+  metadata: InstanceMetadata | null;
+}
+
+// Response for POST .../instances/search.
+export interface InstancesResponse {
+  instances: InstanceItem[];
+  totalRecords: number;
+  offset: number;
+  limit: number;
+}
+
+// Single period summary entry within an instance usage.
+export interface InstancePeriodSummary {
+  period: string;
+  counts: Record<string, number>;
+}
+
+// Per-instance entry in an instance usage response.
+export interface InstanceUsageEntry {
+  instanceId: string;
+  instanceKey: string;
+  project: InstanceReferenceItem | null;
+  deployment: InstanceReferenceItem | null;
+  product: InstanceReferenceItem | null;
+  deployedProduct: InstanceReferenceItem | null;
+  periodSummaries: InstancePeriodSummary[];
+}
+
+// Response for POST .../instances/usages/search.
+export interface InstanceUsageResponse {
+  usages: InstanceUsageEntry[];
+  totalInstances: number;
+  startDate: string;
+  endDate: string;
+}
+
+// Single data point within an instance metric entry.
+export interface InstanceMetricDataPoint {
+  date: string;
+  createdOn: string;
+  coreCount: number | null;
+  jdkVersion: string | null;
+  updates: number | null;
+  deploymentMetadata: InstanceDeploymentMetadata | null;
+}
+
+// Per-instance entry in an instance metrics response.
+export interface InstanceMetricEntry {
+  instanceId: string;
+  instanceKey: string;
+  project: InstanceReferenceItem | null;
+  deployment: InstanceReferenceItem | null;
+  product: InstanceReferenceItem | null;
+  deployedProduct: InstanceReferenceItem | null;
+  dataPoints: InstanceMetricDataPoint[];
+}
+
+// Response for POST .../instances/metrics/search.
+export interface InstanceMetricsResponse {
+  metrics: InstanceMetricEntry[];
+  totalInstances: number;
+  startDate: string;
+  endDate: string;
+}

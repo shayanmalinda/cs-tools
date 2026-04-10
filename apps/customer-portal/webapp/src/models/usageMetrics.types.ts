@@ -17,8 +17,8 @@
 /** Preset time range for usage charts (placeholder until API exists). */
 export type UsageTimeRangePreset = "3m" | "6m" | "12m" | "custom";
 
-/** Environment bucket for product-level usage. */
-export type UsageEnvironmentKind = "production" | "test" | "development";
+/** Environment bucket identifier — the deployment type.id from the API (e.g. "1", "2", "5"). */
+export type UsageEnvironmentKind = string;
 
 /** Single point for Recharts / LineChart x-axis rows. */
 export interface UsageTrendRow {
@@ -56,7 +56,6 @@ export interface UsageEnvironmentBreakdownRow {
   products: UsageOverviewProductCard[];
 }
 
-/** Aggregated metric card on the overview tab. */
 export interface UsageAggregatedMetricDefinition {
   id: string;
   title: string;

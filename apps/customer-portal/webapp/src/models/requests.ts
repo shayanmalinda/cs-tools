@@ -312,3 +312,20 @@ export interface CreateRegistryTokenRequest {
   tokenType: "User" | "Service";
   createdFor?: string;
 }
+
+// Request body for POST .../instances/search.
+export interface InstanceSearchRequest {
+  filters?: {
+    startDate?: string;
+    endDate?: string;
+  };
+  pagination?: PaginationRequest;
+}
+
+// Request body for POST .../instances/usages/search and POST .../instances/metrics/search.
+export interface InstanceMetricsRequest {
+  filters: {
+    startDate: string;
+    endDate: string;
+  };
+}
