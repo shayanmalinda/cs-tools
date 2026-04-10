@@ -134,6 +134,7 @@ export function filterDeploymentsForCaseCreation<
   deployments: T[] | undefined,
   projectTypeLabel: string | null | undefined,
 ): T[] {
+  if (projectTypeLabel === undefined) return [];
   const list = deployments ?? [];
   if (!shouldRestrictToPrimaryProductionDeployments(projectTypeLabel)) {
     return list;
