@@ -657,6 +657,8 @@ public type Instance record {|
     entity:IdString id;
     # Key
     string key;
+    # Instance name
+    string instance;
     # Associated project information
     ReferenceItem? project;
     # Associated deployment information
