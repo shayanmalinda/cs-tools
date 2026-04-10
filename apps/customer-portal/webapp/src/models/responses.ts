@@ -602,6 +602,7 @@ export interface CaseMetadataResponse {
 // Chat history list item (support chat session summary).
 export interface ChatHistoryItem {
   chatId: string;
+  chatNumber?: string;
   title: string;
   startedTime: string;
   messages: number;
