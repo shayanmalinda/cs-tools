@@ -31,6 +31,7 @@ import useGetProjectDetails from "@api/useGetProjectDetails";
 import { useAllDeploymentProducts } from "@hooks/useAllDeploymentProducts";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { buildEnvProducts } from "@utils/caseCreation";
+import { filterDeploymentsForCaseCreation } from "@utils/subscriptionUtils";
 import { htmlToPlainText } from "@utils/richTextEditor";
 import type { ChatNavState } from "@/models/chatTypes";
 
@@ -52,8 +53,17 @@ export default function DescribeIssuePage(): JSX.Element {
   const [value, setValue] = useState("");
   const [isLoadingAfterClick, setIsLoadingAfterClick] = useState(false);
 
-  const { data: projectDeployments } = usePostProjectDeploymentsSearchAll(
+  const { data: allProjectDeployments } = usePostProjectDeploymentsSearchAll(
     projectId || "",
+  );
+  const { data: projectDetails } = useGetProjectDetails(projectId || "");
+  const projectDeployments = useMemo(
+    () =>
+      filterDeploymentsForCaseCreation(
+        allProjectDeployments,
+        projectDetails?.type?.label,
+      ),
+    [allProjectDeployments, projectDetails?.type?.label],
   );
   const { productsByDeploymentId } =
     useAllDeploymentProducts(projectDeployments);
@@ -61,7 +71,6 @@ export default function DescribeIssuePage(): JSX.Element {
     () => buildEnvProducts(productsByDeploymentId, projectDeployments),
     [productsByDeploymentId, projectDeployments],
   );
-  const { data: projectDetails } = useGetProjectDetails(projectId || "");
 
   const isSubmitting = false;
   const submittingRef = useRef(false);
