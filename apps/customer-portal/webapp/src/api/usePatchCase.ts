@@ -90,6 +90,20 @@ export function usePatchCase(
       queryClient.invalidateQueries({
         queryKey: [ApiQueryKeys.CASE_DETAILS, projectId, caseId],
       });
+      queryClient.invalidateQueries({
+        queryKey: [ApiQueryKeys.CASES_STATS, projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [ApiQueryKeys.PROJECT_CASES],
+      });
+      void queryClient.refetchQueries({
+        queryKey: [ApiQueryKeys.CASES_STATS, projectId],
+        type: "active",
+      });
+      void queryClient.refetchQueries({
+        queryKey: [ApiQueryKeys.PROJECT_CASES],
+        type: "active",
+      });
     },
   });
 }
