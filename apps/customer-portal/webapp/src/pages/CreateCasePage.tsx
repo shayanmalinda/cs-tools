@@ -73,7 +73,11 @@ import {
   CaseType,
 } from "@constants/supportConstants";
 import { SecurityTab } from "@constants/securityConstants";
-import { shouldExcludeS0 } from "@utils/subscriptionUtils";
+import {
+  filterDeploymentsForCaseCreation,
+  shouldExcludeS0,
+  shouldRestrictToPrimaryProductionDeployments,
+} from "@utils/subscriptionUtils";
 import { escapeHtml, htmlToPlainText } from "@utils/richTextEditor";
 import UploadAttachmentModal from "@components/support/case-details/attachments-tab/UploadAttachmentModal";
 import { ROUTE_PREVIOUS_PAGE } from "@/constants/commonConstants";
@@ -164,9 +168,20 @@ export default function CreateCasePage(): JSX.Element {
     pageSize: 10,
     enabled: !!projectId,
   });
-  const projectDeployments = useMemo(
+  const allProjectDeployments = useMemo(
     () => deploymentsQuery.data?.pages.flatMap((p) => p.deployments ?? []) ?? [],
     [deploymentsQuery.data],
+  );
+  const isPrimaryProductionOnly = shouldRestrictToPrimaryProductionDeployments(
+    projectDetails?.type?.label,
+  );
+  const projectDeployments = useMemo(
+    () =>
+      filterDeploymentsForCaseCreation(
+        allProjectDeployments,
+        projectDetails?.type?.label,
+      ),
+    [allProjectDeployments, projectDetails?.type?.label],
   );
   const isDeploymentsLoading = deploymentsQuery.isLoading;
   const baseDeploymentOptions = getBaseDeploymentOptions(projectDeployments);
@@ -358,6 +373,18 @@ export default function CreateCasePage(): JSX.Element {
     setDeployment(value);
     setProduct("");
   }, []);
+
+  // For Cloud Support / Cloud Evaluation Support: auto-pick the first primary
+  // production deployment and keep it locked to that value.
+  useEffect(() => {
+    if (!isPrimaryProductionOnly) return;
+    if (!baseDeploymentOptions.length) return;
+    const first = baseDeploymentOptions[0];
+    if (!first) return;
+    setDeployment((prev) =>
+      baseDeploymentOptions.includes(prev) ? prev : first,
+    );
+  }, [isPrimaryProductionOnly, baseDeploymentOptions]);
 
   const handleProductChange = useCallback((value: string) => {
     setProduct(value);
@@ -854,6 +881,7 @@ export default function CreateCasePage(): JSX.Element {
             isRelatedCaseMode={noAiMode}
             extraProductOptions={extraProductOptions}
             isDeploymentDisabled={!!relatedCase}
+            hideDeploymentField={isPrimaryProductionOnly}
             onLoadMoreDeployments={() => {
               if (deploymentsQuery.hasNextPage && !deploymentsQuery.isFetchingNextPage) {
                 void deploymentsQuery.fetchNextPage();
