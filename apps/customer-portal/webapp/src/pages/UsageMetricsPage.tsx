@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Skeleton, Typography } from "@wso2/oxygen-ui";
+import { Box, Skeleton } from "@wso2/oxygen-ui";
 import { useEffect, type JSX } from "react";
 import { useNavigate, useParams } from "react-router";
 import useGetMetadata from "@api/useGetMetadata";
@@ -29,9 +29,8 @@ import UsageAndMetricsTabContent from "@components/project-details/usage-metrics
 export default function UsageMetricsPage(): JSX.Element | null {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
-  const { data: portalMetadata, isLoading } = useGetMetadata();
-  const usageMetricsEnabled =
-    portalMetadata?.featureFlags?.usageMetricsEnabled === true;
+  const { isLoading } = useGetMetadata();
+  const usageMetricsEnabled = true;
 
   useEffect(() => {
     if (isLoading) {
@@ -48,9 +47,16 @@ export default function UsageMetricsPage(): JSX.Element | null {
 
   if (isLoading) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Skeleton variant="text" width={280} height={40} />
-        <Skeleton variant="rounded" height={240} sx={{ mt: 2 }} />
+      <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Skeleton variant="rounded" width={280} height={32} />
+        </Box>
+        <Box sx={{ display: "flex", gap: 3, pb: 1.5 }}>
+          <Skeleton variant="rounded" width={90} height={28} />
+          <Skeleton variant="rounded" width={120} height={28} />
+          <Skeleton variant="rounded" width={100} height={28} />
+        </Box>
+        <Skeleton variant="rounded" height="70vh" />
       </Box>
     );
   }
@@ -61,9 +67,6 @@ export default function UsageMetricsPage(): JSX.Element | null {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
-        Usage & Metrics
-      </Typography>
       <UsageAndMetricsTabContent />
     </Box>
   );
