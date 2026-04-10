@@ -1542,6 +1542,12 @@ paths:
       summary: Get products.
       operationId: getProducts
       parameters:
+      - name: class
+        in: query
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/ProductClass'
       - name: offset
         in: query
         schema:
@@ -4343,6 +4349,11 @@ components:
           type: string
           description: Product class (Product Model)
       description: Product data.
+    ProductClass:
+      type: string
+      description: Valid product class values.
+      enum:
+      - product_model
     ProductUpdate:
       required:
       - date
