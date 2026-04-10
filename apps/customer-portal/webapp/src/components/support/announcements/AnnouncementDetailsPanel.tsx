@@ -29,6 +29,7 @@ import DOMPurify from "dompurify";
 import { ArrowLeft, Calendar, FileText } from "@wso2/oxygen-ui-icons-react";
 import type { JSX, ReactElement } from "react";
 import type { CaseDetails } from "@models/responses";
+import CaseDetailsActionRow from "@components/support/case-details/header/CaseDetailsActionRow";
 import {
   formatUtcToLocalNoTimezone,
   getStatusColor,
@@ -42,6 +43,8 @@ export interface AnnouncementDetailsPanelProps {
   isLoading: boolean;
   isError: boolean;
   onBack: () => void;
+  projectId?: string;
+  caseId?: string;
 }
 
 /**
@@ -83,9 +86,9 @@ function normalizeAnnouncementDescriptionHtml(html: string): string {
 }
 
 /**
- * AnnouncementDetailsPanel displays announcement details: Back, title, date, issue type, Description.
+ * AnnouncementDetailsPanel displays announcement details: Back, title, date, issue type, state management buttons, and description.
  *
- * @param {AnnouncementDetailsPanelProps} props - Data, loading/error state, onBack.
+ * @param {AnnouncementDetailsPanelProps} props - Data, loading/error state, onBack, projectId, caseId.
  * @returns {JSX.Element} The rendered announcement details panel.
  */
 export default function AnnouncementDetailsPanel({
@@ -93,6 +96,8 @@ export default function AnnouncementDetailsPanel({
   isLoading,
   isError,
   onBack,
+  projectId = "",
+  caseId = "",
 }: AnnouncementDetailsPanelProps): JSX.Element {
   const theme = useTheme();
 
@@ -247,7 +252,17 @@ export default function AnnouncementDetailsPanel({
           )}
         </Stack>
       </Paper>
-
+      {data && data.status?.label?.toLowerCase() !== "closed" && (
+        <CaseDetailsActionRow
+          projectId={projectId}
+          caseId={caseId}
+          statusLabel={data.status?.label}
+          assignedEngineer={data.assignedEngineer}
+          engineerInitials={data.assignedEngineer?.name?.split(" ")?.[0]?.[0] ?? ""}
+          closedOn={data.closedOn}
+          restrictToCloseOnly={true}
+        />
+      )}
       <Paper
         variant="outlined"
         elevation={0}

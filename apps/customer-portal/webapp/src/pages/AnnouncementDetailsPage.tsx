@@ -78,6 +78,8 @@ export default function AnnouncementDetailsPage(): JSX.Element {
       data={data}
       isLoading={showSkeletons}
       isError={isError}
+      caseId={caseId || ""}
+      projectId={projectId || ""}
       onBack={handleBack}
     />
   );
