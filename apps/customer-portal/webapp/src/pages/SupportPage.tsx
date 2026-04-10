@@ -99,6 +99,7 @@ export default function SupportPage(): JSX.Element {
     []
   ).map((c) => ({
     chatId: c.id,
+    chatNumber: c.number,
     title: c.initialMessage || c.number,
     startedTime: c.createdOn,
     messages: c.messageCount,
@@ -203,7 +204,9 @@ export default function SupportPage(): JSX.Element {
                       }
 
                       if (action === "resume") {
-                        navigate(`/projects/${projectId}/support/chat/${chatId}`);
+                        navigate(`/projects/${projectId}/support/chat/${chatId}`, {
+                          state: { chatNumber: summary.chatNumber },
+                        });
                       } else {
                         navigate(
                           `/projects/${projectId}/support/conversations/${chatId}`,

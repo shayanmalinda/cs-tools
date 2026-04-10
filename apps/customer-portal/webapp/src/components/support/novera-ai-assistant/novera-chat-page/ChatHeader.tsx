@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Button } from "@wso2/oxygen-ui";
+import { Box, Button, Typography } from "@wso2/oxygen-ui";
 import { ArrowLeft } from "@wso2/oxygen-ui-icons-react";
 import { type JSX } from "react";
 
@@ -22,6 +22,7 @@ interface ChatHeaderProps {
   onBack: () => void;
   onCreateCase?: () => void;
   isCreateCaseLoading?: boolean;
+  chatNumber?: string;
 }
 
 /**
@@ -31,23 +32,37 @@ interface ChatHeaderProps {
  *
  * @returns The ChatHeader JSX element.
  */
-export default function ChatHeader({ onBack }: ChatHeaderProps): JSX.Element {
+export default function ChatHeader({
+  onBack,
+  chatNumber,
+}: ChatHeaderProps): JSX.Element {
   return (
-    <>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        mx: 3,
+        mb: 1.5,
+      }}
+    >
       <Button
         startIcon={<ArrowLeft size={18} />}
         onClick={onBack}
         sx={{
-          mb: 1.5,
           textTransform: "none",
           alignSelf: "flex-start",
           flexShrink: 0,
-          mx: 3,
         }}
         variant="text"
       >
         Back
       </Button>
-    </>
+      {chatNumber && (
+        <Typography variant="body2" color="text.secondary">
+          Chat {chatNumber}
+        </Typography>
+      )}
+    </Box>
   );
 }

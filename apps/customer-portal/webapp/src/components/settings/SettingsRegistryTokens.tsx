@@ -291,23 +291,27 @@ export default function SettingsRegistryTokens({
           const Icon = card.icon;
           return (
             <Grid key={card.label} size={{ xs: 12, sm: 4 }}>
-              {isTableLoading ? (
-                <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 1 }} />
-              ) : error ? (
-                <StatCard
-                  label={card.label}
-                  value={DASH}
-                  icon={<Icon />}
-                  iconColor={card.iconColor as any}
-                />
-              ) : (
-                <StatCard
-                  label={card.label}
-                  value={card.value.toString()}
-                  icon={<Icon />}
-                  iconColor={card.iconColor as any}
-                />
-              )}
+              <StatCard
+                label={card.label}
+                value={
+                  isTableLoading ? (
+                    ((
+                      <Skeleton
+                        data-testid="Skeleton"
+                        variant="rounded"
+                        width={60}
+                        height={24}
+                      />
+                    ) as any)
+                  ) : error ? (
+                    DASH
+                  ) : (
+                    card.value.toString()
+                  )
+                }
+                icon={<Icon />}
+                iconColor={card.iconColor as any}
+              />
             </Grid>
           );
         })}

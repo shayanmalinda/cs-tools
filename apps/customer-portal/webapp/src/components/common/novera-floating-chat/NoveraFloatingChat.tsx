@@ -322,7 +322,10 @@ export default function NoveraFloatingChat(): JSX.Element | null {
     });
   }, [messages]);
 
-  if (!projectId || !hasAgent) {
+  const isFloatingNoveraEnabled =
+    window.config?.CUSTOMER_PORTAL_FLOATING_NOVERA_ENABLED !== false;
+
+  if (!isFloatingNoveraEnabled || !projectId || !hasAgent) {
     return null;
   }
 

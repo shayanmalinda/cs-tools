@@ -142,6 +142,7 @@ export default function AllConversationsPage(): JSX.Element {
       state: {
         conversationSummary: {
           chatId: conv.id,
+          chatNumber: conv.number,
           title: conv.initialMessage || conv.number,
           startedTime: conv.createdOn,
           messages: conv.messageCount,

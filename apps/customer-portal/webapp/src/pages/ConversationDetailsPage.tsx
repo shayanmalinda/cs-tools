@@ -98,7 +98,6 @@ export default function ConversationDetailsPage(): JSX.Element {
   );
 
   const conversationStatus = summary?.status ?? "Open";
-  const initialMessage = summary?.title ?? "";
   const startedTime = summary?.startedTime ?? "";
   const messageCount = summary?.messages;
   const kbArticles = summary?.kbArticles;
@@ -179,11 +178,6 @@ export default function ConversationDetailsPage(): JSX.Element {
               }}
             />
           </Stack>
-          {initialMessage && (
-            <Typography variant="body2" color="text.secondary">
-              {initialMessage}
-            </Typography>
-          )}
         </Box>
       </Box>
 
@@ -233,10 +227,10 @@ export default function ConversationDetailsPage(): JSX.Element {
               <MessageSquare size={16} color={theme.palette.text.secondary} />
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Chat ID
+                  Chat Number
                 </Typography>
                 <Typography variant="body2" color="text.primary">
-                  {summary.chatId}
+                  {summary.chatNumber ?? "--"}
                 </Typography>
               </Box>
             </Box>

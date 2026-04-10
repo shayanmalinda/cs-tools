@@ -75,6 +75,7 @@ export default function NoveraChatPage(): JSX.Element {
   const initialUserMessage = navState?.initialUserMessage;
   const conversationResponse = navState?.conversationResponse;
   const navAccountId = navState?.accountId;
+  const chatNumber = navState?.chatNumber;
 
   const handleBack = () => {
     if (projectId) {
@@ -605,6 +606,7 @@ export default function NoveraChatPage(): JSX.Element {
             onBack={handleBack}
             onCreateCase={handleCreateCase}
             isCreateCaseLoading={isCreateCaseLoading}
+            chatNumber={chatNumber}
           />
         </Box>
 
