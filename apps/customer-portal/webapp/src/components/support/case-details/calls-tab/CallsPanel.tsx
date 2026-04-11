@@ -378,14 +378,18 @@ export default function CallsPanel({
         <CallsEmptyState action={requestCallButton} />
       ) : (
         <Stack spacing={2}>
-          <CallRequestList
-            requests={paginatedCallRequests}
-            userTimeZone={userTimeZone}
-            onEditClick={disableCallActions ? undefined : handleEditClick}
-            onDeleteClick={disableCallActions ? undefined : handleDeleteClick}
-            onApproveClick={disableCallActions ? undefined : handleApproveClick}
-            onRejectClick={disableCallActions ? undefined : handleRejectClick}
-          />
+          {isFetchingNextPage ? (
+            <CallsListSkeleton />
+          ) : (
+            <CallRequestList
+              requests={paginatedCallRequests}
+              userTimeZone={userTimeZone}
+              onEditClick={disableCallActions ? undefined : handleEditClick}
+              onDeleteClick={disableCallActions ? undefined : handleDeleteClick}
+              onApproveClick={disableCallActions ? undefined : handleApproveClick}
+              onRejectClick={disableCallActions ? undefined : handleRejectClick}
+            />
+          )}
           {callRequestTotalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
               <Pagination

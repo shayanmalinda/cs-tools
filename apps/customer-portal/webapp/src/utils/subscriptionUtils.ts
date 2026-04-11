@@ -79,7 +79,19 @@ export function getProjectPermissions(
 
     case PROJECT_TYPE_LABELS.CLOUD_EVALUATION_SUPPORT:
     case PROJECT_TYPE_LABELS.EVALUATION_SUBSCRIPTION:
+      break;
+
     case PROJECT_TYPE_LABELS.SUBSCRIPTION:
+      permissions.hasOperations = true;
+      permissions.hasSR = true;
+      permissions.hasCR = false;
+      permissions.hasDeployments = true;
+      permissions.hasQueryHours = true;
+      permissions.hasTimeLogs = true;
+      permissions.showOutstandingOpsChart = true;
+      permissions.includeChangeRequestsInDashboardTotals = false;
+      permissions.includeS0InSupportMetrics = false;
+      permissions.showServiceHoursAllocationsCard = true;
       break;
 
     default:

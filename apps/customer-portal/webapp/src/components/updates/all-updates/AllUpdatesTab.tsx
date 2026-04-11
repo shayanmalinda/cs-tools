@@ -37,7 +37,7 @@ import { usePostUpdateLevelsSearch } from "@api/usePostUpdateLevelsSearch";
 import { PendingUpdatesList } from "@components/updates/pending-updates/PendingUpdatesList";
 import PendingUpdatesListSkeleton from "@components/updates/pending-updates/PendingUpdatesListSkeleton";
 import EmptyState from "@components/common/empty-state/EmptyState";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import UpdateLevelsReportModal from "@components/updates/all-updates/UpdateLevelsReportModal";
 import type {
   ProductUpdateLevelEntry,
@@ -276,7 +276,7 @@ export default function AllUpdatesTab(): JSX.Element {
           py: 5,
         }}
       >
-        <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+        <Error500Page style={{ width: 200, height: "auto" }} />
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           Could not load filter options. Please try again later.
         </Typography>
@@ -443,7 +443,7 @@ export default function AllUpdatesTab(): JSX.Element {
             py: 5,
           }}
         >
-          <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+          <Error500Page style={{ width: 200, height: "auto" }} />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             Failed to load update levels. Please try again.
           </Typography>

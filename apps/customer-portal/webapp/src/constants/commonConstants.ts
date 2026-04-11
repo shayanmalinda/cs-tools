@@ -15,3 +15,8 @@
 // under the License.
 
 export const ROUTE_PREVIOUS_PAGE = -1;
+
+/** Product class values. Must match backend entity:ProductClass. */
+export const PRODUCT_CLASS = {
+  PRODUCT_MODEL: "product_model",
+} as const;

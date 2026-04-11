@@ -39,6 +39,7 @@ import {
 } from "@utils/support";
 import ChatHistorySkeleton from "@components/support/support-overview-cards/ChatHistorySkeleton";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
+import EmptyIcon from "@components/common/empty-state/EmptyIcon";
 
 export interface ChatHistoryListProps {
   items: ChatHistoryItem[];
@@ -69,9 +70,21 @@ export default function ChatHistoryList({
 
   if (!items || items.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary">
-        No chat history.
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          py: 2,
+        }}
+      >
+        <EmptyIcon
+          style={{ width: 120, maxWidth: "100%", height: "auto", marginBottom: 12 }}
+        />
+        <Typography variant="body2" color="text.secondary">
+          No chat history.
+        </Typography>
+      </Box>
     );
   }
 

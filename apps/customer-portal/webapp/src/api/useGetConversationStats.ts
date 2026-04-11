@@ -21,21 +21,29 @@ import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import type { ConversationStats } from "@models/responses";
 
+export interface UseGetConversationStatsOptions {
+  createdByMe?: boolean;
+  enabled?: boolean;
+}
+
 /**
  * Custom hook to fetch conversation statistics for a project.
  *
  * @param {string} projectId - The ID of the project.
+ * @param {UseGetConversationStatsOptions} [options] - Optional query options.
  * @returns {UseQueryResult<ConversationStats, Error>} The query result object.
  */
 export function useGetConversationStats(
   projectId: string,
+  options?: UseGetConversationStatsOptions,
 ): UseQueryResult<ConversationStats, Error> {
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
+  const { createdByMe, enabled = true } = options ?? {};
 
   return useQuery<ConversationStats, Error>({
-    queryKey: [ApiQueryKeys.CONVERSATION_STATS, projectId],
+    queryKey: [ApiQueryKeys.CONVERSATION_STATS, projectId, createdByMe],
     queryFn: async (): Promise<ConversationStats> => {
       logger.debug(`Fetching conversation stats for project ID: ${projectId}`);
 
@@ -46,7 +54,11 @@ export function useGetConversationStats(
           throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
         }
 
-        const requestUrl = `${baseUrl}/projects/${projectId}/stats/conversations`;
+        let requestUrl = `${baseUrl}/projects/${projectId}/stats/conversations`;
+
+        if (createdByMe) {
+          requestUrl += "?createdBy=me";
+        }
 
         const response = await authFetch(requestUrl, {
           method: "GET",
@@ -77,7 +89,7 @@ export function useGetConversationStats(
         throw error;
       }
     },
-    enabled: !!projectId && isSignedIn && !isAuthLoading,
+    enabled: (enabled ?? true) && !!projectId && isSignedIn && !isAuthLoading,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,

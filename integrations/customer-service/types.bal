@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ballerina/http;
 
 # Contact.
 public type Contact record {|
@@ -29,3 +30,7 @@ public type Account record {|
     # Account ID
     string? id;
 |};
+
+# Union type for common HTTP error responses.
+public type HttpErrorResponse http:BadRequest|http:Unauthorized|http:Forbidden|http:NotFound|http:BadGateway|
+    http:ServiceUnavailable|http:GatewayTimeout|http:InternalServerError;

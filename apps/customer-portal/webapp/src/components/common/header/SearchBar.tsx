@@ -39,7 +39,7 @@ import type { CaseListItem } from "@models/responses";
 import AllCasesList from "@components/support/all-cases/AllCasesList";
 import AllCasesListSkeleton from "@components/support/all-cases/AllCasesListSkeleton";
 import SearchNoResultsIcon from "@components/common/empty-state/SearchNoResultsIcon";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import { isS0Case } from "@utils/support";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -175,7 +175,7 @@ export default function SearchBar({
             px: 2,
           }}
         >
-          <ErrorStateIcon
+          <Error500Page
             style={{ width: 120, height: "auto", marginBottom: 16 }}
           />
           <Typography variant="body2" color="text.secondary">

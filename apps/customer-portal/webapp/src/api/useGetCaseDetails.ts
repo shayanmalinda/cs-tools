@@ -17,6 +17,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
+import { ApiError } from "@api/ApiError";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CaseDetails } from "@models/responses";
@@ -57,7 +58,9 @@ export default function useGetCaseDetails(
         });
 
         if (!response.ok) {
-          throw new Error(
+          throw new ApiError(
+            response.status,
+            response.statusText,
             `Error fetching case details: ${response.status} ${response.statusText}`,
           );
         }

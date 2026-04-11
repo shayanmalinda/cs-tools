@@ -28,6 +28,7 @@ export interface UseGetProjectCasesStatsOptions {
   incidentId?: string;
   queryId?: string;
   caseTypes?: Array<`${(typeof CaseType)[keyof typeof CaseType]}` | string>;
+  createdByMe?: boolean;
   enabled?: boolean;
 }
 
@@ -46,10 +47,10 @@ export function useGetProjectCasesStats(
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
-  const { incidentId, queryId, caseTypes, enabled = true } = options ?? {};
+  const { incidentId, queryId, caseTypes, createdByMe, enabled = true } = options ?? {};
 
   return useQuery<ProjectCasesStats, Error>({
-    queryKey: [ApiQueryKeys.CASES_STATS, id, incidentId, queryId, caseTypes],
+    queryKey: [ApiQueryKeys.CASES_STATS, id, incidentId, queryId, caseTypes, createdByMe],
     queryFn: async (): Promise<ProjectCasesStats> => {
       logger.debug(`Fetching case stats for project ID: ${id}`);
 
@@ -73,6 +74,10 @@ export function useGetProjectCasesStats(
         } else if (incidentId && queryId) {
           params.append("caseTypes", queryId);
           params.append("caseTypes", incidentId);
+        }
+
+        if (createdByMe) {
+          params.append("createdBy", "me");
         }
 
         const queryString = params.toString();

@@ -47,7 +47,7 @@ import {
 } from "@wso2/oxygen-ui-icons-react";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import useGetChangeRequestDetails from "@api/useGetChangeRequestDetails";
 import { usePatchChangeRequest } from "@api/usePatchChangeRequest";
 import ScheduledMaintenanceWindowCard from "@components/support/change-requests/ScheduledMaintenanceWindowCard";
@@ -164,7 +164,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
           Back to Change Requests
         </Button>
         <Paper variant="outlined" sx={{ p: 6, textAlign: "center" }}>
-          <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+          <Error500Page style={{ width: 200, height: "auto" }} />
           <Typography variant="h6" color="text.primary" sx={{ mt: 3, mb: 1 }}>
             Error Loading Change Request
           </Typography>

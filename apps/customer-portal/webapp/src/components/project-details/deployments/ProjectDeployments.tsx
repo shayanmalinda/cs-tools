@@ -15,7 +15,7 @@
 
 import { usePostProjectDeploymentsSearchInfinite } from "@api/usePostProjectDeploymentsSearch";
 import EmptyState from "@components/common/empty-state/EmptyState";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import ErrorBanner from "@components/common/error-banner/ErrorBanner";
 import SuccessBanner from "@components/common/success-banner/SuccessBanner";
 import AddDeploymentModal from "@components/project-details/deployments/AddDeploymentModal";
@@ -252,7 +252,7 @@ export default function ProjectDeployments({
             p: 5,
           }}
         >
-          <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+          <Error500Page style={{ width: 200, height: "auto" }} />
         </Box>
       );
     }

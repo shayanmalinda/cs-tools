@@ -798,6 +798,7 @@ export interface ProductItem {
   id: string;
   label?: string;
   name?: string;
+  class?: string;
 }
 
 // Product version from POST /products/:productId/versions/search.
@@ -1099,11 +1100,13 @@ export interface CreateDeploymentResponse {
 // Call request structure (from POST /cases/:caseId/call-requests/search).
 export interface CallRequest {
   id: string;
+  number: string;
   case: { id: string; label: string };
   reason: string;
   preferredTimes: string[];
   durationMin?: number | null;
   scheduleTime: string;
+  meetingLink?: string | null;
   createdOn: string;
   updatedOn: string;
   state: { id: string; label: string };

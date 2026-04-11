@@ -21,6 +21,7 @@ import HomePage from "@pages/HomePage";
 import ProjectHub from "@pages/ProjectHub";
 import ProjectPage from "@pages/ProjectPage";
 import ProjectDetails from "@pages/ProjectDetails";
+import ProjectGuard from "@layouts/ProjectGuard";
 import DashboardPage from "@pages/DashboardPage";
 import SupportPage from "@pages/SupportPage";
 import UpdatesPage from "@pages/UpdatesPage";
@@ -50,6 +51,11 @@ import OperationsPage from "@pages/OperationsPage";
 import EngagementsPage from "@pages/EngagementsPage";
 import UsageMetricsPage from "@pages/UsageMetricsPage";
 import ServiceNowCaseRedirectPage from "@pages/ServiceNowCaseRedirectPage";
+import {
+  Error401Page,
+  Error403Page,
+  Error404Page,
+} from "@components/common/error";
 
 export default function App(): JSX.Element {
   return (
@@ -60,6 +66,11 @@ export default function App(): JSX.Element {
             {/* Public Route */}
             <Route path="/home" element={<HomePage />} />
 
+            {/* Error Routes */}
+            <Route path="/401" element={<Error401Page />} />
+            <Route path="/403" element={<Error403Page />} />
+            <Route path="/404" element={<Error404Page />} />
+
             <Route element={<AuthGuard />}>
               {/* ProjectHub Page */}
               <Route path="/" element={<ProjectHub />} />
@@ -68,7 +79,7 @@ export default function App(): JSX.Element {
               <Route path="support" element={<ServiceNowCaseRedirectPage />} />
 
               {/* Project Specific Routes */}
-              <Route path="projects/:projectId">
+              <Route path="projects/:projectId" element={<ProjectGuard />}>
                 {/* Dashboard */}
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
@@ -198,7 +209,7 @@ export default function App(): JSX.Element {
             </Route>
 
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="*" element={<Error404Page />} />
           </Routes>
         </SuccessBannerProvider>
       </ErrorBannerProvider>

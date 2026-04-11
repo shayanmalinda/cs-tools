@@ -175,11 +175,11 @@ describe("CaseDetailsDetailsPanel", () => {
     expect(screen.queryByText("Assigned Engineer")).not.toBeInTheDocument();
   });
 
-  it("should show ErrorStateIcon and error message when isError is true", () => {
+  it("should show Error500Page and error message when isError is true", () => {
     renderDetailsPanel({ data: undefined, isError: true });
     expect(screen.getByText("Something Went Wrong")).toBeInTheDocument();
-    const svg = document.querySelector("svg");
-    expect(svg).toBeInTheDocument();
+    const img = document.querySelector("img");
+    expect(img).toBeInTheDocument();
   });
 
   it("should render service request overview and request detail fields when isServiceRequest", () => {

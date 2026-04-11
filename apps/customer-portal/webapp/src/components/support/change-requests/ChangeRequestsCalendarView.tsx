@@ -31,7 +31,7 @@ import { useState } from "react";
 import type { JSX } from "react";
 import type { ChangeRequestItem } from "@models/responses";
 import ChangeRequestsCalendarSkeleton from "@components/support/change-requests/ChangeRequestsCalendarSkeleton";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import {
   ChangeRequestStates,
   getChangeRequestStateColor,
@@ -123,7 +123,7 @@ export default function ChangeRequestsCalendarView({
   if (isError) {
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
-        <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+        <Error500Page style={{ width: 200, height: "auto" }} />
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
           Failed to load calendar. Please try again.
         </Typography>

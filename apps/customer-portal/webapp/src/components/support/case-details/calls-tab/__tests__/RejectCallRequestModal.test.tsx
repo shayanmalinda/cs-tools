@@ -25,6 +25,7 @@ const mockCall: CallRequest = {
   reason: "Test notes",
   preferredTimes: [],
   durationMin: 30,
+  number: "CR-TEST",
   scheduleTime: "",
   createdOn: "2024-10-29 10:00:00",
   updatedOn: "2024-10-29 10:00:00",

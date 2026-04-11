@@ -47,7 +47,7 @@ vi.mock("@components/common/empty-state/SearchNoResultsIcon", () => ({
   default: () => <svg data-testid="search-no-results-icon" />,
 }));
 
-vi.mock("@components/common/error-state/ErrorStateIcon", () => ({
+vi.mock("@components/common/error/Error500Page", () => ({
   default: () => <svg data-testid="error-state-icon" />,
 }));
 

@@ -2774,7 +2774,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # Get products.
     #
     # + return - List of products or an error
-    resource function get products(http:RequestContext ctx, int? offset, int? 'limit)
+    resource function get products(http:RequestContext ctx, entity:ProductClass? 'class, int? offset, int? 'limit)
         returns entity:ProductsResponse|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -2786,7 +2786,14 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        entity:ProductsResponse|error response = entity:getProducts(userInfo.idToken, {}); // TODO: Handle pagination
+        entity:ProductsResponse|error response = entity:getProducts(userInfo.idToken,
+                {
+                    filters: {'class},
+                    pagination: {
+                        offset: offset ?: DEFAULT_OFFSET,
+                        'limit: 'limit ?: DEFAULT_LIMIT
+                    }
+                });
         if response is error {
             string customError = "Failed to retrieve products.";
             log:printError(customError, response);

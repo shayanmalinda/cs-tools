@@ -28,6 +28,7 @@ import { Clock } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
 import type { CaseListItem } from "@models/responses";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
+import EmptyIcon from "@components/common/empty-state/EmptyIcon";
 import OutstandingCasesSkeleton from "./OutstandingCasesSkeleton";
 import { getSeverityLegendColor } from "@constants/dashboardConstants";
 import {
@@ -71,9 +72,21 @@ export default function OutstandingCasesList({
 
   if (cases.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary">
-        No outstanding cases.
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          py: 2,
+        }}
+      >
+        <EmptyIcon
+          style={{ width: 120, maxWidth: "100%", height: "auto", marginBottom: 12 }}
+        />
+        <Typography variant="body2" color="text.secondary">
+          No outstanding cases.
+        </Typography>
+      </Box>
     );
   }
 

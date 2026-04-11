@@ -34,7 +34,7 @@ import type { CaseDetails } from "@models/responses";
 import { getSeverityLegendColor } from "@constants/dashboardConstants";
 import AssignedEngineerDisplay from "@case-details-details/AssignedEngineerDisplay";
 import CaseDetailsCard from "@case-details-details/CaseDetailsCard";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import {
   formatValue,
   formatSlaResponseTime,
@@ -110,7 +110,7 @@ export default function CaseDetailsDetailsPanel({
           py: 10,
         }}
       >
-        <ErrorStateIcon />
+        <Error500Page />
         <Typography variant="h4">Something Went Wrong</Typography>
       </Box>
     );

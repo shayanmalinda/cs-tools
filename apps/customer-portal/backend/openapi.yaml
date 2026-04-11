@@ -1542,6 +1542,12 @@ paths:
       summary: Get products.
       operationId: getProducts
       parameters:
+      - name: class
+        in: query
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/ProductClass'
       - name: offset
         in: query
         schema:
@@ -2840,6 +2846,10 @@ components:
           description: New preferred UTC times for the call
           items:
             $ref: '#/components/schemas/DateTime'
+        durationInMinutes:
+          type: integer
+          description: New preferred duration for the call
+          format: int64
       additionalProperties: false
       description: Request payload for updating a call request.
     Case:
@@ -4337,8 +4347,13 @@ components:
           description: Name
         class:
           type: string
-          description: "Product class (product_model)"
+          description: Product class (Product Model)
       description: Product data.
+    ProductClass:
+      type: string
+      description: Valid product class values.
+      enum:
+      - product_model
     ProductUpdate:
       required:
       - date

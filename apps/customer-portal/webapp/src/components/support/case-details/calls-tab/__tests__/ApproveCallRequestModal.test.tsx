@@ -43,6 +43,7 @@ const mockCall: CallRequest = {
   reason: "Test notes",
   preferredTimes: ["2024-10-29 14:00:00"],
   durationMin: 60,
+  number: "CR-TEST",
   scheduleTime: "2024-11-05 14:00:00",
   createdOn: "2024-10-29 10:00:00",
   updatedOn: "2024-10-29 10:00:00",
@@ -52,6 +53,7 @@ const mockCall: CallRequest = {
 const mockCallNoPreferredTimes: CallRequest = {
   ...mockCall,
   preferredTimes: [],
+  number: "CR-TEST",
   scheduleTime: "",
 };
 

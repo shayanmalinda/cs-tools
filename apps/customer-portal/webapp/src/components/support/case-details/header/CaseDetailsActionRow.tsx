@@ -81,6 +81,7 @@ export interface CaseDetailsActionRowProps {
   showOnlyEngineer?: boolean;
   /** When true, hides assigned engineer (e.g. security report analysis). */
   hideAssignedEngineer?: boolean;
+  restrictToCloseOnly?: boolean;
 }
 
 /**
@@ -121,6 +122,7 @@ export default function CaseDetailsActionRow({
   isLoading = false,
   showOnlyEngineer = false,
   hideAssignedEngineer = false,
+  restrictToCloseOnly = false,
 }: CaseDetailsActionRowProps): JSX.Element {
   void assignedEngineer;
   void engineerInitials;
@@ -140,6 +142,9 @@ export default function CaseDetailsActionRow({
 
   const availableActions = getAvailableCaseActions(statusLabel).filter(
     (label) => {
+      if (restrictToCloseOnly && label !== "Closed") {
+        return false;
+      }
       if (label === "Open Related Case" && !isWithinOpenRelatedCaseWindow(closedOn)) {
         return false;
       }
@@ -225,7 +230,7 @@ export default function CaseDetailsActionRow({
                             { stateKey: stateKey! },
                             {
                               onSuccess: () => {
-                                showSuccess("Case status updated successfully.");
+                                showSuccess("State updated successfully.");
                               },
                               onError: (err) => {
                                 showError(

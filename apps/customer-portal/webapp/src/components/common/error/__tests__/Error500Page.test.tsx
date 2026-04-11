@@ -16,20 +16,20 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 
-describe("ErrorStateIcon", () => {
-  it("should render the error state SVG", () => {
-    const { container } = render(<ErrorStateIcon />);
+describe("Error500Page", () => {
+  it("should render the error state illustration", () => {
+    const { container } = render(<Error500Page />);
 
-    const svg = container.querySelector("svg");
-    expect(svg).toBeInTheDocument();
-    expect(svg).toHaveAttribute("viewBox", "0 0 592 421");
-    expect(svg).toHaveAttribute("aria-hidden", "true");
+    const img = container.querySelector("img");
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute("aria-hidden", "true");
+    expect(img).toHaveAttribute("src");
   });
 
-  it("should accept and pass through SVG props", () => {
-    render(<ErrorStateIcon data-testid="custom-error-icon" />);
+  it("should accept and pass through img props", () => {
+    render(<Error500Page data-testid="custom-error-icon" />);
 
     expect(screen.getByTestId("custom-error-icon")).toBeInTheDocument();
   });

@@ -17,7 +17,7 @@
 import { Box, Grid, Typography } from "@wso2/oxygen-ui";
 import { useNavigate } from "react-router";
 import type { JSX } from "react";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import EmptyState from "@components/common/empty-state/EmptyState";
 import type { RecommendedUpdateLevelItem } from "@models/responses";
 import { UpdateProductCard } from "@update-cards/UpdateProductCard";
@@ -56,7 +56,7 @@ export function UpdateProductGrid({
           py: 5,
         }}
       >
-        <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+        <Error500Page style={{ width: 200, height: "auto" }} />
       </Box>
     );
   }

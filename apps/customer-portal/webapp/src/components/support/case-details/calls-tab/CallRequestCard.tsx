@@ -26,7 +26,7 @@ import {
   alpha,
   useTheme,
 } from "@wso2/oxygen-ui";
-import { Clock, Phone } from "@wso2/oxygen-ui-icons-react";
+import { Clock, ExternalLink, Phone } from "@wso2/oxygen-ui-icons-react";
 import { type JSX } from "react";
 import type { CallRequest } from "@models/responses";
 import {
@@ -85,6 +85,7 @@ export default function CallRequestCard({
     isCancelled || statusLabel === CallRequestStatus.COMPLETED;
   const isPendingOnCustomer =
     statusLabel === CallRequestStatus.PENDING_ON_CUSTOMER;
+  const isScheduled = statusLabel === CallRequestStatus.SCHEDULED;
   const isNotesPending =
     call.state?.id === CALL_REQUEST_STATE_NOTES_PENDING_ID ||
     statusLabel === CallRequestStatus.NOTES_PENDING ||
@@ -170,6 +171,15 @@ export default function CallRequestCard({
                   }}
                 />
               </Stack>
+              {call.number && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
+                  number : {call.number}
+                </Typography>
+              )}
               <Typography variant="caption" color="text.secondary">
                 Requested on{" "}
                 {formatCallRequestBackendDateTimeShort(call.createdOn)}
@@ -278,6 +288,39 @@ export default function CallRequestCard({
             </Typography>
           </Box>
         </Box>
+
+        {isScheduled && (
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              sx={{ mb: 0.5 }}
+            >
+              Meeting Link
+            </Typography>
+            {call.meetingLink ? (
+              <Button
+                variant="text"
+                size="small"
+                href={call.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                startIcon={<ExternalLink size={14} />}
+                sx={{
+                  p: 0,
+                  minWidth: 0,
+                  fontSize: "0.8125rem",
+                  textTransform: "none",
+                }}
+              >
+                Join meeting
+              </Button>
+            ) : (
+              <Typography variant="body2">--</Typography>
+            )}
+          </Box>
+        )}
 
         <Divider sx={{ mb: 2, borderColor: "divider" }} />
 

@@ -44,7 +44,7 @@ import type {
 } from "@models/responses";
 import PendingUpdatesListSkeleton from "@components/updates/pending-updates/PendingUpdatesListSkeleton";
 import EmptyState from "@components/common/empty-state/EmptyState";
-import ErrorStateIcon from "@components/common/error-state/ErrorStateIcon";
+import Error500Page from "@components/common/error/Error500Page";
 import { ROUTE_PREVIOUS_PAGE } from "@/constants/commonConstants";
 
 type FilterType = "all" | "security" | "regular";
@@ -518,7 +518,7 @@ export default function UpdateLevelDetailsPage(): JSX.Element {
               py: 5,
             }}
           >
-            <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+            <Error500Page style={{ width: 200, height: "auto" }} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               Failed to load updates. Please try again.
             </Typography>
@@ -533,7 +533,7 @@ export default function UpdateLevelDetailsPage(): JSX.Element {
               py: 5,
             }}
           >
-            <ErrorStateIcon style={{ width: 200, height: "auto" }} />
+            <Error500Page style={{ width: 200, height: "auto" }} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               Level not found.
             </Typography>

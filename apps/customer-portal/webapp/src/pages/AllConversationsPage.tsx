@@ -102,7 +102,9 @@ export default function AllConversationsPage(): JSX.Element {
     data: statsData,
     isLoading: isStatsLoading,
     isError: isStatsError,
-  } = useGetConversationStats(projectId || "");
+  } = useGetConversationStats(projectId || "", {
+    createdByMe: createdByMe || undefined,
+  });
 
   const stats: Partial<Record<AllConversationsStatKey, number>> | undefined =
     statsData

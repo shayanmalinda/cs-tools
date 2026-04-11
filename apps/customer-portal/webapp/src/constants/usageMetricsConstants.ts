@@ -18,9 +18,9 @@ import type { UsageTimeRangePreset } from "@models/usageMetrics.types";
 
 export const USAGE_LINE_CHART_MARGIN = {
   top: 5,
-  right: 30,
+  right: 40,
   left: 20,
-  bottom: 5,
+  bottom: 40,
 };
 
 export const USAGE_TIME_RANGE_LABELS: Record<UsageTimeRangePreset, string> = {

@@ -19,6 +19,7 @@ import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
+import { PRODUCT_CLASS } from "@constants/commonConstants";
 import type { ProductsResponse } from "@models/responses";
 
 /**
@@ -48,6 +49,7 @@ export function useGetProducts(params?: {
         }
 
         const searchParams = new URLSearchParams();
+        searchParams.set("class", PRODUCT_CLASS.PRODUCT_MODEL);
         searchParams.set("offset", String(offset));
         searchParams.set("limit", String(limit));
         const requestUrl = `${baseUrl}/products?${searchParams.toString()}`;

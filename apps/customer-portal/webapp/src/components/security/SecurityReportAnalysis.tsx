@@ -272,7 +272,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
               onClick={handleCreateReport}
               size="small"
             >
-              Create Report
+              Create
             </Button>
           </Box>
         </Box>

@@ -25,6 +25,7 @@ const mockCall: CallRequest = {
   reason: "Cancel",
   preferredTimes: ["2026-04-02 15:45:00"],
   durationMin: 30,
+  number: "CR-TEST",
   scheduleTime: "",
   createdOn: "2026-04-02 10:00:00",
   updatedOn: "2026-04-02 10:00:00",

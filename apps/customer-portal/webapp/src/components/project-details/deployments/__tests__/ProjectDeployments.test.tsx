@@ -131,7 +131,7 @@ vi.mock(
     default: () => <div data-testid="deployment-skeleton" />,
   }),
 );
-vi.mock("@components/common/error-state/ErrorStateIcon", () => ({
+vi.mock("@components/common/error/Error500Page", () => ({
   default: () => <div data-testid="error-state-icon" />,
 }));
 vi.mock("@components/common/empty-state/EmptyState", () => ({
