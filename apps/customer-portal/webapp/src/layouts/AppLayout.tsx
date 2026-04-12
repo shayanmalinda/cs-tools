@@ -45,17 +45,15 @@ import {
  */
 interface AppLayoutProps {
   children?: ReactNode;
-  authCheckPending?: boolean;
 }
 
 /**
  * AppLayout component providing the main structure, navigation, and global UI elements.
  */
-export default function AppLayout({ children, authCheckPending }: AppLayoutProps): JSX.Element {
+export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation();
   const mainContentRef = useRef<HTMLDivElement>(null);
   const { isLoading: isAuthLoading } = useAsgardeo();
-  const showLoader = isAuthLoading || (authCheckPending ?? false);
 
   // Scroll to top on route change
   useEffect(() => {
@@ -75,7 +73,7 @@ export default function AppLayout({ children, authCheckPending }: AppLayoutProps
 
   // Animate loading message during authentication
   useEffect(() => {
-    if (!showLoader) return;
+    if (!isAuthLoading) return;
 
     setLoadingMessage("Authenticating…");
 
@@ -201,14 +199,14 @@ export default function AppLayout({ children, authCheckPending }: AppLayoutProps
                   flexDirection: "column",
                   overflow: "auto",
                   ...(isDetailsStylePage ? { minHeight: "60vh" } : {}),
-                  ...(showLoader
+                  ...(isAuthLoading
                     ? { p: 0 }
                     : isDetailsStylePage
                       ? { px: 0, pb: 0, pt: 0 }
                       : { p: 3 }),
                 }}
               >
-                {showLoader ? (
+                {isAuthLoading ? (
                   <Box
                     sx={{
                       flex: 1,

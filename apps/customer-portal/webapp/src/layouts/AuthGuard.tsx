@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { type JSX, useEffect, useRef, useState } from "react";
+import { type JSX, useEffect } from "react";
 import { useAsgardeo } from "@asgardeo/react";
 import { useLocation, useNavigate } from "react-router";
 import AppLayout from "@layouts/AppLayout";
@@ -23,55 +23,51 @@ import { getLastSelectedProjectId } from "@utils/settingsStorage";
 const POST_LOGIN_REDIRECT_KEY = "post_login_redirect";
 
 /**
- * AuthGuard protects all nested routes.
+ * AuthGuard renders AppLayout (header/footer) so loading state is visible
+ * and Asgardeo authentication flow can be observed. Redirects to home only
+ * when not signed in and auth check is complete.
  *
- * @returns {JSX.Element} AppLayout.
+ * Preserves the intended URL across the Asgardeo sign-in redirect so that
+ * deep-links (e.g. ServiceNow case links) land on the correct page after auth.
+ *
+ * @returns {JSX.Element} AppLayout or redirect to home.
  */
 export default function AuthGuard(): JSX.Element {
   const { isSignedIn, isLoading: isAuthLoading, signIn } = useAsgardeo();
   const location = useLocation();
   const navigate = useNavigate();
-  const [authCheckPending, setAuthCheckPending] = useState(true);
-  const signInInitiated = useRef(false);
 
   useEffect(() => {
-    if (isAuthLoading) return;
-
-    if (isSignedIn) {
-      setAuthCheckPending(false);
-      return;
-    }
-
-    if (!signInInitiated.current) {
-      signInInitiated.current = true;
-
+    if (!isSignedIn && !isAuthLoading) {
       const intended = location.pathname + location.search;
       if (intended !== "/" && intended !== "/home") {
         sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, intended);
       }
-
       void signIn();
     }
   }, [isSignedIn, isAuthLoading, signIn, location]);
 
   useEffect(() => {
-    if (!isSignedIn) return;
-
-    setAuthCheckPending(false);
-
-    const redirect = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
-    if (redirect) {
-      sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
-      void navigate(redirect, { replace: true });
-      return;
-    }
-
-    const lastProjectId = getLastSelectedProjectId();
-    const fromHeader = (location.state as { fromHeader?: boolean })?.fromHeader;
-    if (lastProjectId && location.pathname === "/" && !fromHeader) {
-      void navigate(`/projects/${lastProjectId}/dashboard`, { replace: true });
+    if (isSignedIn) {
+      const redirect = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
+      if (redirect) {
+        sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+        void navigate(redirect, { replace: true });
+        return;
+      }
+      const lastProjectId = getLastSelectedProjectId();
+      const fromHeader = (location.state as { fromHeader?: boolean })?.fromHeader;
+      if (
+        lastProjectId &&
+        location.pathname === "/" &&
+        !fromHeader
+      ) {
+        void navigate(`/projects/${lastProjectId}/dashboard`, {
+          replace: true,
+        });
+      }
     }
   }, [isSignedIn, navigate, location.pathname]);
 
-  return <AppLayout authCheckPending={authCheckPending} />;
+  return <AppLayout />;
 }
