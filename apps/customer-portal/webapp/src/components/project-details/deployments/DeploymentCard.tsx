@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { ProjectDeploymentItem } from "@models/responses";
+import type { ProjectDeploymentItem } from "@/types/deployments";
 import type { SelectedDeploymentProduct } from "@components/project-details/deployments/deploymentSelectionTypes";
 import { displayValue, formatProjectDateTime } from "@utils/projectDetails";
 import {
