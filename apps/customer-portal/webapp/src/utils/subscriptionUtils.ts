@@ -16,9 +16,9 @@
 
 import { PROJECT_TYPE_LABELS } from "@constants/projectTypeConstants";
 import type { ActivityItem } from "@constants/projectDetailsConstants";
-import type { ProjectStatsResponse } from "@models/responses";
+import type { ProjectStatsResponse } from "@/types/projects";
 import { convertMinutesToHours } from "@utils/projectDetails";
-import type { ProjectPermissions } from "@/types/subscriptionTypes";
+import type { ProjectPermissions } from "@/types/subscriptions";
 
 /**
  * Restrictive defaults for unknown or unlisted project types.
