@@ -133,9 +133,14 @@ function parseRequestDetails(
   let match: RegExpExecArray | null;
 
   while ((match = strongRegex.exec(descriptionHtml)) !== null) {
-    const label = (match[1] ?? "").replace(/<[^>]+>/g, "").trim().replace(/:$/, "");
+    const label = (match[1] ?? "")
+      .replace(/<[^>]+>/g, "")
+      .trim()
+      .replace(/:$/, "");
     const valueStart = match.index + match[0].length;
-    const nextStrong = descriptionHtml.slice(valueStart).search(/<strong[^>]*>/i);
+    const nextStrong = descriptionHtml
+      .slice(valueStart)
+      .search(/<strong[^>]*>/i);
     const valueEnd =
       nextStrong >= 0 ? valueStart + nextStrong : descriptionHtml.length;
     const valueHtml = descriptionHtml.slice(valueStart, valueEnd).trim();
@@ -188,10 +193,9 @@ export default function ServiceRequestDetailContent({
   const severityLabel = data?.severity?.label;
   const statusColorPath = getStatusColor(statusLabel ?? undefined);
   const resolvedStatusColor = resolveColorFromTheme(statusColorPath, theme);
-  const statusChipIcon = getStatusIconElement(
-    statusLabel,
-    12,
-  ) as ReactElement | undefined;
+  const statusChipIcon = getStatusIconElement(statusLabel, 12) as
+    | ReactElement
+    | undefined;
 
   const assignedLabel = getAssignedEngineerLabel(data?.assignedEngineer);
   const environmentLabel = data?.deployment?.label ?? null;
@@ -225,7 +229,8 @@ export default function ServiceRequestDetailContent({
     const list = commentsData?.comments ?? [];
     return [...list].sort(
       (a, b) =>
-        new Date(a.createdOn ?? "").getTime() - new Date(b.createdOn ?? "").getTime(),
+        new Date(a.createdOn ?? "").getTime() -
+        new Date(b.createdOn ?? "").getTime(),
     );
   }, [commentsData?.comments]);
 
@@ -294,9 +299,7 @@ export default function ServiceRequestDetailContent({
           setCommentResetTrigger((prev) => prev + 1);
         },
         onError: (err) => {
-          showError(
-            err?.message ?? "Failed to add comment. Please try again.",
-          );
+          showError(err?.message ?? "Failed to add comment. Please try again.");
         },
       },
     );
@@ -393,7 +396,10 @@ export default function ServiceRequestDetailContent({
             sx={{
               mt: 1.5,
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(4, minmax(0, 1fr))",
+              },
               gap: 3,
             }}
           >
@@ -454,7 +460,7 @@ export default function ServiceRequestDetailContent({
                 </Stack>
                 <Typography variant="body2" color="text.primary">
                   {data?.createdOn
-                    ? formatDateTime(data.createdOn, "long") ?? "--"
+                    ? (formatDateTime(data.createdOn, "long") ?? "--")
                     : "--"}
                 </Typography>
               </Stack>
@@ -473,18 +479,26 @@ export default function ServiceRequestDetailContent({
       >
         <Stack spacing={3}>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
-            <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.primary"
+              sx={{ mb: 1.5 }}
+            >
               Request Details
             </Typography>
             {(() => {
               const apiVariables = data?.variables ?? [];
               const filteredVariables = apiVariables.filter(
-                (v) => !REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES.test((v.name ?? "").trim()),
+                (v) =>
+                  !REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES.test(
+                    (v.name ?? "").trim(),
+                  ),
               );
               if (filteredVariables.length > 0) {
                 return filteredVariables.map((v, index) => {
                   const rawValue = (v.value ?? "").trim();
-                  const hasHtml = rawValue.includes("<") || rawValue.includes(">");
+                  const hasHtml =
+                    rawValue.includes("<") || rawValue.includes(">");
                   const processedValue = hasHtml
                     ? DOMPurify.sanitize(
                         convertCodeTagsToHtml(
@@ -538,7 +552,8 @@ export default function ServiceRequestDetailContent({
                 });
               }
               const filtered = requestDetailSections.filter(
-                (s) => !REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES.test(s.label.trim()),
+                (s) =>
+                  !REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES.test(s.label.trim()),
               );
               if (filtered.length > 0) {
                 return filtered.map((section, index) => {
@@ -650,13 +665,22 @@ export default function ServiceRequestDetailContent({
               ) : (
                 commentsToShow.map((comment: CaseComment) => {
                   const isCurrentUser =
-                    (comment.createdBy?.toLowerCase() ?? "") === currentUserEmail;
+                    (comment.createdBy?.toLowerCase() ?? "") ===
+                    currentUserEmail;
                   const avatarBg = isCurrentUser
-                    ? alpha(theme.palette.info?.light ?? theme.palette.info?.main, 0.2)
-                    : alpha(theme.palette.primary?.light ?? theme.palette.primary?.main, 0.2);
+                    ? alpha(
+                        theme.palette.info?.light ?? theme.palette.info?.main,
+                        0.2,
+                      )
+                    : alpha(
+                        theme.palette.primary?.light ??
+                          theme.palette.primary?.main,
+                        0.2,
+                      );
                   const avatarColor = isCurrentUser
                     ? (theme.palette.info?.main ?? theme.palette.info?.light)
-                    : (theme.palette.primary?.main ?? theme.palette.primary?.light);
+                    : (theme.palette.primary?.main ??
+                      theme.palette.primary?.light);
                   return (
                     <Stack
                       key={comment.id}
@@ -682,7 +706,8 @@ export default function ServiceRequestDetailContent({
                           color="text.secondary"
                           sx={{ display: "block" }}
                         >
-                          {comment.createdBy} • {formatRelativeTime(comment.createdOn ?? "")}
+                          {comment.createdBy} •{" "}
+                          {formatRelativeTime(comment.createdOn ?? "")}
                         </Typography>
                         {isPlainTextComment(comment.content ?? "") ? (
                           <Box
@@ -777,7 +802,11 @@ export default function ServiceRequestDetailContent({
 
         <Stack spacing={3}>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
-            <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.primary"
+              sx={{ mb: 1.5 }}
+            >
               Assignment
             </Typography>
             <Stack spacing={2}>
@@ -790,16 +819,10 @@ export default function ServiceRequestDetailContent({
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    bgcolor: alpha(
-                      theme.palette.primary?.main,
-                      0.12,
-                    ),
+                    bgcolor: alpha(theme.palette.primary?.main, 0.12),
                   }}
                 >
-                  <User
-                    size={20}
-                    color={theme.palette.primary?.main}
-                  />
+                  <User size={20} color={theme.palette.primary?.main} />
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
@@ -809,7 +832,11 @@ export default function ServiceRequestDetailContent({
                   >
                     Assigned To
                   </Typography>
-                  <Typography variant="body2" fontWeight={600} color="text.primary">
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.primary"
+                  >
                     {assignedLabel ?? "--"}
                   </Typography>
                 </Box>
@@ -823,16 +850,10 @@ export default function ServiceRequestDetailContent({
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    bgcolor: alpha(
-                      theme.palette.info?.main,
-                      0.12,
-                    ),
+                    bgcolor: alpha(theme.palette.info?.main, 0.12),
                   }}
                 >
-                  <Folder
-                    size={20}
-                    color={theme.palette.info?.main}
-                  />
+                  <Folder size={20} color={theme.palette.info?.main} />
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
@@ -842,7 +863,11 @@ export default function ServiceRequestDetailContent({
                   >
                     Category
                   </Typography>
-                  <Typography variant="body2" fontWeight={600} color="text.primary">
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.primary"
+                  >
                     {data?.catalog?.label ?? "--"}
                   </Typography>
                 </Box>
@@ -854,91 +879,97 @@ export default function ServiceRequestDetailContent({
             const displayableActions = CASE_STATUS_ACTIONS.filter((action) =>
               getAvailableCaseActions(statusLabel).includes(action.label),
             ).filter((action) => action.label !== "Open Related Case");
-            const isClosed =
-              statusLabel?.toLowerCase() === "closed";
+            const isClosed = statusLabel?.toLowerCase() === "closed";
             if (isClosed || displayableActions.length === 0) return null;
             return (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
-            <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
-              Manage service request status
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {displayableActions
-                .map(({ label, Icon }) => {
-                  const stateLabel = ACTION_TO_CASE_STATE_LABEL[label];
-                  const stateKeyEntry = caseStates?.find(
-                    (s) =>
-                      s.label.toLowerCase() ===
-                      (stateLabel ?? "").toLowerCase(),
-                  );
-                  const stateKey =
-                    stateKeyEntry && !Number.isNaN(Number(stateKeyEntry.id))
-                      ? Number(stateKeyEntry.id)
-                      : undefined;
-                  const canPatch = stateKey != null && !!caseId;
-                  const isThisPending =
-                    patchCase.isPending && pendingActionLabel === label;
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.primary"
+                  sx={{ mb: 1.5 }}
+                >
+                  Manage service request status
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {displayableActions.map(({ label, Icon }) => {
+                    const stateLabel = ACTION_TO_CASE_STATE_LABEL[label];
+                    const stateKeyEntry = caseStates?.find(
+                      (s) =>
+                        s.label.toLowerCase() ===
+                        (stateLabel ?? "").toLowerCase(),
+                    );
+                    const stateKey =
+                      stateKeyEntry && !Number.isNaN(Number(stateKeyEntry.id))
+                        ? Number(stateKeyEntry.id)
+                        : undefined;
+                    const canPatch = stateKey != null && !!caseId;
+                    const isThisPending =
+                      patchCase.isPending && pendingActionLabel === label;
 
-                  return (
-                    <Button
-                      key={label}
-                      variant="outlined"
-                      size="small"
-                      startIcon={
-                        isThisPending ? (
-                          <Loader2 size={12} />
-                        ) : (
-                          <Icon size={12} />
-                        )
-                      }
-                      disabled={patchCase.isPending || !canPatch}
-                      onClick={
-                        canPatch
-                          ? () => {
-                              setPendingActionLabel(label);
-                              patchCase.mutate(
-                                { stateKey },
-                                {
-                                  onSuccess: () => {
-                                    showSuccess(
-                                      "Service request status updated successfully.",
-                                    );
+                    return (
+                      <Button
+                        key={label}
+                        variant="outlined"
+                        size="small"
+                        startIcon={
+                          isThisPending ? (
+                            <Loader2 size={12} />
+                          ) : (
+                            <Icon size={12} />
+                          )
+                        }
+                        disabled={patchCase.isPending || !canPatch}
+                        onClick={
+                          canPatch
+                            ? () => {
+                                setPendingActionLabel(label);
+                                patchCase.mutate(
+                                  { stateKey },
+                                  {
+                                    onSuccess: () => {
+                                      showSuccess(
+                                        "Service request status updated successfully.",
+                                      );
+                                    },
+                                    onError: (err) => {
+                                      showError(
+                                        err?.message ??
+                                          "Failed to update service request status. Please try again.",
+                                      );
+                                    },
+                                    onSettled: () => {
+                                      setPendingActionLabel(null);
+                                    },
                                   },
-                                  onError: (err) => {
-                                    showError(
-                                      err?.message ??
-                                        "Failed to update service request status. Please try again.",
-                                    );
-                                  },
-                                  onSettled: () => {
-                                    setPendingActionLabel(null);
-                                  },
-                                },
-                              );
-                            }
-                          : undefined
-                      }
-                      sx={{
-                        fontSize: "0.7rem",
-                        minHeight: 0,
-                        py: 0.5,
-                        px: 1,
-                        textTransform: "none",
-                      }}
-                    >
-                      {isThisPending
-                        ? toPresentContinuousActionLabel(label)
-                        : toPresentTenseActionLabel(label)}
-                    </Button>
-                  );
-                })}
-            </Stack>
-          </Paper>
+                                );
+                              }
+                            : undefined
+                        }
+                        sx={{
+                          fontSize: "0.7rem",
+                          minHeight: 0,
+                          py: 0.5,
+                          px: 1,
+                          textTransform: "none",
+                        }}
+                      >
+                        {isThisPending
+                          ? toPresentContinuousActionLabel(label)
+                          : toPresentTenseActionLabel(label)}
+                      </Button>
+                    );
+                  })}
+                </Stack>
+              </Paper>
             );
           })()}
 
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
-            <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.primary"
+              sx={{ mb: 1.5 }}
+            >
               Activity Timeline
             </Typography>
             <Box
@@ -1012,12 +1043,18 @@ export default function ServiceRequestDetailContent({
           </Paper>
 
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>
-            <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.primary"
+              sx={{ mb: 1.5 }}
+            >
               Related Information
             </Typography>
             <Stack spacing={1.5}>
               {data?.project?.label && (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                <Box
+                  sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+                >
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Box color="text.secondary">
                       <Globe size={16} />
@@ -1042,7 +1079,7 @@ export default function ServiceRequestDetailContent({
                 </Stack>
                 <Typography variant="body2" color="text.primary">
                   {data?.updatedOn
-                    ? formatDateTime(data.updatedOn, "long") ?? "--"
+                    ? (formatDateTime(data.updatedOn, "long") ?? "--")
                     : "--"}
                 </Typography>
               </Box>

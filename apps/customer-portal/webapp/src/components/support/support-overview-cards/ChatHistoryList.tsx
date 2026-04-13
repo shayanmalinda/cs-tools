@@ -79,7 +79,12 @@ export default function ChatHistoryList({
         }}
       >
         <EmptyIcon
-          style={{ width: 120, maxWidth: "100%", height: "auto", marginBottom: 12 }}
+          style={{
+            width: 120,
+            maxWidth: "100%",
+            height: "auto",
+            marginBottom: 12,
+          }}
         />
         <Typography variant="body2" color="text.secondary">
           No chat history.

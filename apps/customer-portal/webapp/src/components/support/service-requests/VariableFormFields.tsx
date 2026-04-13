@@ -138,7 +138,6 @@ function isHiddenField(questionText: string): boolean {
   return HIDDEN_FIELD_PATTERNS.some((p) => p.test(normalized));
 }
 
-
 function FieldLabel({
   questionText,
   isRequired = TYPABLE_FIELDS_ALL_REQUIRED,
@@ -148,7 +147,11 @@ function FieldLabel({
 }): JSX.Element {
   const { label } = parseRequiredLabel(questionText);
   return (
-    <Typography variant="caption" component="span" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+    <Typography
+      variant="caption"
+      component="span"
+      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+    >
       {label}
       {isRequired && (
         <Box
@@ -196,8 +199,7 @@ export default function VariableFormFields({
   onAttachmentAdd,
 }: VariableFormFieldsProps): JSX.Element {
   const sortedVariables = useMemo(
-    () =>
-      variables ? [...variables].sort((a, b) => a.order - b.order) : [],
+    () => (variables ? [...variables].sort((a, b) => a.order - b.order) : []),
     [variables],
   );
   const deduplicatedForDisplay = deduplicateVariables(sortedVariables);
@@ -298,9 +300,7 @@ export default function VariableFormFields({
           <FormControl fullWidth size="small">
             <Select
               value={value}
-              onChange={(e) =>
-                onChange(variable.id, e.target.value as string)
-              }
+              onChange={(e) => onChange(variable.id, e.target.value as string)}
               displayEmpty
               disabled={isContext}
               renderValue={(v) => v || "Select..."}
@@ -366,7 +366,10 @@ export default function VariableFormFields({
       return (
         <Grid key={variable.id} size={{ xs: 12 }}>
           <Box sx={{ mb: 1 }}>
-            <FieldLabel questionText={variable.questionText ?? ""} isRequired={false} />
+            <FieldLabel
+              questionText={variable.questionText ?? ""}
+              isRequired={false}
+            />
           </Box>
           <TextField
             fullWidth
@@ -383,7 +386,10 @@ export default function VariableFormFields({
       return (
         <Grid key={variable.id} size={{ xs: 12 }}>
           <Box sx={{ mb: 1 }}>
-            <FieldLabel questionText={variable.questionText ?? ""} isRequired={false} />
+            <FieldLabel
+              questionText={variable.questionText ?? ""}
+              isRequired={false}
+            />
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {onAttachmentAdd ? (
@@ -403,7 +409,11 @@ export default function VariableFormFields({
                     if (files?.length) {
                       for (let i = 0; i < files.length; i++) {
                         const f = files[i];
-                        if (f) onAttachmentAdd(f, variable.questionText ?? undefined);
+                        if (f)
+                          onAttachmentAdd(
+                            f,
+                            variable.questionText ?? undefined,
+                          );
                       }
                       e.target.value = "";
                     }
@@ -423,7 +433,14 @@ export default function VariableFormFields({
               </Button>
             )}
             {attachments.length > 0 && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.5,
+                  mt: 1,
+                }}
+              >
                 {attachments.map((item, idx) => (
                   <Box
                     key={item.id}
@@ -460,9 +477,7 @@ export default function VariableFormFields({
     return (
       <Grid key={variable.id} size={{ xs: 12 }}>
         <Box sx={{ mb: 1 }}>
-          <FieldLabel
-            questionText={variable.questionText ?? ""}
-          />
+          <FieldLabel questionText={variable.questionText ?? ""} />
         </Box>
         <TextField
           fullWidth
@@ -494,10 +509,13 @@ export default function VariableFormFields({
         )}
       </Box>
 
-      
       {contextFieldsForDisplay.length > 0 && contextValues && (
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            sx={{ mb: 1.5 }}
+          >
             Context (from selection above)
           </Typography>
           <Grid container spacing={2}>

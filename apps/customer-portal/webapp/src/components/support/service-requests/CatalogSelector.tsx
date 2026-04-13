@@ -47,7 +47,13 @@ export interface CatalogSelectorProps {
 
 interface CatalogIconConfig {
   Icon: ComponentType<{ size?: number; color?: string }>;
-  paletteKey: "primary" | "secondary" | "info" | "success" | "warning" | "error";
+  paletteKey:
+    | "primary"
+    | "secondary"
+    | "info"
+    | "success"
+    | "warning"
+    | "error";
 }
 
 const CATALOG_ICON_MAP: Array<{
@@ -259,7 +265,12 @@ export default function CatalogSelector({
                 </Box>
               </AccordionSummary>
               <AccordionDetails
-                sx={{ p: 2, borderRadius: 0, borderTop: 1, borderColor: "divider" }}
+                sx={{
+                  p: 2,
+                  borderRadius: 0,
+                  borderTop: 1,
+                  borderColor: "divider",
+                }}
               >
                 <Box
                   sx={{
@@ -283,9 +294,7 @@ export default function CatalogSelector({
                         role="radio"
                         aria-checked={isSelected}
                         id={radioId}
-                        onClick={() =>
-                          onSelectCatalogItem(catalog.id, item.id)
-                        }
+                        onClick={() => onSelectCatalogItem(catalog.id, item.id)}
                         sx={{
                           display: "flex",
                           alignItems: "center",
@@ -295,9 +304,7 @@ export default function CatalogSelector({
                           textAlign: "left",
                           cursor: "pointer",
                           border: 1,
-                          borderColor: isSelected
-                            ? "primary.main"
-                            : "divider",
+                          borderColor: isSelected ? "primary.main" : "divider",
                           bgcolor: isSelected
                             ? alpha(theme.palette.primary.main, 0.08)
                             : "transparent",

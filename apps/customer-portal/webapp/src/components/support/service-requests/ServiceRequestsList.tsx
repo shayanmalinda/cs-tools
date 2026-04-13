@@ -77,10 +77,16 @@ export default function ServiceRequestsList({
           }}
         >
           <SearchNoResultsIcon
-            style={{ width: 200, maxWidth: "100%", height: "auto", marginBottom: 16 }}
+            style={{
+              width: 200,
+              maxWidth: "100%",
+              height: "auto",
+              marginBottom: 16,
+            }}
           />
           <Typography variant="body1" color="text.secondary">
-            No service requests found. Try adjusting your filters or search query.
+            No service requests found. Try adjusting your filters or search
+            query.
           </Typography>
         </Box>
       );
@@ -95,7 +101,12 @@ export default function ServiceRequestsList({
         }}
       >
         <EmptyIcon
-          style={{ width: 200, maxWidth: "100%", height: "auto", marginBottom: 16 }}
+          style={{
+            width: 200,
+            maxWidth: "100%",
+            height: "auto",
+            marginBottom: 16,
+          }}
         />
         <Typography variant="body1" color="text.secondary">
           No service requests yet.
