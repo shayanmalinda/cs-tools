@@ -14,30 +14,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Registry token from POST /projects/projectId/registry-tokens/search.
-export type RegistryToken = {
+import type { AuditMetadata } from "@/types/common";
+
+// Item type for a registry token list item.
+export enum RegistryTokenType {
+  User = "User",
+  Service = "Service",
+}
+
+// Item type for a registry token permission.
+export type RegistryTokenPermission = { namespace: string };
+
+// Item type for a registry token.
+export type RegistryToken = AuditMetadata & {
   id?: number;
   name: string;
   displayName?: string;
   description: string;
-  creationTime?: string;
-  tokenType?: "User" | "Service";
+  tokenType?: RegistryTokenType;
   createdFor?: string;
-  createdBy?: string;
   expiresAt?: number;
   disable?: boolean;
   duration?: number;
-  permissions?: { namespace: string }[];
-}
+  permissions?: RegistryTokenPermission[];
+};
 
-// Response for POST /projects/projectId/registry-tokens (create token).
+// Response type for creating a registry token.
 export type RegistryTokenCreationResponse = {
   secret: string;
-}
+};
 
-// Request body for creating a registry token (POST /projects/:projectId/registry-tokens).
+// Request type for creating a registry token.
 export type CreateRegistryTokenRequest = {
   robotName: string;
-  tokenType: "User" | "Service";
+  tokenType: RegistryTokenType;
   createdFor?: string;
-}
+};

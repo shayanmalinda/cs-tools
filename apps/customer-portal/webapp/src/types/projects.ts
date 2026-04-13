@@ -14,27 +14,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { PaginationRequest } from "./common";
+import type {
+  IdLabelRef,
+  PaginationResponse,
+  SearchRequestBase,
+} from "@/types/common";
 
-// Basic project definition returned in search list responses.
+// Item type for basic project definition returned in search list responses.
 export type ProjectListItem = {
   id: string;
   name: string;
   key: string;
   createdOn: string;
   description: string;
-  type?: {
-    id: string;
-    label: string;
-  };
+  type?: IdLabelRef;
   hasAgent: boolean;
   hasKbReferences?: boolean;
   activeCasesCount: number;
   activeChatsCount: number;
   slaStatus: string;
-}
+};
 
-/** Account nested in project details response. */
+// Item type for account nested in project details response.
 export type ProjectDetailsAccount = {
   id: string;
   hasAgent?: boolean;
@@ -46,9 +47,9 @@ export type ProjectDetailsAccount = {
   region?: string | null;
   ownerEmail?: string | null;
   technicalOwnerEmail?: string | null;
-}
+};
 
-/** Detailed project information including account/subscription details. */
+// Response type for detailed project information including account/subscription details.
 export type ProjectDetails = {
   id: string;
   key: string;
@@ -57,10 +58,7 @@ export type ProjectDetails = {
   createdOn: string;
   hasAgent?: boolean;
   hasKbReferences?: boolean;
-  type: {
-    id: string;
-    label: string;
-  };
+  type: IdLabelRef;
   sfId?: string;
   hasSr: boolean;
   startDate?: string;
@@ -76,58 +74,72 @@ export type ProjectDetails = {
   remainingOnboardingHours?: number;
   onboardingExpiryDate?: string | null;
   onboardingStatus?: string | null;
-}
+};
 
-// Project Search Response.
-export type SearchProjectsResponse = {
-  offset: number;
-  limit: number;
+// Response type for project search responses.
+export type SearchProjectsResponse = PaginationResponse & {
   projects: ProjectListItem[];
-  totalRecords: number;
-}
+};
 
-// Request body for searching projects.
-export type SearchProjectsRequest = {
-  filters?: {
-    searchQuery?: string;
-  };
-  pagination?: PaginationRequest;
-}
+// Filter type for project search filters.
+export type ProjectSearchFilters = {
+  searchQuery?: string;
+};
 
-// Global metadata response.
+// Request type for searching projects.
+export type SearchProjectsRequest = SearchRequestBase & {
+  filters?: ProjectSearchFilters;
+};
+
+// Model type for time zone option for portal metadata.
+export type TimeZoneOption = {
+  id: string;
+  label: string;
+};
+
+// Model type for feature flags for the portal.
+export type PortalFeatureFlags = {
+  usageMetricsEnabled: boolean;
+};
+
+// Response type for global metadata.
 export type PortalMetadataResponse = {
-  timeZones: Array<{ id: string; label: string }>;
-  featureFlags?: {
-    usageMetricsEnabled: boolean;
-  };
-}
+  timeZones: TimeZoneOption[];
+  featureFlags?: PortalFeatureFlags;
+};
 
-// Project support statistics.
+// Response type for project support statistics.
 export type ProjectSupportStats = {
   ongoingCases: number;
   resolvedPast30DaysCasesCount: number;
   resolvedChats: number;
   activeChats: number;
-}
+};
 
-// Project Stats Response
+// Item type for core stats inside a project stats response.
+export type ProjectStatsSummary = {
+  openCases: number;
+  activeChats: number;
+  deployments: number;
+  slaStatus: string;
+};
+
+// Item type for recent activity inside a project stats response.
+export type ProjectRecentActivity = {
+  totalHours: number;
+  billableHours: number;
+  lastDeploymentOn: string;
+  systemHealth?: string;
+};
+
+// Response type for project stats responses.
 export type ProjectStatsResponse = {
-  projectStats: {
-    openCases: number;
-    activeChats: number;
-    deployments: number;
-    slaStatus: string;
-  };
-  recentActivity: {
-    totalHours: number;
-    billableHours: number;
-    lastDeploymentOn: string;
-    systemHealth?: string;
-  };
-}
+  projectStats: ProjectStatsSummary;
+  recentActivity: ProjectRecentActivity;
+};
 
-// Request body for PATCH /projects/:id.
+// Request type for patching a project.
 export type PatchProjectRequest = {
   hasAgent?: boolean;
   hasKbReferences?: boolean;
-}
+};
