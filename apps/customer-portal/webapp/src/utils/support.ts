@@ -558,7 +558,7 @@ export type ChatActionState =
 /** Assigned engineer from API: string or { id, label?, name? } object. */
 export type AssignedEngineerValue =
   | string
-  | { id: string; label?: string; name?: string }
+  | { id: string; label?: string; name?: string | null }
   | null
   | undefined;
 
@@ -613,7 +613,7 @@ export function formatValue(
 export function getInitials(
   name:
     | string
-    | { id: string; label?: string; name?: string }
+    | { id: string; label?: string; name?: string | null }
     | null
     | undefined,
 ): string {
