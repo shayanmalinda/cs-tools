@@ -28,7 +28,7 @@ import { ApiQueryKeys } from "@constants/apiConstants";
 import { addApiHeaders } from "@utils/apiUtils";
 import type { DeployedProductSearchRequest } from "@/types/deployments";
 import type { DeploymentProductItem, DeployedProductsResponsePayload, DeployedProductsResponse } from "@/types/deployments";
-import { isDeployedProductsResponse } from "@/types/deployments";
+import { isDeployedProductsResponse } from "@/utils/deployments";
 
 const DEFAULT_PAGE_SIZE = 10;
 
