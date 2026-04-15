@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import SuccessBanner from "@components/common/success-banner/SuccessBanner";
+import SuccessBanner from "@components/success-banner/SuccessBanner";
 import {
   createContext,
   useCallback,
@@ -26,7 +26,7 @@ import {
   type JSX,
 } from "react";
 
-import { ERROR_BANNER_TIMEOUT_MS } from "@constants/errorBannerConstants";
+import { ERROR_BANNER_TIMEOUT_MS } from "@features/shared/constants/errorBannerConstants";
 
 interface SuccessBannerContextType {
   /** Show the success banner with the given message. */

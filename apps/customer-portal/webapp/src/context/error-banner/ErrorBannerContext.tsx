@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ErrorBanner from "@components/common/error-banner/ErrorBanner";
+import ErrorBanner from "@components/error-banner/ErrorBanner";
 import {
   createContext,
   useCallback,
@@ -26,7 +26,7 @@ import {
   type JSX,
 } from "react";
 
-import { ERROR_BANNER_TIMEOUT_MS } from "@constants/errorBannerConstants";
+import { ERROR_BANNER_TIMEOUT_MS } from "@features/shared/constants/errorBannerConstants";
 
 interface ErrorBannerContextType {
   /** Show the error banner with the given user-facing message. */
