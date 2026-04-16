@@ -14,77 +14,83 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Card, CardContent } from "@wso2/oxygen-ui";
+import { Box, Card, CardContent } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
+
 import type { ProjectDetails } from "@features/project-hub/types/projects";
+import { formatProjectDate } from "@features/project-details/utils/projectDetails";
 import ProjectHeader from "@features/project-details/components/project-overview/project-information/ProjectHeader";
 import ProjectName from "@features/project-details/components/project-overview/project-information/ProjectName";
-import ProjectDescription from "@features/project-details/components/project-overview/project-information/ProjectDescription";
 import ProjectMetadata from "@features/project-details/components/project-overview/project-information/ProjectMetadata";
 import SubscriptionDetails from "@features/project-details/components/project-overview/project-information/SubscriptionDetails";
-import {
-  displayValue,
-  formatProjectDate,
-} from "@features/project-details/utils/projectDetails";
 
-export interface ProjectInformationCardProps {
-  project?: ProjectDetails | null;
+interface ProjectInformationCardProps {
+  project?: ProjectDetails;
   slaStatus: string;
   isLoading?: boolean;
   isError?: boolean;
 }
 
-/**
- * Overview card: header, name, description, metadata, subscription block.
- *
- * @param props - Project payload, SLA string, loading and error flags.
- * @returns {JSX.Element} Card section.
- */
-export default function ProjectInformationCard({
+const ProjectInformationCard = ({
   project,
   slaStatus,
   isLoading,
   isError,
-}: ProjectInformationCardProps): JSX.Element {
-  const supportTier = displayValue(project?.account?.supportTier, "--");
-  const onboardingStatus = displayValue(project?.onboardingStatus, "--");
-  const goLive = project?.goLivePlanDate
-    ? formatProjectDate(String(project.goLivePlanDate))
-    : "--";
-  const created = project?.createdOn
-    ? formatProjectDate(project.createdOn)
-    : "--";
+}: ProjectInformationCardProps): JSX.Element => {
+  const getKey = () => project?.key || "--";
+  const getName = () => project?.name || "--";
+  const getCreatedDate = () =>
+    project?.createdOn ? formatProjectDate(project.createdOn) : "--";
+  const getType = () => project?.type || { id: "--", label: "--" };
+  const getSupportTier = () => project?.account?.supportTier || "--";
+  const getStartDate = () => {
+    const val = project?.startDate;
+    return val?.trim() ? formatProjectDate(val.trim()) : "--";
+  };
+  const getEndDate = () => {
+    const val = project?.endDate;
+    return val?.trim() ? formatProjectDate(val.trim()) : "--";
+  };
+  const getGoLivePlanDate = () => {
+    const val = project?.goLivePlanDate;
+    return val?.trim() ? formatProjectDate(val.trim()) : "--";
+  };
+  const getOnboardingStatus = () => project?.onboardingStatus?.trim() || "--";
 
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: 3 }}>
         <ProjectHeader />
-        <ProjectName
-          name={project?.name ?? "--"}
-          projectKey={project?.key ?? "--"}
-          isLoading={isLoading}
-        />
-        <ProjectDescription
-          description={project?.description ?? ""}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <ProjectMetadata
-          createdDate={created}
-          type={project?.type ?? { id: "", label: "" }}
-          supportTier={supportTier}
-          slaStatus={slaStatus}
-          goLivePlanDate={goLive}
-          onboardingStatus={onboardingStatus}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <SubscriptionDetails
-          startDate={project?.startDate ?? undefined}
-          endDate={project?.endDate ?? undefined}
-          isLoading={isLoading}
-        />
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <ProjectName
+            name={getName()}
+            projectKey={getKey()}
+            isLoading={isLoading}
+            isError={isError}
+          />
+
+          <ProjectMetadata
+            createdDate={getCreatedDate()}
+            type={getType()}
+            supportTier={getSupportTier()}
+            slaStatus={slaStatus}
+            goLivePlanDate={getGoLivePlanDate()}
+            onboardingStatus={getOnboardingStatus()}
+            isLoading={isLoading}
+            isError={isError}
+          />
+
+          <SubscriptionDetails
+            startDate={getStartDate()}
+            endDate={getEndDate()}
+            isLoading={isLoading}
+            isError={isError}
+          />
+        </Box>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default ProjectInformationCard;

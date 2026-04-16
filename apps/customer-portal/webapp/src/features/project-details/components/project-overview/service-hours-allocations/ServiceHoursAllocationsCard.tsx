@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Card, CardContent, Skeleton, Typography } from "@wso2/oxygen-ui";
+import { Box, Card, CardContent, Typography, Skeleton } from "@wso2/oxygen-ui";
 import { Clock } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
 import type { ProjectDetails } from "@features/project-hub/types/projects";
@@ -43,11 +43,15 @@ function formatHoursDisplay(
   return `${formatServiceHoursDecimalAsHrMin(c)}/${formatServiceHoursDecimalAsHrMin(t)} (${pct}%)`;
 }
 
+function formatRemaining(value: number | undefined): string {
+  return formatServiceHoursDecimalAsHrMin(value);
+}
+
 /**
- * Query and onboarding hours summary for the project overview grid.
+ * ServiceHoursAllocationsCard displays Query Hours and Onboarding Hours allocations from project details.
  *
- * @param props - Project payload and loading state.
- * @returns {JSX.Element} Service hours card.
+ * @param {ServiceHoursAllocationsCardProps} props - Project data, loading and error state.
+ * @returns {JSX.Element} The rendered ServiceHoursAllocationsCard component.
  */
 export default function ServiceHoursAllocationsCard({
   project,
@@ -58,19 +62,15 @@ export default function ServiceHoursAllocationsCard({
     project?.consumedQueryHours,
     project?.totalQueryHours,
   );
-  const queryRemaining =
-    project?.remainingQueryHours != null
-      ? formatServiceHoursDecimalAsHrMin(project.remainingQueryHours)
-      : NOT_AVAILABLE;
+  const queryRemaining = formatRemaining(project?.remainingQueryHours);
 
   const onboardingDisplay = formatHoursDisplay(
     project?.consumedOnboardingHours,
     project?.totalOnboardingHours,
   );
-  const onboardingRemaining =
-    project?.remainingOnboardingHours != null
-      ? formatServiceHoursDecimalAsHrMin(project.remainingOnboardingHours)
-      : NOT_AVAILABLE;
+  const onboardingRemaining = formatRemaining(
+    project?.remainingOnboardingHours,
+  );
   const onboardingExpiry =
     project?.onboardingExpiryDate?.trim() && project.onboardingExpiryDate
       ? formatProjectDate(project.onboardingExpiryDate)
@@ -78,39 +78,122 @@ export default function ServiceHoursAllocationsCard({
 
   return (
     <Card sx={{ height: "100%" }}>
-      <CardContent sx={{ p: 3 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-          <Clock size={20} aria-hidden />
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Service hours
-          </Typography>
+      <CardContent
+        sx={{
+          p: 3,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Clock size={20} />
+          <Typography variant="h6">Service Hours Allocations</Typography>
         </Box>
-        {isLoading ? (
-          <Skeleton variant="rounded" width="100%" height={120} />
-        ) : isError ? (
-          <ErrorIndicator entityName="service hours" />
-        ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Query Hours */}
+          <Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 1,
+              }}
+            >
               <Typography variant="body2" color="text.secondary">
-                Query hours
+                Query Hours
               </Typography>
-              <Typography variant="body2">{queryDisplay}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Remaining: {queryRemaining}
-              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width={80} height={24} />
+              ) : isError ? (
+                <ErrorIndicator entityName="query hours" />
+              ) : (
+                <Typography variant="body2">{queryDisplay}</Typography>
+              )}
             </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Onboarding hours
-              </Typography>
-              <Typography variant="body2">{onboardingDisplay}</Typography>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <Typography variant="caption" color="text.secondary">
-                Remaining: {onboardingRemaining} · Expires {onboardingExpiry}
+                Remaining
               </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width={40} height={20} />
+              ) : isError ? (
+                <span />
+              ) : (
+                <Typography variant="caption">{queryRemaining}</Typography>
+              )}
             </Box>
           </Box>
-        )}
+
+          {/* Onboarding Hours */}
+          <Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 1,
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Onboarding Hours
+              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width={80} height={24} />
+              ) : isError ? (
+                <ErrorIndicator entityName="onboarding hours" />
+              ) : (
+                <Typography variant="body2">{onboardingDisplay}</Typography>
+              )}
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 1,
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Remaining
+              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width={40} height={20} />
+              ) : isError ? (
+                <span />
+              ) : (
+                <Typography variant="caption">{onboardingRemaining}</Typography>
+              )}
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Onboarding Expiry Date
+              </Typography>
+              {isLoading ? (
+                <Skeleton variant="text" width={80} height={20} />
+              ) : isError ? (
+                <span />
+              ) : (
+                <Typography variant="caption">{onboardingExpiry}</Typography>
+              )}
+            </Box>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );

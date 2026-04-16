@@ -15,88 +15,69 @@
 // under the License.
 
 import {
-  Box,
   Card,
   CardContent,
-  Grid,
-  Skeleton,
   Typography,
+  Grid,
+  Box,
+  StatCard,
+  Divider,
+  Skeleton,
 } from "@wso2/oxygen-ui";
+import { Activity } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
-import { statItems } from "@features/project-details/constants/projectDetailsConstants";
-import type { ProjectStatsSummary } from "@features/project-hub/types/projects";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 
-export interface ProjectStatisticsCardProps {
-  stats?: ProjectStatsSummary | null;
+import type { ProjectStatsResponse } from "@features/project-hub/types/projects";
+import { statItems } from "@features/project-details/constants/projectDetailsConstants";
+
+interface ProjectStatisticsCardProps {
+  stats?: ProjectStatsResponse["projectStats"];
   isLoading?: boolean;
   isError?: boolean;
+  isSidebarOpen?: boolean;
   showDeploymentsStat?: boolean;
 }
 
-/**
- * Stat grid for open cases, chats, and optional deployments.
- *
- * @param props - Project stats API slice and visibility flags.
- * @returns {JSX.Element} Statistics card.
- */
-export default function ProjectStatisticsCard({
+const ProjectStatisticsCard = ({
   stats,
   isLoading,
   isError,
+  isSidebarOpen = false,
   showDeploymentsStat = true,
-}: ProjectStatisticsCardProps): JSX.Element {
-  const items = showDeploymentsStat
+}: ProjectStatisticsCardProps): JSX.Element => {
+  const gridSize = isSidebarOpen ? { xs: 12, xl: 4 } : { xs: 12, lg: 4 };
+  const visibleStats = showDeploymentsStat
     ? statItems
     : statItems.filter((s) => s.key !== "deployments");
-
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-          Statistics
-        </Typography>
-        <Grid container spacing={2}>
-          {items.map((item) => {
-            const Icon = item.icon;
-            const raw = stats?.[item.key];
-            const value =
-              raw === null || raw === undefined ? "--" : String(raw);
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Activity size={20} />
+          <Typography variant="h6">Project Statistics</Typography>
+        </Box>
+        <Divider sx={{ mb: 3, pb: 2 }} />
 
+        <Grid container spacing={2}>
+          {visibleStats.map((stat) => {
+            const StatIcon = stat.icon;
             return (
-              <Grid key={item.key} size={{ xs: 12, sm: 4 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      color: "text.secondary",
-                      minWidth: 0,
-                    }}
-                  >
-                    <Icon size={18} aria-hidden />
-                    <Typography variant="body2" color="inherit" noWrap>
-                      {item.label}
-                    </Typography>
-                  </Box>
-                  {isLoading ? (
-                    <Skeleton variant="text" width={32} />
-                  ) : isError ? (
-                    <ErrorIndicator entityName={item.label} />
-                  ) : (
-                    <Typography variant="body2" color="primary">
-                      {value}
-                    </Typography>
-                  )}
-                </Box>
+              <Grid size={gridSize} key={stat.label}>
+                <StatCard
+                  label={stat.label}
+                  value={
+                    isLoading
+                      ? ((
+                          <Skeleton variant="text" width="40%" height={24} />
+                        ) as any)
+                      : isError
+                        ? ((<ErrorIndicator entityName={stat.label} />) as any)
+                        : (stats?.[stat.key] ?? "--").toString()
+                  }
+                  icon={<StatIcon size={24} />}
+                  iconColor={stat.iconColor}
+                />
               </Grid>
             );
           })}
@@ -104,4 +85,6 @@ export default function ProjectStatisticsCard({
       </CardContent>
     </Card>
   );
-}
+};
+
+export default ProjectStatisticsCard;
