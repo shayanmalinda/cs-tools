@@ -22,6 +22,9 @@ export function AuthorizationFallback() {
   return (
     <Backdrop
       open={true}
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="permission-title"
       component={Stack}
       sx={{
         bgcolor: "background.default",
@@ -36,7 +39,7 @@ export function AuthorizationFallback() {
       </Box>
 
       <Stack>
-        <Typography variant="h6" fontWeight={600}>
+        <Typography variant="h6" fontWeight={600} id="permission-title">
           Permission Required
         </Typography>
 
