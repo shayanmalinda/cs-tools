@@ -47,9 +47,7 @@ export default function ProjectDetails(): JSX.Element {
   const { showLoader, hideLoader } = useLoader();
   const { isLoading: isAuthLoading } = useAsgardeo();
 
-  const { sidebarCollapsed } = useOutletContext<{
-    sidebarCollapsed: boolean;
-  }>() || { sidebarCollapsed: false };
+  useOutletContext<{ sidebarCollapsed: boolean }>();
 
   const { data: projectsData } = useInfiniteProjects({ enabled: true });
   const allProjects = flattenProjectPages(projectsData);
@@ -117,15 +115,12 @@ export default function ProjectDetails(): JSX.Element {
     [permissions.hasDeployments, permissions.hasTimeLogs],
   );
 
-  useEffect(() => {
-    const tabIds = visibleTabs.map((t) => t.id);
-    if (activeTab && !tabIds.includes(activeTab)) {
-      setActiveTab("overview");
-    }
-  }, [visibleTabs, activeTab]);
+  const effectiveTab = visibleTabs.some((t) => t.id === activeTab)
+    ? activeTab
+    : "overview";
 
   const renderContent = () => {
-    switch (activeTab) {
+    switch (effectiveTab) {
       case "overview":
         if (!projectId) {
           return (
@@ -153,7 +148,6 @@ export default function ProjectDetails(): JSX.Element {
                   stats={stats?.projectStats}
                   isLoading={(isDetailsLoading || !stats) && !statsError}
                   isError={!!statsError}
-                  isSidebarOpen={!sidebarCollapsed}
                   showDeploymentsStat={permissions.hasDeployments}
                 />
               </Grid>
@@ -201,7 +195,7 @@ export default function ProjectDetails(): JSX.Element {
       {/* project page tabs */}
       <TabBar
         tabs={visibleTabs}
-        activeTab={activeTab}
+        activeTab={effectiveTab}
         onTabChange={setActiveTab}
       />
 

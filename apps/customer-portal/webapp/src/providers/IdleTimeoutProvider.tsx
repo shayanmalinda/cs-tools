@@ -49,16 +49,8 @@ export default function IdleTimeoutProvider({
     }
   };
 
-  const onIdle = () => {
-    if (isSignedIn && !isLoading) {
-      setSessionWarningOpen(false);
-      signOut().finally(() => navigate("/home"));
-    }
-  };
-
   const { activate } = useIdleTimer({
     onPrompt,
-    onIdle,
     timeout: IDLE_TIMEOUT_MS,
     promptBeforeIdle: IDLE_PROMPT_BEFORE_MS,
     throttle: IDLE_THROTTLE_MS,
