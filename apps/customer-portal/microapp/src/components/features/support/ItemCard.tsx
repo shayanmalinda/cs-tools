@@ -99,11 +99,9 @@ export function ItemCard(props: ItemCardProps) {
               {props.number}
             </Typography>
             {(type === "case" || type === "sra" || type === "service") && (
-              <PriorityChip size="small" id={props.severityId ?? "N/A"} />
+              <PriorityChip size="small" id={props.severityId} />
             )}
-            {type === "change" && (
-              <PriorityChip type="change" size="small" prefix="Impact" id={props.impactId ?? "N/A"} />
-            )}
+            {type === "change" && <PriorityChip type="change" size="small" prefix="Impact" id={props.impactId} />}
           </Stack>
           <ChevronRight size={pxToRem(18)} color={theme.palette.text.secondary} />
         </Stack>
@@ -115,7 +113,7 @@ export function ItemCard(props: ItemCardProps) {
         </Typography>
 
         <Stack direction="row" alignItems="center" gap={1}>
-          <StatusChip type={type} size="small" id={props.statusId ?? "N/A"} />
+          <StatusChip type={type} size="small" id={props.statusId} />
           <Circle sx={(theme) => ({ color: "text.tertiary", fontSize: theme.typography.pxToRem(4) })} />
           <Typography variant="subtitle2" fontWeight="regular" color="text.secondary">
             {type === "case" && (props.assigned ?? "Not Assigned")}

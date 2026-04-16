@@ -81,19 +81,19 @@ export function ItemCardExtended(props: ItemCardExtendedProps) {
                 {props.number}
               </Typography>
               {(type === "case" || type === "service" || type === "sra") && (
-                <PriorityChip size="small" id={props.severityId ?? "N/A"} />
+                <PriorityChip size="small" id={props.severityId} />
               )}
               {type === "service" && <Chip size="small" label={props.issueType ?? "N/A"} />}
               {type === "engagement" && <Chip size="small" label={props.engagementType ?? "Unspecified"} />}
               {type === "change" && (
                 <>
-                  <PriorityChip type="change" size="small" prefix="Impact" id={props.impactId ?? "N/A"} />
+                  <PriorityChip type="change" size="small" prefix="Impact" id={props.impactId} />
                   <Chip size="small" label={props.requestType ?? "N/A"} />
                 </>
               )}
             </Stack>
             <Stack direction="row" gap={2}>
-              <StatusChip type={type} size="small" id={props.statusId ?? "N/A"} />
+              <StatusChip type={type} size="small" id={props.statusId} />
               <Box color="text.secondary">
                 <ChevronRight size={pxToRem(18)} />
               </Box>

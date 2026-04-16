@@ -64,19 +64,14 @@ export function PriorityChip({ prefix, id, type = "case", ...props }: PriorityCh
     <Chip
       label={`${prefix ? `${prefix}: ` : ""}${overrideOrDefault(label)}`}
       {...props}
-      sx={(theme) => {
-        if (color === "default") {
-          return {
-            bgcolor: alpha(theme.palette.text.primary, 0.08),
-            color: theme.palette.text.secondary,
-          };
-        }
-
-        return {
-          bgcolor: alpha(theme.palette[color].light, 0.1),
-          color: theme.palette[color].light,
-        };
-      }}
+      sx={
+        color !== "default"
+          ? (theme) => ({
+              bgcolor: alpha(theme.palette[color].light, 0.1),
+              color: theme.palette[color].light,
+            })
+          : undefined
+      }
     />
   );
 }
@@ -120,19 +115,14 @@ export function StatusChip({ id, type = "case", ...props }: StatusChipProps) {
       color={color}
       label={label}
       {...props}
-      sx={(theme) => {
-        if (color === "default") {
-          return {
-            bgcolor: alpha(theme.palette.text.primary, 0.08),
-            color: theme.palette.text.secondary,
-          };
-        }
-
-        return {
-          bgcolor: alpha(theme.palette[color].light, 0.1),
-          color: theme.palette[color].light,
-        };
-      }}
+      sx={
+        color !== "default"
+          ? (theme) => ({
+              bgcolor: alpha(theme.palette[color].light, 0.1),
+              color: theme.palette[color].light,
+            })
+          : undefined
+      }
     />
   );
 }
