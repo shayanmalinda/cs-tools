@@ -27,7 +27,7 @@ import {
 import { Skeleton, Stack } from "@wso2/oxygen-ui";
 import { useSearchParams } from "react-router-dom";
 import { useLayout } from "@context/layout";
-import { Suspense, useLayoutEffect } from "react";
+import { useLayoutEffect } from "react";
 import { ErrorBoundary } from "../components/core";
 import { SecurityReportAnalysisListContent } from "../components/features/support/SecurityReportAnalysisListContent";
 import { EngagementListContent } from "../components/features/support/EngagementListContent";
@@ -68,9 +68,7 @@ function ItemsListContent({ type, filter, search }: { type: ItemCardProps["type"
 export function FilterAppBarSlot({ type }: { type: ItemCardProps["type"] }) {
   return (
     <ErrorBoundary fallback={<FilterSlotBuilderSkeleton />}>
-      <Suspense fallback={<FilterSlotBuilderSkeleton />}>
-        <FilterSlotContent type={type} />
-      </Suspense>
+      <FilterSlotContent type={type} />
     </ErrorBoundary>
   );
 }

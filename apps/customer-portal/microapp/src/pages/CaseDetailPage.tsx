@@ -26,9 +26,9 @@ import { useLayout } from "@context/layout";
 import { cases } from "@src/services/cases";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { useProject } from "@context/project";
 import ms from "ms";
 import { Comment } from "@components/features/detail";
+import { useFilters } from "../context/filters";
 
 dayjs.extend(relativeTime);
 
@@ -38,9 +38,8 @@ export default function CaseDetailPage() {
   const [comment, setComment] = useState("");
 
   const { id } = useParams();
-  const { projectId } = useProject();
   const { data, isLoading } = useQuery(cases.get(id!));
-  const { data: filters, isLoading: isFiltersLoading } = useQuery(cases.filters(projectId!));
+  const { data: filters, isLoading: isFiltersLoading } = useFilters();
   const { data: comments, isFetching: isCommentsRefetching } = useQuery({
     ...cases.comments(id!),
     select: (data) => [...data].sort((a, b) => a.createdOn.getTime() - b.createdOn.getTime()),

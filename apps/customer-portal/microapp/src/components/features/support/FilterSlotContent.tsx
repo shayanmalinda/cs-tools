@@ -1,27 +1,20 @@
-import { useProject } from "@root/src/context/project";
-import { FilterSlotBuilder, type ItemCardProps } from ".";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { cases } from "@root/src/services/cases";
+import { SEARCH_PLACEHOLDER_CONFIG } from "@root/src/config/constants";
+import { FilterSlotBuilder, FilterSlotBuilderSkeleton, type ItemCardProps } from ".";
+import { useFilters } from "@context/filters";
 
 export function FilterSlotContent({ type }: { type: ItemCardProps["type"] }) {
-  const { projectId } = useProject();
-  const { data: filters } = useSuspenseQuery(cases.filters(projectId!));
+  const { data, isLoading } = useFilters();
 
-  const SEARCH_PLACEHOLDER_CONFIG: Record<typeof type, string> = {
-    case: "Search Cases",
-    chat: "Search Chats",
-    service: "Search Service Requests",
-    change: "Search Change Requests",
-  };
+  if (isLoading || !data) return <FilterSlotBuilderSkeleton />;
 
   const tabs = (() => {
     switch (type) {
       case "chat":
-        return filters.conversationStates;
+        return data.conversationStates;
       case "change":
-        return filters.changeRequestStates;
+        return data.changeRequestStates;
       default:
-        return filters.caseStates;
+        return data.caseStates;
     }
   })().map((filter) => ({ label: filter.label, value: filter.id }));
 

@@ -14,22 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useProject } from "@context/project";
-import ProjectScopeProvider from "@root/src/context/ProjectScopeProvider";
-import { Navigate, Outlet } from "react-router-dom";
+import { useContext } from "react";
+import { FiltersContext } from "./FiltersContext";
 
-const RequireProject = () => {
-  const { projectId } = useProject();
+export function useFilters() {
+  const context = useContext(FiltersContext);
 
-  if (!projectId) {
-    return <Navigate to="/select" replace />;
+  if (!context) {
+    throw new Error("useFilters must be used within a FiltersProvider");
   }
 
-  return (
-    <ProjectScopeProvider>
-      <Outlet />
-    </ProjectScopeProvider>
-  );
-};
-
-export default RequireProject;
+  return context;
+}

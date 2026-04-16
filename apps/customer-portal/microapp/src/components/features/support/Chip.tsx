@@ -14,7 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { alpha, Chip, type ChipProps } from "@wso2/oxygen-ui";
+import type { ItemCardProps } from ".";
+import { alpha, Chip, Skeleton, type ChipProps } from "@wso2/oxygen-ui";
+import { overrideOrDefault } from "@root/src/utils/others";
+import { useFilters } from "@root/src/context/filters";
 
 import {
   CASE_STATUS_CHIP_COLOR_CONFIG,
@@ -23,11 +26,6 @@ import {
   IMPACT_CHIP_COLOR_CONFIG,
   PRIORITY_CHIP_COLOR_CONFIG,
 } from "./config";
-import { useProject } from "@root/src/context/project";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { cases } from "@src/services/cases";
-import type { ItemCardProps } from ".";
-import { overrideOrDefault } from "@root/src/utils/others";
 
 interface PriorityChipProps extends Omit<ChipProps, "label"> {
   prefix?: string;
@@ -36,16 +34,17 @@ interface PriorityChipProps extends Omit<ChipProps, "label"> {
 }
 
 export function PriorityChip({ prefix, id, type = "case", ...props }: PriorityChipProps) {
-  const { projectId } = useProject();
-  const { data } = useSuspenseQuery(cases.filters(projectId!));
+  const { data, isLoading } = useFilters();
+
+  if (isLoading || !data) return <SkeletonChip />;
 
   const label =
     (() => {
       switch (type) {
         case "change":
-          return data.changeRequestImpacts;
+          return data?.changeRequestImpacts;
         default:
-          return data.severities;
+          return data?.severities;
       }
     })()
       .find((s) => s.id === id)
@@ -88,8 +87,9 @@ interface StatusChipProps extends Omit<ChipProps, "label"> {
 }
 
 export function StatusChip({ id, type = "case", ...props }: StatusChipProps) {
-  const { projectId } = useProject();
-  const { data } = useSuspenseQuery(cases.filters(projectId!));
+  const { data, isLoading } = useFilters();
+
+  if (isLoading || !data) return <SkeletonChip />;
 
   const label =
     (() => {
@@ -135,4 +135,8 @@ export function StatusChip({ id, type = "case", ...props }: StatusChipProps) {
       }}
     />
   );
+}
+
+function SkeletonChip() {
+  return <Skeleton variant="text" width={50} height={30} />;
 }

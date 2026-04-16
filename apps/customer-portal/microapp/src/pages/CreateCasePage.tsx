@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as Yup from "yup";
 import { overrideOrDefault } from "../utils/others";
 import { useNotify } from "../context/snackbar";
+import { useFilters } from "../context/filters";
 
 type CreateCaseFormValues = {
   project: string;
@@ -77,9 +78,9 @@ export default function CreateCasePage() {
     },
   });
 
-  const { data: filters } = useSuspenseQuery(cases.filters(formik.values.project));
-  const issueTypeOptions = filters.issueTypes.map((type) => ({ value: Number(type.id), label: type.label }));
-  const severityLevelOptions = filters.severities.map((type) => ({
+  const { data: filters } = useFilters();
+  const issueTypeOptions = filters?.issueTypes.map((type) => ({ value: Number(type.id), label: type.label }));
+  const severityLevelOptions = filters?.severities.map((type) => ({
     value: Number(type.id),
     label: overrideOrDefault(type.label),
   }));
@@ -143,13 +144,17 @@ export default function CreateCasePage() {
       autoFilledFields.add("product");
     }
 
-    const matchedType = issueTypeOptions.find((option) => option.label === classifications.issueType);
+    const matchedType = issueTypeOptions?.find((option) => option.label === classifications.issueType);
+
     if (matchedType) {
       formik.setFieldValue("type", matchedType.value);
       autoFilledFields.add("type");
     }
 
-    const matchedSeverity = severityLevelOptions.find((option) => option.label.includes(classifications.severityLevel));
+    const matchedSeverity = severityLevelOptions?.find((option) =>
+      option.label.includes(classifications.severityLevel),
+    );
+
     if (matchedSeverity) {
       formik.setFieldValue("severity", matchedSeverity.value);
       autoFilledFields.add("severity");
@@ -175,6 +180,7 @@ export default function CreateCasePage() {
           <Stack gap={2}>
             <SelectField
               required
+              disabled
               name="project"
               label="Project"
               options={projectsOptions}
@@ -294,7 +300,7 @@ export default function CreateCasePage() {
               label="Issue Type"
               placeholder="Select Issue Type"
               aiLabel={classified.has("type") ? "AI Classified" : undefined}
-              options={issueTypeOptions}
+              options={issueTypeOptions ?? []}
               value={formik.values.type}
               onChange={(e) => {
                 formik.handleChange(e);
@@ -313,7 +319,7 @@ export default function CreateCasePage() {
               label="Severity Levels"
               placeholder="Select Severity"
               aiLabel={classified.has("severity") ? "AI Classified" : undefined}
-              options={severityLevelOptions}
+              options={severityLevelOptions ?? []}
               value={formik.values.severity}
               onChange={(e) => {
                 formik.handleChange(e);

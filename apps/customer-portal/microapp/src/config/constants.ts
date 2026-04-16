@@ -122,3 +122,12 @@ export const ITEM_DETAIL_PATHS: Record<ItemCardProps["type"], (id: string) => st
 };
 
 export const LOCAL_STORAGE_LAST_VISITED_PROJECT_KEY = "last-active-project-id";
+
+export const SEARCH_PLACEHOLDER_CONFIG: Record<ItemCardProps["type"], string> = {
+  case: "Search Cases",
+  chat: "Search Chats",
+  service: "Search Service Requests",
+  change: "Search Change Requests",
+  sra: "Search Security Report Analysis",
+  engagement: "Search Engagement",
+};

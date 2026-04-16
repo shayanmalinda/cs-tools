@@ -14,22 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useProject } from "@context/project";
-import ProjectScopeProvider from "@root/src/context/ProjectScopeProvider";
-import { Navigate, Outlet } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { FiltersContext } from "./FiltersContext";
+import { cases } from "@root/src/services/cases";
+import { useProject } from "../project";
 
-const RequireProject = () => {
+export default function FiltersProvider({ children }: { children: React.ReactNode }) {
   const { projectId } = useProject();
+  const { data, isLoading } = useQuery(cases.filters(projectId!));
 
-  if (!projectId) {
-    return <Navigate to="/select" replace />;
-  }
-
-  return (
-    <ProjectScopeProvider>
-      <Outlet />
-    </ProjectScopeProvider>
-  );
-};
-
-export default RequireProject;
+  return <FiltersContext.Provider value={{ data, isLoading }}>{children}</FiltersContext.Provider>;
+}

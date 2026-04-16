@@ -16,33 +16,21 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Chip, Grid, Skeleton, Stack, Typography } from "@wso2/oxygen-ui";
-import {
-  InfoField,
-  OverlineSlot,
-  ProgressTimelineEntrySkeleton,
-  StakeholderItem,
-  StakeholderItemSkeleton,
-  TimelineEntry,
-} from "@components/features/detail";
+import { InfoField, OverlineSlot, StakeholderItem, StakeholderItemSkeleton } from "@components/features/detail";
 import { PriorityChip, StatusChip } from "@components/features/support";
 import { User, Users } from "@wso2/oxygen-ui-icons-react";
 import { SectionCard } from "@components/shared";
 import { useLayout } from "@context/layout";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { changeRequests } from "@src/services/changes";
 import { useParams } from "react-router-dom";
 import { stripHtmlTags } from "@utils/others";
-import { Timeline } from "../components/ui";
-import { useProject } from "../context/project";
-import { cases } from "../services/cases";
-import { TIMELINE_META } from "../config/constants";
+import { ProgressTimeline } from "../components/features/detail/ProgressTimeline";
 
 export default function ChangeDetailPage() {
   const layout = useLayout();
   const { id } = useParams();
-  const { projectId } = useProject();
   const { data, isLoading } = useQuery(changeRequests.get(id!));
-  const { data: filters } = useSuspenseQuery(cases.filters(projectId!));
 
   const ref = useRef<HTMLSpanElement>(null);
   const [overlineSlotVariant, setOverlineSlotVariant] = useState<"normal" | "shrunk">("normal");
@@ -77,9 +65,6 @@ export default function ChangeDetailPage() {
       layout.setTitleOverride(undefined);
     };
   }, [data, overlineSlotVariant]);
-
-  const status = filters.changeRequestStates.find((type) => type.id === data?.statusId)?.label;
-  const statusIndex = TIMELINE_META.findIndex((entry) => entry.title === status);
 
   return (
     <>
@@ -195,38 +180,7 @@ export default function ChangeDetailPage() {
           </Grid>
         </SectionCard>
         <SectionCard title="Progress Timeline">
-          {data ? (
-            <Timeline>
-              {TIMELINE_META.map((step, index) => (
-                <TimelineEntry
-                  key={index}
-                  variant="progress"
-                  status={
-                    index >= TIMELINE_META.length - 3
-                      ? index === statusIndex
-                        ? "active"
-                        : "pending"
-                      : index === statusIndex
-                        ? "active"
-                        : index < statusIndex
-                          ? "completed"
-                          : "pending"
-                  }
-                  title={step.title}
-                  description={step.description}
-                  fill={index === 3 ? (data.hasCustomerApproved ? "green" : "red") : undefined}
-                  end={index > TIMELINE_META.length - 4}
-                  last={index === TIMELINE_META.length - 1}
-                />
-              ))}
-            </Timeline>
-          ) : (
-            <Timeline>
-              {TIMELINE_META.map((_, index) => (
-                <ProgressTimelineEntrySkeleton key={index} last={index === TIMELINE_META.length - 1} />
-              ))}
-            </Timeline>
-          )}
+          <ProgressTimeline id={id!} />
         </SectionCard>
         <SectionCard title="Stakeholders">
           <Stack gap={1.5}>
