@@ -18,7 +18,6 @@ import { Box, Chip, Form, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
 import { Calendar, FileText } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
 import {
-  formatUtcToLocalNoTimezone,
   stripHtml,
   getStatusColor,
   getStatusIconElement,
@@ -201,7 +200,7 @@ export default function AnnouncementList({
                     color="text.secondary"
                     sx={{ lineHeight: 1 }}
                   >
-                    Created {formatUtcToLocalNoTimezone(caseItem.createdOn)}
+                    Created {caseItem.createdOn || "--"}
                   </Typography>
                 </Box>
                 {caseItem.issueType?.label && (
