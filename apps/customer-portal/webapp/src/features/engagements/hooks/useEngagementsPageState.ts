@@ -59,6 +59,14 @@ export function useEngagementsPageState() {
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    setSortField((prev) =>
+      prev === EngagementsSortField.Severity
+        ? EngagementsSortField.CreatedOn
+        : prev,
+    );
+  }, []);
+
   const { data: project, isLoading: isProjectLoading } = useGetProjectDetails(
     projectId || "",
   );
@@ -192,7 +200,10 @@ export function useEngagementsPageState() {
     setPage(1);
   };
 
-  const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
+  const listHasRefinement = hasListSearchOrFilters(searchTerm, {
+    ...filters,
+    severityId: undefined,
+  });
 
   const onCaseClick =
     projectId !== undefined
