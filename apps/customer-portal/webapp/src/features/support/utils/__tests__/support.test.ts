@@ -710,6 +710,18 @@ describe("support utils", () => {
         convertCodeTagsToHtml("Refs [code]A[/code] and [code]B[/code]"),
       ).toBe("Refs <code>A</code> and <code>B</code>");
     });
+
+    it("should normalize escaped [/code][code] markers and not render them", () => {
+      expect(
+        convertCodeTagsToHtml("[code]A[\\/code][code]B[/code]"),
+      ).toBe("<code>A</code>\n<code>B</code>");
+    });
+
+    it("should drop orphan code markers while keeping a blank separator", () => {
+      expect(
+        convertCodeTagsToHtml("Incident[/code] [code]Description[/code]"),
+      ).toBe("Incident\n\n<code>Description</code>");
+    });
   });
 
   describe("stripAllCodeBlocks", () => {
@@ -718,10 +730,22 @@ describe("support utils", () => {
         stripAllCodeBlocks(
           "[code]<br><b>Title</b>[/code][code]<br><p>Desc</p>[/code]",
         ),
-      ).toBe("<br><b>Title</b><br><p>Desc</p>");
+      ).toBe("<br><b>Title</b>\n\n<br><p>Desc</p>\n");
     });
     it("should return empty for empty input", () => {
       expect(stripAllCodeBlocks("")).toBe("");
+    });
+
+    it("should strip escaped code wrappers and keep blank line between blocks", () => {
+      expect(stripAllCodeBlocks("[code]A[\\/code][code]B[/code]")).toBe(
+        "A\n\nB\n",
+      );
+    });
+
+    it("should strip orphan code markers in mixed content", () => {
+      expect(
+        stripAllCodeBlocks("Incident[/code] [code]Description[/code]"),
+      ).toBe("Incident\n\nDescription\n");
     });
   });
 
