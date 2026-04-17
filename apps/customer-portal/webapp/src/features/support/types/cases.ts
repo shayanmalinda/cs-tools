@@ -362,6 +362,6 @@ export type CreateCaseRequest = {
   projectId: string;
   severityKey?: number;
   title: string;
-  parentCaseId?: string;
+  relatedCaseId?: string;
   conversationId?: string;
 };

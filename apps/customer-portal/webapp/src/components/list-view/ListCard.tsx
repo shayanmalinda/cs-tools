@@ -80,6 +80,8 @@ export default function ListCard({
         flexDirection: "column",
         alignItems: "stretch",
         gap: 1,
+        width: "100%",
+        minWidth: 0,
       }}
     >
       <Form.CardHeader
@@ -150,7 +152,13 @@ export default function ListCard({
         <Typography
           variant="h6"
           color="text.primary"
-          sx={{ mb: 1, fontWeight: 500 }}
+          sx={{
+            mb: 1,
+            fontWeight: 500,
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+            minWidth: 0,
+          }}
         >
           {caseItem.title || "--"}
         </Typography>
@@ -163,6 +171,9 @@ export default function ListCard({
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+            minWidth: 0,
           }}
         >
           {stripHtml(caseItem.description) || "--"}
@@ -183,6 +194,7 @@ export default function ListCard({
             alignItems: "center",
             gap: 2,
             flexWrap: "wrap",
+            minWidth: 0,
           }}
         >
           <Box
@@ -190,14 +202,14 @@ export default function ListCard({
               display: "flex",
               alignItems: "center",
               gap: 0.5,
-              flexShrink: 0,
+              minWidth: 0,
             }}
           >
             <Calendar size={14} />
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ lineHeight: 1 }}
+              sx={{ lineHeight: 1, overflowWrap: "anywhere" }}
             >
               Created {formatDateTime(caseItem.createdOn) || "--"}
             </Typography>
@@ -208,14 +220,14 @@ export default function ListCard({
                 display: "flex",
                 alignItems: "center",
                 gap: 0.5,
-                flexShrink: 0,
+                minWidth: 0,
               }}
             >
               <User size={14} />
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ lineHeight: 1 }}
+                sx={{ lineHeight: 1, overflowWrap: "anywhere" }}
               >
                 Created by {caseItem.createdBy}
               </Typography>
@@ -231,14 +243,14 @@ export default function ListCard({
                   display: "flex",
                   alignItems: "center",
                   gap: 0.5,
-                  flexShrink: 0,
+                  minWidth: 0,
                 }}
               >
                 <User size={14} />
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  sx={{ lineHeight: 1 }}
+                  sx={{ lineHeight: 1, overflowWrap: "anywhere" }}
                 >
                   Assigned to {assignedLabel}
                 </Typography>
@@ -251,14 +263,14 @@ export default function ListCard({
                 display: "flex",
                 alignItems: "center",
                 gap: 0.5,
-                flexShrink: 0,
+                minWidth: 0,
               }}
             >
               <FileText size={14} />
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ lineHeight: 1 }}
+              sx={{ lineHeight: 1, overflowWrap: "anywhere" }}
               >
                 {caseItem.deployment.label}
               </Typography>

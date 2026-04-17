@@ -19,7 +19,7 @@ import {
   BANNER_HEADER_GAP_PX,
   BANNER_RIGHT_GAP_PX,
   HEADER_HEIGHT_PX,
-} from "@features/shared/constants/errorBannerConstants";
+} from "@constants/common";
 import type { JSX } from "react";
 
 interface ErrorBannerProps {

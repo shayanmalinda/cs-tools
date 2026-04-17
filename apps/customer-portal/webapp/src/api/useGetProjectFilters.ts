@@ -18,7 +18,7 @@ import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@/utils/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys } from "@/constants/apiConstants";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import { CALL_REQUEST_STATE_CANCELLED } from "@features/support/constants/supportConstants";
 import type { CaseMetadataResponse } from "@features/support/types/cases";
 
