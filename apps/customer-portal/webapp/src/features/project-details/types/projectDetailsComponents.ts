@@ -168,6 +168,7 @@ export type DeploymentDocumentListProps = {
 export type DeploymentDocumentRowProps = {
   doc: DeploymentDocument;
   deploymentId: string;
+  currentUserEmail: string;
   onError: (message: string) => void;
 };
 

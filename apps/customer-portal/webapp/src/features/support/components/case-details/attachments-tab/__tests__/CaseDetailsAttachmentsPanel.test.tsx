@@ -86,6 +86,15 @@ vi.mock("@features/support/api/useGetCaseAttachments", () => ({
     data?.pages?.flatMap((p: any) => p.attachments ?? []) ?? [],
 }));
 
+vi.mock("@features/settings/api/useGetUserDetails", () => ({
+  __esModule: true,
+  default: () => ({
+    data: { email: "admin@test.com" },
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 function renderPanel(caseId = "case-1") {
   return render(
     <QueryClientProvider client={queryClient}>
