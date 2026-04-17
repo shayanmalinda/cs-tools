@@ -2669,12 +2669,10 @@ components:
           type: string
           description: Allowed domain list of the account
           nullable: true
-          default: ""
         classification:
           type: string
           description: Account classification
           nullable: true
-          default: ""
         isPartner:
           type: boolean
           description: Whether the account is a partner or not
@@ -2688,6 +2686,7 @@ components:
       - downloadUrl
       - id
       - name
+      - previewUrl
       - size
       - type
       type: object
@@ -2714,6 +2713,10 @@ components:
         downloadUrl:
           type: string
           description: Download URL
+          nullable: true
+        previewUrl:
+          type: string
+          description: Preview URL for image attachments
           nullable: true
         description:
           type: string
@@ -2847,7 +2850,8 @@ components:
           description: Reason for the requested call cancellation
         utcTimes:
           type: array
-          description: New preferred UTC times for the call
+          description: New preferred UTC times for the call (mandatory when stateKey
+            is 2)
           items:
             $ref: '#/components/schemas/DateTime'
         durationInMinutes:

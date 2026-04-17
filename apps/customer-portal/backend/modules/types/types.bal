@@ -550,6 +550,8 @@ public type Attachment record {|
     string createdOn;
     # Download URL
     string? downloadUrl;
+    # Preview URL for image attachments
+    string? previewUrl;
     # Description of the attachment
     string? description;
 |};

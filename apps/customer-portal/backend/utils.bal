@@ -233,6 +233,7 @@ public isolated function mapAttachmentsResponse(entity:AttachmentsResponse respo
             createdBy: attachment.createdBy,
             createdOn: attachment.createdOn,
             downloadUrl: attachment.downloadUrl,
+            previewUrl: attachment.previewUrl,
             description: attachment.description
         };
 
