@@ -50,6 +50,7 @@ export type DeploymentDocument = {
   createdBy?: string;
   content?: string | null;
   downloadUrl?: string;
+  previewUrl?: string | null;
 };
 
 // Response type for GET /deployments/:deploymentId/attachments.
