@@ -44,7 +44,7 @@ const mockCaseDetails = {
   type: { id: "1", label: "Incident" },
   deployment: { id: "d1", label: "Production" },
   deployedProduct: null,
-  parentCase: null,
+  relatedCase: null,
   conversation: null,
   issueType: null,
   status: { id: "1", label: "Open" },

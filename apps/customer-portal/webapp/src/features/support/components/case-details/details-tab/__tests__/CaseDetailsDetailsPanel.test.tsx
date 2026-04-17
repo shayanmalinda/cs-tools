@@ -39,7 +39,7 @@ const mockCaseDetails: Partial<CaseDetails> = {
   type: { id: "1", label: "Incident" },
   deployment: { id: "d1", label: "Production" },
   deployedProduct: null,
-  parentCase: null,
+  relatedCase: null,
   conversation: null,
   issueType: null,
   severity: { id: "60", label: "S0" },

@@ -115,7 +115,7 @@ export default function CaseDetailsPage(): JSX.Element {
     navigate(`/projects/${projectId}/support/chat/create-related-case`, {
       state: {
         relatedCase: {
-          parentCaseId: data?.id ?? caseId ?? "",
+          relatedCaseId: data?.id ?? caseId ?? "",
           number: data?.number ?? "",
           title: data?.title ?? "",
           description: data?.description ?? "",
