@@ -22,7 +22,7 @@ export type ChatMessageForClassification = {
 
 /** Location state for creating a case from “Open Related Case”. */
 export type RelatedCaseState = {
-  parentCaseId?: string;
+  relatedCaseId?: string;
   number: string;
   title: string;
   description: string;

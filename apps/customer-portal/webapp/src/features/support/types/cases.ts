@@ -215,7 +215,7 @@ export type CaseDetails = AuditMetadata & {
   project: IdLabelRef | null;
   type: IdLabelRef | null;
   deployedProduct: CaseDetailsDeployedProduct | null;
-  parentCase: IdLabelRef | null;
+  relatedCase: IdLabelRef | null;
   conversation: unknown;
   issueType: IdLabelRef | null;
   catalog?: IdLabelRef | null;
@@ -362,6 +362,6 @@ export type CreateCaseRequest = {
   projectId: string;
   severityKey?: number;
   title: string;
-  parentCaseId?: string;
+  relatedCaseId?: string;
   conversationId?: string;
 };
