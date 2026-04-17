@@ -45,12 +45,12 @@ import {
 function formatPreferredTimes(
   times: string[] | undefined,
   userTimeZone?: string,
-): string {
-  if (!times?.length) return "--";
+) : string[] {
+  if (!times?.length) return ["--"];
   const formatted = times
     .map((time) => formatUtcToLocal(time, "short", false, userTimeZone))
     .filter((s) => s !== "--");
-  return formatted.length > 0 ? formatted.join(", ") : "--";
+  return formatted.length > 0 ? formatted : ["--"];
 }
 
 /**
@@ -86,6 +86,7 @@ export default function CallRequestCard({
   const resolvedColor = isCancelled
     ? theme.palette.error.main
     : resolveColorFromTheme(colorPath, theme);
+  const preferredTimeLines = formatPreferredTimes(call.preferredTimes, userTimeZone);
 
   return (
     <Card variant="outlined">
@@ -260,9 +261,23 @@ export default function CallRequestCard({
             >
               Preferred Times
             </Typography>
-            <Typography variant="body2">
-              {formatPreferredTimes(call.preferredTimes, userTimeZone)}
-            </Typography>
+            {preferredTimeLines[0] === "--" ? (
+              <Typography variant="body2">--</Typography>
+            ) : (
+              <Box
+                component="ul"
+                sx={{
+                  m: 0,
+                  pl: 2.5,
+                }}
+              >
+                {preferredTimeLines.map((timeValue) => (
+                  <Box component="li" key={timeValue}>
+                    <Typography variant="body2">{timeValue}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Box>
           <Box>
             <Typography
