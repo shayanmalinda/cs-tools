@@ -22,7 +22,7 @@ import {
 import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@/utils/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys } from "@/constants/apiConstants";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { PostDeploymentAttachmentVariables } from "@features/project-details/types/projectDetailsApi";
 import type { PostDeploymentAttachmentResponse } from "@features/project-details/types/deployments";
 
