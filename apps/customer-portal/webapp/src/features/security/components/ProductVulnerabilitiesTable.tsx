@@ -76,7 +76,7 @@ const ProductVulnerabilitiesTable = ({
     [debouncedSearch, filters, page, rowsPerPage],
   );
 
-  const { data, isFetching, isError } =
+  const { data, isLoading, isError } =
     usePostProductVulnerabilitiesSearch(searchRequest);
 
   useEffect(() => {
@@ -159,7 +159,7 @@ const ProductVulnerabilitiesTable = ({
       )}
 
       <ProductVulnerabilitiesList
-        isLoading={isFetching || (!data && !isError)}
+        isLoading={isLoading || (!data && !isError)}
         isError={isError}
         data={paginatedData}
         page={page}
