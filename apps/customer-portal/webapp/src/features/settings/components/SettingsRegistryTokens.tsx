@@ -125,10 +125,9 @@ export default function SettingsRegistryTokens({
   const {
     data: allTokens = [],
     isLoading,
-    isFetching,
     error,
   } = useSearchRegistryTokens(projectId);
-  const isTableLoading = isLoading || isFetching;
+  const isTableLoading = isLoading;
   const userTokens = useMemo(
     () => allTokens.filter((t) => t.tokenType === RegistryTokenType.USER),
     [allTokens],
