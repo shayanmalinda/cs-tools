@@ -56,6 +56,6 @@ export default function usePostDeploymentInstancesMetricsSearch(
       return response.json() as Promise<InstanceMetricsResponse>;
     },
     enabled: !!deploymentId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }

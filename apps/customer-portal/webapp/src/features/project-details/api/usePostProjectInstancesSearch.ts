@@ -56,6 +56,6 @@ export default function usePostProjectInstancesSearch(
       return response.json() as Promise<InstancesResponse>;
     },
     enabled: !!projectId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }

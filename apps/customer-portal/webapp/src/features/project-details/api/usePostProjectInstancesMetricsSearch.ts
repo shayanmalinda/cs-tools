@@ -57,6 +57,6 @@ export default function usePostProjectInstancesMetricsSearch(
       return response.json() as Promise<InstanceMetricsResponse>;
     },
     enabled: !!projectId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }

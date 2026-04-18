@@ -56,6 +56,6 @@ export default function usePostDeploymentInstancesSearch(
       return response.json() as Promise<InstancesResponse>;
     },
     enabled: !!deploymentId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }

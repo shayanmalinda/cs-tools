@@ -60,6 +60,6 @@ export default function usePostDeployedProductInstancesSearch(
       return response.json() as Promise<InstancesResponse>;
     },
     enabled: !!deployedProductId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }

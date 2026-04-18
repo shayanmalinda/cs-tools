@@ -266,7 +266,7 @@ export function usePostDeploymentProductsSearchInfinite(
       return undefined;
     },
     enabled: enabled && !!deploymentId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }
 
@@ -308,7 +308,7 @@ export function usePostDeploymentProductsSearchAll(
         logger,
       }),
     enabled: enabled && !!deploymentId && isSignedIn && !isAuthLoading,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 }
 
