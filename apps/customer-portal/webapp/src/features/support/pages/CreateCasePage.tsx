@@ -29,7 +29,7 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectDetails from "@api/useGetProjectDetails";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { usePostProjectDeploymentsSearchInfinite } from "@api/usePostProjectDeploymentsSearch";
 import {
   extractDeploymentProducts,
@@ -979,11 +979,11 @@ export default function CreateCasePage(): JSX.Element {
                     : "Creating..."
                   : isNavigatingAfterCreate
                     ? "Opening case..."
-                  : isSecurityReport
-                    ? "Submit Security Report"
-                    : relatedCase
-                      ? "Create Related Case"
-                      : "Create Support Case"}
+                    : isSecurityReport
+                      ? "Submit Security Report"
+                      : relatedCase
+                        ? "Create Related Case"
+                        : "Create Support Case"}
             </Button>
           </Box>
         </Box>

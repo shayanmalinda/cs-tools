@@ -15,7 +15,7 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import type { ConversationRequest } from "@features/support/types/conversations";
 import type { ConversationResponse } from "@features/support/types/conversations";
