@@ -25,19 +25,32 @@ import { themeConfig } from "@config/themeConfig";
 import { loggerConfig } from "@config/loggerConfig";
 import LoggerProvider from "@context/logger/LoggerProvider";
 import { authConfig } from "@config/authConfig";
+import { AUTH_NOT_READY_ERROR_MESSAGE } from "@constants/apiConstants";
+
+const AUTH_TOKEN_ERROR_MESSAGES = [
+  AUTH_NOT_READY_ERROR_MESSAGE,
+  "Unable to retrieve ID token",
+];
 
 /**
  * Custom retry function for React Query.
- * Only retries on 502 (Bad Gateway) and 503 (Service Unavailable) errors.
+ * Retries on auth-not-ready token errors (up to 3 times) and on 502/503.
  *
  * @param {number} failureCount - The number of times the request has failed.
  * @param {Error} error - The error that occurred.
  * @returns {boolean} True if the request should be retried, false otherwise.
  */
 function shouldRetry(failureCount: number, error: Error): boolean {
-  // Max 3 retries
-  if (failureCount >= 2) {
+  if (failureCount >= 3) {
     return false;
+  }
+
+  // Retry transient auth-token errors — token may not be ready right after sign-in
+  if (
+    error instanceof Error &&
+    AUTH_TOKEN_ERROR_MESSAGES.some((msg) => error.message.includes(msg))
+  ) {
+    return failureCount < 3;
   }
 
   // Check if error has a status code property
@@ -47,16 +60,27 @@ function shouldRetry(failureCount: number, error: Error): boolean {
   return statusCode === 502 || statusCode === 503;
 }
 
+function retryDelay(_attemptIndex: number, error: unknown): number {
+  // Short backoff for token-not-ready errors: 500ms, 1s, 2s
+  if (
+    error instanceof Error &&
+    AUTH_TOKEN_ERROR_MESSAGES.some((msg) => error.message.includes(msg))
+  ) {
+    return Math.min(500 * 2 ** _attemptIndex, 2000);
+  }
+  return Math.min(1000 * 2 ** _attemptIndex, 30000);
+}
+
 const queryClient: QueryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: shouldRetry,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay,
       refetchOnWindowFocus: false,
     },
     mutations: {
       retry: shouldRetry,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay,
     },
   },
 });
