@@ -31,6 +31,10 @@ export function useProactiveTokenRefresh(): void {
       return;
     }
 
+    if (document.visibilityState === "hidden" && hiddenAtRef.current === null) {
+      hiddenAtRef.current = Date.now();
+    }
+
     const handleVisibilityChange = (): void => {
       if (document.visibilityState === "hidden") {
         hiddenAtRef.current = Date.now();
