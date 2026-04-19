@@ -16,7 +16,7 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import type { ProjectCasesStats } from "@features/support/types/cases";
@@ -142,6 +142,6 @@ export function useGetProjectCasesStats(
       }
     },
     enabled: !!id && isSignedIn && !isAuthLoading && enabled,
-    staleTime:  0,
+    staleTime: 0,
   });
 }

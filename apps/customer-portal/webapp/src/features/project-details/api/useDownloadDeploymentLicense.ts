@@ -16,7 +16,7 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import type { DownloadDeploymentLicenseVariables } from "@features/project-details/types/projectDetailsApi";

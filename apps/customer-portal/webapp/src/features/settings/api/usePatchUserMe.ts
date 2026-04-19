@@ -20,7 +20,7 @@ import {
   type UseMutationResult,
 } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import type { PatchUserMeRequest } from "@features/settings/types/users";
 import type { UserDetails } from "@features/settings/types/users";

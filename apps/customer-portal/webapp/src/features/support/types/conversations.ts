@@ -143,6 +143,19 @@ export type RecommendationResult = {
   recommendations: Recommendation[];
 };
 
+export enum NoveraActionType {
+  SolutionProposed = "solutionProposed",
+  SolutionWorked = "solutionWorked",
+}
+
+// Item type for a UI action button returned in a Novera final event.
+export type NoveraAction = {
+  type: NoveraActionType | string;
+  label: string;
+  style?: "primary" | "danger";
+  payload?: Record<string, unknown>;
+};
+
 // Response type for chat conversation (Novera).
 export type ConversationResponse = {
   message: string;
@@ -202,6 +215,7 @@ export type Message = {
   thinkingSteps?: string[];
   thinkingLabel?: string | null;
   isStreaming?: boolean;
+  actions?: NoveraAction[];
 };
 
 // Model type for chat navigation state.

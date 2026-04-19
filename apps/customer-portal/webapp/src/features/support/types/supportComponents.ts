@@ -442,6 +442,7 @@ export type ChatInputProps = {
   isSending?: boolean;
   isCreateCaseLoading?: boolean;
   resetTrigger?: number;
+  forceRichText?: boolean;
 };
 
 export type ChatHeaderProps = {
@@ -470,6 +471,7 @@ export type ChatMessageListProps = {
   onThumbsDown?: (messageId: string) => void;
   onFetchOlder?: () => void;
   isFetchingOlder?: boolean;
+  onSolutionWorked?: () => void;
 };
 
 export type ChatMessageBubbleProps = {
@@ -477,4 +479,5 @@ export type ChatMessageBubbleProps = {
   onCreateCase?: () => void;
   onThumbsUp?: (messageId: string) => void;
   onThumbsDown?: (messageId: string) => void;
+  onSolutionWorked?: () => void;
 };

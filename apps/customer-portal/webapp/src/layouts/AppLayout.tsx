@@ -144,108 +144,117 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
 
   return (
     <IdleTimeoutProvider>
-      <TopBanner />
-      <GlobalNotificationBanner visible={notificationBannerConfig.visible} />
-      <AppShell>
-        <AppShell.Navbar>
-          <Header
-            onToggleSidebar={shellActions.toggleSidebar}
-            collapsed={shellState.sidebarCollapsed}
-          />
-        </AppShell.Navbar>
-
-        {!isProjectHub && (
-          <AppShell.Sidebar>
-            <SideBar
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100dvh",
+          overflow: "hidden",
+        }}
+      >
+        <TopBanner />
+        <GlobalNotificationBanner visible={notificationBannerConfig.visible} />
+        <AppShell sx={{ flex: 1, minHeight: 0, height: "auto" }}>
+          <AppShell.Navbar>
+            <Header
+              onToggleSidebar={shellActions.toggleSidebar}
               collapsed={shellState.sidebarCollapsed}
-              expandedMenus={shellState.expandedMenus}
-              onSelect={shellActions.setActiveMenuItem}
-              onToggleExpand={shellActions.toggleMenu}
             />
-          </AppShell.Sidebar>
-        )}
+          </AppShell.Navbar>
 
-        <AppShell.Main>
-          <FloatingNoveraVisibilityProvider>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                width: "100%",
-                flex: 1,
-                minHeight: 0,
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              {isVisible && (
-                <LinearProgress
-                  color="warning"
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 1300,
-                    height: 3,
-                  }}
-                />
-              )}
+          {!isProjectHub && (
+            <AppShell.Sidebar>
+              <SideBar
+                collapsed={shellState.sidebarCollapsed}
+                expandedMenus={shellState.expandedMenus}
+                onSelect={shellActions.setActiveMenuItem}
+                onToggleExpand={shellActions.toggleMenu}
+              />
+            </AppShell.Sidebar>
+          )}
+
+          <AppShell.Main>
+            <FloatingNoveraVisibilityProvider>
               <Box
-                ref={mainContentRef}
                 sx={{
-                  flex: 1,
-                  minHeight: 0,
-                  minWidth: 0,
                   display: "flex",
                   flexDirection: "column",
-                  overflow: "auto",
-                  ...(isDetailsStylePage ? { minHeight: "60vh" } : {}),
-                  ...(isAuthLoading
-                    ? { p: 0 }
-                    : isDetailsStylePage
-                      ? { px: 0, pb: 0, pt: 0 }
-                      : { p: 3 }),
+                  height: "100%",
+                  width: "100%",
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: "hidden",
+                  position: "relative",
                 }}
               >
-                {isAuthLoading ? (
-                  <Box
+                {isVisible && (
+                  <LinearProgress
+                    color="warning"
                     sx={{
-                      flex: 1,
-                      minHeight: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 2,
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      zIndex: 1300,
+                      height: 3,
                     }}
-                  >
-                    <LinearProgress
-                      color="warning"
-                      sx={{ width: "80%", maxWidth: 400, height: 4 }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {loadingMessage}
-                    </Typography>
-                  </Box>
-                ) : (
-                  children || (
-                    <Outlet
-                      context={{ sidebarCollapsed: shellState.sidebarCollapsed }}
-                    />
-                  )
+                  />
                 )}
+                <Box
+                  ref={mainContentRef}
+                  sx={{
+                    flex: 1,
+                    minHeight: 0,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "auto",
+                    ...(isDetailsStylePage ? { minHeight: "60vh" } : {}),
+                    ...(isAuthLoading
+                      ? { p: 0 }
+                      : isDetailsStylePage
+                        ? { px: 0, pb: 0, pt: 0 }
+                        : { p: 3 }),
+                  }}
+                >
+                  {isAuthLoading ? (
+                    <Box
+                      sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 2,
+                      }}
+                    >
+                      <LinearProgress
+                        color="warning"
+                        sx={{ width: "80%", maxWidth: 400, height: 4 }}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        {loadingMessage}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    children || (
+                      <Outlet
+                        context={{ sidebarCollapsed: shellState.sidebarCollapsed }}
+                      />
+                    )
+                  )}
+                </Box>
+                {!isProjectHub && <NoveraFloatingChat />}
               </Box>
-              {!isProjectHub && <NoveraFloatingChat />}
-            </Box>
-          </FloatingNoveraVisibilityProvider>
-        </AppShell.Main>
+            </FloatingNoveraVisibilityProvider>
+          </AppShell.Main>
 
-        <AppShell.Footer>
-          <Footer />
-        </AppShell.Footer>
-      </AppShell>
+          <AppShell.Footer>
+            <Footer />
+          </AppShell.Footer>
+        </AppShell>
+      </Box>
     </IdleTimeoutProvider>
   );
 }

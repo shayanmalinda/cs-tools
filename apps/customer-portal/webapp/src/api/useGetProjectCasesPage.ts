@@ -15,7 +15,7 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CaseSearchRequest } from "@features/support/types/cases";
@@ -88,6 +88,6 @@ export function useGetProjectCasesPage(
       !isAuthLoading &&
       offset >= 0 &&
       limit > 0,
-    staleTime:  0,
+    staleTime: 0,
   });
 }

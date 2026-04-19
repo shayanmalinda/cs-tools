@@ -16,7 +16,7 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import type { CreateCaseRequest } from "@features/support/types/cases";
 import type { CreateServiceRequestPayload } from "@features/operations/types/serviceRequests";

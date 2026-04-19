@@ -16,7 +16,7 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import { CALL_REQUEST_STATE_CANCELLED } from "@features/support/constants/supportConstants";
@@ -76,6 +76,6 @@ export default function useGetProjectFilters(
       }
     },
     enabled: !!projectId && isSignedIn && !isAuthLoading,
-    staleTime:  0,
+    staleTime: 0,
   });
 }

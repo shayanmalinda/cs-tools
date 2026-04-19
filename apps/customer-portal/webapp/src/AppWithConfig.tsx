@@ -52,7 +52,6 @@ const queryClient: QueryClient = new QueryClient({
     queries: {
       retry: shouldRetry,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      refetchOnWindowFocus: false,
     },
     mutations: {
       retry: shouldRetry,
