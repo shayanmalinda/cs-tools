@@ -30,7 +30,8 @@ import { useGetConversationMessages } from "@features/support/api/useGetConversa
 import { usePostCaseClassifications } from "@features/support/api/usePostCaseClassifications";
 import { useChatWebSocket } from "@features/support/api/useChatWebSocket";
 import useGetProjectDetails from "@api/useGetProjectDetails";
-import type { SlotState } from "@features/support/types/conversations";
+import type { SlotState, NoveraAction } from "@features/support/types/conversations";
+import { NoveraActionType } from "@features/support/types/conversations";
 import { useAllDeploymentProducts } from "@features/support/hooks/useAllDeploymentProducts";
 import {
   DEFAULT_CONVERSATION_REGION,
@@ -286,6 +287,7 @@ export default function NoveraChatPage(): JSX.Element {
       performClassification();
     }
   }, [isWaitingForClassification, isAllProductsLoading, performClassification]);
+  const [showRichText, setShowRichText] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputValueRef = useRef("");
   const [resetTrigger, setResetTrigger] = useState(0);
@@ -338,6 +340,9 @@ export default function NoveraChatPage(): JSX.Element {
         pendingFinalRef.current = null;
         const { finalMessage, payload } = pending;
         const msg = prev[idx];
+        const parsedActions = Array.isArray(payload.actions)
+          ? (payload.actions as NoveraAction[])
+          : undefined;
         const next = [...prev];
         next[idx] = {
           ...msg,
@@ -349,6 +354,7 @@ export default function NoveraChatPage(): JSX.Element {
           thinkingSteps: [],
           thinkingLabel: null,
           isStreaming: false,
+          actions: parsedActions,
         };
         appliedFinal = true;
         return next;
@@ -356,8 +362,12 @@ export default function NoveraChatPage(): JSX.Element {
     });
     if (appliedFinal) {
       setIsSending(false);
+      const hasSolutionProposed = pending?.payload &&
+        Array.isArray(pending.payload.actions) &&
+        (pending.payload.actions as NoveraAction[]).some((a) => a.type === NoveraActionType.SolutionProposed);
+      if (hasSolutionProposed) setShowRichText(true);
     }
-  }, []);
+  }, [setShowRichText]);
 
   const dequeueOneTypedToken = useCallback(() => {
     const token = tokenQueueRef.current.shift();
@@ -578,6 +588,9 @@ export default function NoveraChatPage(): JSX.Element {
   );
 
   const handleSolutionWorked = useCallback(() => {
+    void sendViaWebSocket("This Resolved My Issue");
+  }, [sendViaWebSocket]);
+
   const handleSendMessage = useCallback(async (): Promise<boolean> => {
     const text = htmlToPlainText(inputValueRef.current).trim();
     if (!text || isSending || !projectId) return false;
@@ -635,6 +648,7 @@ export default function NoveraChatPage(): JSX.Element {
               messages={messages}
               messagesEndRef={messagesEndRef}
               onCreateCase={handleCreateCase}
+              onSolutionWorked={handleSolutionWorked}
               onFetchOlder={
                 urlConversationId && hasNextPage && !isFetchingNextPage
                   ? () => fetchNextPage()
@@ -654,6 +668,7 @@ export default function NoveraChatPage(): JSX.Element {
             isCreateCaseLoading={isCreateCaseLoading}
             isSending={isSending}
             resetTrigger={resetTrigger}
+            forceRichText={showRichText}
           />
         </Paper>
       </Box>
