@@ -32,23 +32,27 @@ function sleep(delayMs: number): Promise<void> {
 
 // Checks whether an error indicates Asgardeo auth state is not ready yet.
 function isAsgardeoUnauthenticatedError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const maybeCode = (error as { code?: unknown }).code;
+  const maybeCode = (error as { code?: unknown } | null)?.code;
   if (maybeCode === ASGARDEO_UNAUTHENTICATED_CODE) {
     return true;
   }
-  
-  const msg = error.message.toLowerCase();
 
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : typeof (error as { message?: unknown })?.message === "string"
+          ? ((error as { message: string }).message)
+          : "";
+
+  const lower = msg.toLowerCase();
   return (
-    msg.includes("id token") ||
-    msg.includes("not authenticated") ||
-    msg.includes("not signed in") ||
-    msg.includes("no token") ||
-    msg.includes("unauthenticated")
+    lower.includes("id token") ||
+    lower.includes("not authenticated") ||
+    lower.includes("not signed in") ||
+    lower.includes("no token") ||
+    lower.includes("unauthenticated")
   );
 }
 
@@ -91,7 +95,7 @@ export function useAuthApiClient() {
     for (let attempt = 0; attempt < delays.length; attempt += 1) {
       // If Asgardeo is still initializing, skip the token call and wait —
       // getIdToken() returns empty while isLoading=true even for signed-in users.
-      if (isAsgardeoLoadingRef.current) {
+      if (isAsgardeoLoadingRef.current !== false) {
         authNotReadyCount += 1;
         logger.warn("[authFetch] token-unavailable", {
           attempt: attempt + 1,
