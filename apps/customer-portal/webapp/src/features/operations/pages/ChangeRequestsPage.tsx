@@ -92,6 +92,7 @@ export default function ChangeRequestsPage(): JSX.Element {
     data: stats,
     isLoading: isStatsLoading,
     isError: isStatsError,
+    isFetched: isStatsFetched,
   } = useGetProjectChangeRequestStats(projectId || "", {
     enabled: !!projectId,
   });
@@ -231,6 +232,15 @@ export default function ChangeRequestsPage(): JSX.Element {
   };
 
   const listHasRefinement = hasListSearchOrFilters(searchTerm, filters);
+  const normalizedStats = useMemo(
+    () => ({
+      totalRequests: stats?.totalRequests ?? 0,
+      awaitingYourAction: stats?.awaitingYourAction ?? 0,
+      ongoing: stats?.ongoing ?? 0,
+      completed: stats?.completed ?? 0,
+    }),
+    [stats],
+  );
 
   const exportButton = (
     <Button
@@ -266,11 +276,11 @@ export default function ChangeRequestsPage(): JSX.Element {
 
       <Box sx={{ mb: 3 }}>
         <ListStatGrid
-          isLoading={isStatsLoading || (!stats && !isStatsError)}
+          isLoading={isStatsLoading || (!isStatsFetched && !isStatsError)}
           isError={isStatsError}
           entityName="change request"
           configs={CHANGE_REQUEST_STAT_CONFIGS}
-          stats={stats}
+          stats={normalizedStats}
         />
       </Box>
 
