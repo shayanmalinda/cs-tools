@@ -248,6 +248,7 @@ export function getDashboardChartsLoadingState(params: {
   isEngagementLoading: boolean;
   includeCrStats: boolean;
   isChangeRequestStatsLoading: boolean;
+  includeEngagementStats?: boolean;
 }): boolean {
   const {
     isDashboardLoading,
@@ -257,9 +258,13 @@ export function getDashboardChartsLoadingState(params: {
     isEngagementLoading,
     includeCrStats,
     isChangeRequestStatsLoading,
+    includeEngagementStats = true,
   } = params;
 
-  if (isDashboardLoading || isDefaultCaseLoading || isEngagementLoading) {
+  if (isDashboardLoading || isDefaultCaseLoading) {
+    return true;
+  }
+  if (includeEngagementStats && isEngagementLoading) {
     return true;
   }
   if (showOpsChart && isServiceRequestLoading) {

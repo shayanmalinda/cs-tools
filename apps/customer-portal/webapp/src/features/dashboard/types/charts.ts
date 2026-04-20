@@ -97,4 +97,5 @@ export type ChartLayoutProps = {
   restrictSeverityToLow?: boolean;
   showOperationsChart?: boolean;
   operationsChartMode?: OperationsChartMode;
+  showEngagementsChart?: boolean;
 };
