@@ -46,10 +46,7 @@ function ImageComponent({
   };
 
   return (
-    <span
-      style={{ position: "relative", display: "inline-block" }}
-      className="editor-image-wrapper"
-    >
+    <span style={{ position: "relative", display: "inline-block" }}>
       <img
         src={sanitizeUrl(src)}
         alt={altText}
@@ -59,7 +56,6 @@ function ImageComponent({
         type="button"
         onClick={handleRemove}
         aria-label="Remove image"
-        className="editor-image-remove-button"
         style={{
           position: "absolute",
           top: 4,
@@ -77,26 +73,12 @@ function ImageComponent({
           fontSize: 14,
           lineHeight: 1,
           padding: 0,
-          opacity: 0,
-          pointerEvents: "none",
-          transform: "scale(0.9)",
-          transition: "opacity 0.2s ease, transform 0.2s ease",
+          opacity: 1,
+          pointerEvents: "auto",
         }}
       >
         ×
       </button>
-      <style>{`
-        .editor-image-wrapper:hover .editor-image-remove-button,
-        .editor-image-wrapper:focus-within .editor-image-remove-button {
-          opacity: 1;
-          pointer-events: auto;
-          transform: none;
-        }
-        .editor-image-remove-button:focus-visible {
-          outline: 2px solid #ffffff;
-          outline-offset: 1px;
-        }
-      `}</style>
     </span>
   );
 }
