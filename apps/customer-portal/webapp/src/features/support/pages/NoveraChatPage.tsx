@@ -314,6 +314,7 @@ export default function NoveraChatPage(): JSX.Element {
     }
   }, [isWaitingForClassification, isAllProductsLoading, performClassification]);
   const [showRichText, setShowRichText] = useState(false);
+  const [isInputDisabled, setIsInputDisabled] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const inputValueRef = useRef("");
   const [resetTrigger, setResetTrigger] = useState(0);
@@ -388,13 +389,15 @@ export default function NoveraChatPage(): JSX.Element {
     });
     if (appliedFinal) {
       setIsSending(false);
-      const hasSolutionProposed =
-        pending?.payload &&
-        Array.isArray(pending.payload.actions) &&
-        (pending.payload.actions as NoveraAction[]).some(
-          (a) => a.type === NoveraActionType.SolutionProposed,
-        );
-      if (hasSolutionProposed) setShowRichText(true);
+      const actions = Array.isArray(pending?.payload?.actions)
+        ? (pending.payload.actions as NoveraAction[])
+        : [];
+      if (actions.some((a) => a.type === NoveraActionType.SolutionProposed)) {
+        setShowRichText(true);
+      }
+      if (actions.some((a) => a.type === NoveraActionType.SolutionWorked)) {
+        setIsInputDisabled(true);
+      }
     }
   }, [setShowRichText]);
 
@@ -702,6 +705,7 @@ export default function NoveraChatPage(): JSX.Element {
             isSending={isSending}
             resetTrigger={resetTrigger}
             forceRichText={showRichText}
+            disabled={isInputDisabled}
           />
         </Paper>
       </Box>
