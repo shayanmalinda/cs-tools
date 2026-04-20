@@ -133,7 +133,11 @@ export default function SupportPage(): JSX.Element {
         isError={isError}
         stats={stats}
       />
-      <Grid container spacing={3} sx={{ alignItems: "stretch", minWidth: 0 }}>
+      <Grid
+        container
+        spacing={3}
+        sx={{ alignItems: "stretch", minWidth: 0, width: "100%", overflowX: "hidden" }}
+      >
         <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", minWidth: 0 }}>
           <SupportOverviewCard
             title="Outstanding Cases"
