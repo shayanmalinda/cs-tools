@@ -50,8 +50,9 @@ const ChartLayout = ({
 }: ChartLayoutProps): JSX.Element => {
   const visibleChartsCount =
     1 + (showOperationsChart ? 1 : 0) + (showEngagementsChart ? 1 : 0);
+  const singleChartMode = visibleChartsCount === 1;
   const chartSpan =
-    visibleChartsCount === 1
+    singleChartMode
       ? ({ xs: 12 as const, md: 12 as const })
       : showOperationsChart
         ? DASHBOARD_CHART_SPAN
@@ -66,16 +67,18 @@ const ChartLayout = ({
           isError={isErrorOutstanding}
           excludeS0={excludeS0}
           restrictSeverityToLow={restrictSeverityToLow}
+          centerContent={singleChartMode}
         />
       </Grid>
 
       {showOperationsChart && (
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={chartSpan}>
           <ActiveCasesChart
             data={activeCases}
             isLoading={isLoading}
             isError={isErrorActiveCases}
             variant={operationsChartMode}
+            centerContent={singleChartMode}
           />
         </Grid>
       )}
@@ -86,6 +89,7 @@ const ChartLayout = ({
             data={engagements}
             isLoading={isLoading}
             isError={isErrorEngagements}
+            centerContent={singleChartMode}
           />
         </Grid>
       )}

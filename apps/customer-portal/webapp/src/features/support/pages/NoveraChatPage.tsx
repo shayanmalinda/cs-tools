@@ -239,7 +239,7 @@ export default function NoveraChatPage(): JSX.Element {
         try {
           const classificationResponse = await classifyCase({
             chatHistory,
-            envProducts: envProducts ?? {},
+            envProducts,
             region: DEFAULT_CONVERSATION_REGION,
             tier: DEFAULT_CONVERSATION_TIER,
           });

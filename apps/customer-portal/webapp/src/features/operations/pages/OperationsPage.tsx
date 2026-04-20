@@ -95,7 +95,7 @@ export default function OperationsPage(): JSX.Element {
       filters: { caseTypes: [CaseType.SERVICE_REQUEST] },
       sortBy: { field: "createdOn", order: SortOrder.DESC },
     },
-    { enabled: !!projectId && isServiceRequestEnabled },
+    { enabled: !!projectId && permissionsReady && isServiceRequestEnabled },
   );
   const serviceRequests =
     srData?.pages?.[0]?.cases?.slice(0, OPERATIONS_OVERVIEW_LIST_LIMIT) ?? [];
@@ -113,7 +113,7 @@ export default function OperationsPage(): JSX.Element {
     },
     0,
     OPERATIONS_OVERVIEW_LIST_LIMIT,
-    { enabled: !!projectId && isChangeRequestEnabled },
+    { enabled: !!projectId && permissionsReady && isChangeRequestEnabled },
   );
   const changeRequests = crData?.changeRequests ?? [];
 
@@ -123,7 +123,7 @@ export default function OperationsPage(): JSX.Element {
     isError: isSrStatsError,
   } = useGetProjectCasesStats(projectId || "", {
     caseTypes: [CaseType.SERVICE_REQUEST],
-    enabled: !!projectId && isServiceRequestEnabled,
+    enabled: !!projectId && permissionsReady && isServiceRequestEnabled,
   });
 
   const {
@@ -131,7 +131,7 @@ export default function OperationsPage(): JSX.Element {
     isLoading: isCrStatsLoading,
     isError: isCrStatsError,
   } = useGetProjectChangeRequestsStats(projectId || "", {
-    enabled: !!projectId && isChangeRequestEnabled,
+    enabled: !!projectId && permissionsReady && isChangeRequestEnabled,
   });
 
   const activeServiceRequests = srStats?.activeCount;

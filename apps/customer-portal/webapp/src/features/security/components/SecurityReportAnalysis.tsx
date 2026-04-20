@@ -72,7 +72,8 @@ import { getProjectPermissions } from "@utils/permission";
 const SecurityReportAnalysis = (): JSX.Element => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
-  const { data: projectDetails } = useGetProjectDetails(projectId || "");
+  const { data: projectDetails, isLoading: isProjectLoading } =
+    useGetProjectDetails(projectId || "");
   const canCreateSecurityReport = getProjectPermissions(
     projectDetails?.type?.label,
     { hasPdpSubscription: projectDetails?.hasPdpSubscription },
@@ -116,7 +117,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
   const { data, isLoading, hasNextPage, fetchNextPage } = useGetProjectCases(
     projectId || "",
     caseSearchRequest,
-    { enabled: !!projectId },
+    { enabled: !!projectId && canCreateSecurityReport },
   );
 
   useEffect(() => {
@@ -184,6 +185,28 @@ const SecurityReportAnalysis = (): JSX.Element => {
     () => [...SECURITY_REPORT_SORT_OPTIONS],
     [],
   );
+
+  if (!isProjectLoading && projectDetails && !canCreateSecurityReport) {
+    return (
+      <Paper
+        sx={{
+          width: "100%",
+          mb: 4,
+          p: 3,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <Typography variant="h5" color="text.primary">
+          {SECURITY_REPORT_ANALYSIS_TITLE}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Security report analysis is not available for this project type.
+        </Typography>
+      </Paper>
+    );
+  }
 
   return (
     <Paper

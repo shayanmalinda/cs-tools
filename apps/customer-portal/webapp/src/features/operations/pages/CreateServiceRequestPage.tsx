@@ -186,11 +186,19 @@ export default function CreateServiceRequestPage(): JSX.Element {
 
   const { data: projectDetails, isLoading: isProjectLoading } =
     useGetProjectDetails(projectId || "");
+  const srPermissions = useMemo(
+    () =>
+      getProjectPermissions(projectDetails?.type?.label, {
+        hasPdpSubscription: projectDetails?.hasPdpSubscription,
+      }),
+    [projectDetails?.type?.label, projectDetails?.hasPdpSubscription],
+  );
+  const hasSR = srPermissions.hasSR;
   const deploymentsQuery = usePostProjectDeploymentsSearchInfinite(
     projectId || "",
     {
       pageSize: 10,
-      enabled: !!projectId && !isProjectLoading,
+      enabled: !!projectId && !isProjectLoading && hasSR,
     },
   );
   const allProjectDeployments = useMemo(
@@ -529,14 +537,6 @@ export default function CreateServiceRequestPage(): JSX.Element {
     selectedCatalogItemId,
     isCreatePending,
   });
-
-  const srPermissions = useMemo(
-    () =>
-      getProjectPermissions(projectDetails?.type?.label, {
-        hasPdpSubscription: projectDetails?.hasPdpSubscription,
-      }),
-    [projectDetails?.type?.label, projectDetails?.hasPdpSubscription],
-  );
 
   if (!isProjectLoading && projectDetails && !srPermissions.hasSR) {
     return (

@@ -174,15 +174,18 @@ export default function ServiceRequestsPage(): JSX.Element {
   const hasStatsResponse = stats !== undefined;
   const hasCasesResponse = data !== undefined;
   const isProjectContextLoading = isProjectLoading;
+  const canLoadServiceRequests = !projectDetailsReady || permissions.hasSR;
   const isStatsLoading =
-    isProjectContextLoading ||
-    isStatsQueryLoading ||
-    (!!projectId && !hasStatsResponse && !isStatsError);
+    canLoadServiceRequests &&
+    (isProjectContextLoading ||
+      isStatsQueryLoading ||
+      (!!projectId && !hasStatsResponse && !isStatsError));
 
   const isCasesAreaLoading =
-    isCasesQueryLoading ||
-    (!!projectId && !hasCasesResponse) ||
-    isFetchingNextPage;
+    canLoadServiceRequests &&
+    (isCasesQueryLoading ||
+      (!!projectId && !hasCasesResponse) ||
+      isFetchingNextPage);
 
   const isInitialPageLoading = isStatsLoading || isCasesAreaLoading;
 

@@ -144,6 +144,15 @@ vi.mock("@api/useGetProjects", () => {
   };
 });
 
+vi.mock("@api/useGetProjectDetails", () => ({
+  __esModule: true,
+  default: () => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 vi.mock("@components/side-nav-bar/SubscriptionWidget", () => {
   return {
     __esModule: true,

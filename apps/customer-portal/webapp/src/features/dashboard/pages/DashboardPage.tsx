@@ -233,6 +233,7 @@ export default function DashboardPage(): JSX.Element {
       isErrorServiceRequest,
       includeCrStats,
       isErrorChangeRequestStats,
+      includeEngagementStats: permissions.hasEngagements,
     });
 
     if (allCoreFailed && !hasShownErrorRef.current) {
@@ -253,6 +254,7 @@ export default function DashboardPage(): JSX.Element {
     isErrorChangeRequestStats,
     showOpsChart,
     includeCrStats,
+    permissions.hasEngagements,
     showError,
     logger,
     projectId,

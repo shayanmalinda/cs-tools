@@ -285,6 +285,7 @@ export function getAllCoreFailedState(params: {
   isErrorServiceRequest: boolean;
   includeCrStats: boolean;
   isErrorChangeRequestStats: boolean;
+  includeEngagementStats?: boolean;
 }): boolean {
   const {
     isErrorCombinedCases,
@@ -294,9 +295,13 @@ export function getAllCoreFailedState(params: {
     isErrorServiceRequest,
     includeCrStats,
     isErrorChangeRequestStats,
+    includeEngagementStats = true,
   } = params;
 
-  if (!isErrorCombinedCases || !isErrorDefaultCase || !isErrorEngagement) {
+  if (!isErrorCombinedCases || !isErrorDefaultCase) {
+    return false;
+  }
+  if (includeEngagementStats && !isErrorEngagement) {
     return false;
   }
   if (showOpsChart && !isErrorServiceRequest) {

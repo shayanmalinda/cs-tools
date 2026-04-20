@@ -148,8 +148,10 @@ export function getProjectPermissions(
  */
 export function shouldExcludeS0(
   projectTypeLabel: string | null | undefined,
+  options?: GetProjectPermissionsOptions,
 ): boolean {
-  return !getProjectPermissions(projectTypeLabel).includeS0InSupportMetrics;
+  return !getProjectPermissions(projectTypeLabel, options)
+    .includeS0InSupportMetrics;
 }
 
 /**

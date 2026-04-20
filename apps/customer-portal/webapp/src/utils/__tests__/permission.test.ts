@@ -67,16 +67,34 @@ describe("getProjectPermissions", () => {
 });
 
 describe("shouldForceSeverityS4", () => {
+  it("is true for Development Support", () => {
+    expect(shouldForceSeverityS4(ProjectType.DEVELOPMENT_SUPPORT)).toBe(true);
+  });
+
   it("is true for Professional Services", () => {
     expect(shouldForceSeverityS4(ProjectType.PROFESSIONAL_SERVICES)).toBe(true);
   });
 });
 
 describe("getProjectSeverityPolicy", () => {
+  it("excludes S0 and restricts to S4 for Development Support", () => {
+    const policy = getProjectSeverityPolicy(ProjectType.DEVELOPMENT_SUPPORT);
+    expect(policy.excludeS0).toBe(true);
+    expect(policy.restrictSeverityToLow).toBe(true);
+  });
+
   it("excludes S0 and restricts to S4 for Professional Services", () => {
     const policy = getProjectSeverityPolicy(ProjectType.PROFESSIONAL_SERVICES);
     expect(policy.excludeS0).toBe(true);
     expect(policy.restrictSeverityToLow).toBe(true);
+  });
+
+  it("keeps full severity range for Managed Cloud Subscription", () => {
+    const policy = getProjectSeverityPolicy(
+      ProjectType.MANAGED_CLOUD_SUBSCRIPTION,
+    );
+    expect(policy.excludeS0).toBe(false);
+    expect(policy.restrictSeverityToLow).toBe(false);
   });
 });
 
