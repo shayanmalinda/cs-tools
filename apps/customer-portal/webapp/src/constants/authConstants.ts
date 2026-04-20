@@ -28,3 +28,7 @@ export const CONTINUE_LOADER_MS = 6_000;
 
 // Minimum idle duration (ms) before the Continue loader is shown.
 export const CONTINUE_LOADER_IDLE_THRESHOLD_MS = 20 * 60 * 1000;
+
+export const HIDDEN_REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+
+export const SILENT_RECOVERY_TIMEOUT_MS = 15_000;
