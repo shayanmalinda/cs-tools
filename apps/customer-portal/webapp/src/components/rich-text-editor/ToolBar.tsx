@@ -235,9 +235,11 @@ const Toolbar = ({
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === "string") {
-          editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-            src: reader.result,
-            altText: file.name,
+          editor.focus(() => {
+            editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+              src: reader.result as string,
+              altText: file.name,
+            });
           });
         }
         resetInput();

@@ -84,7 +84,11 @@ export default function SideBar({
       items = items.filter((item: AppShellNavItem) => item.id !== "usage-metrics");
     }
 
-    if (!isProjectTypeResolved || !permissions.hasOperations) {
+    if (
+      !isProjectTypeResolved ||
+      !permissions.hasOperations ||
+      (!permissions.hasSR && !permissions.hasCR)
+    ) {
       items = items.filter((item: AppShellNavItem) => item.id !== "operations");
     }
 
@@ -92,11 +96,16 @@ export default function SideBar({
       items = items.filter((item: AppShellNavItem) => item.id !== "engagements");
     }
 
+    if (!permissions.hasUpdates) {
+      items = items.filter((item: AppShellNavItem) => item.id !== "updates");
+    }
+
     return items;
   }, [
     isProjectTypeResolved,
     permissions.hasOperations,
     permissions.hasEngagements,
+    permissions.hasUpdates,
     usageMetricsEnabled,
   ]);
 

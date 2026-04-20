@@ -45,7 +45,10 @@ export default function SessionWarningDialog({
   return (
     <Dialog
       open={open}
-      onClose={onContinue}
+      onClose={(_event, reason) => {
+        if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+        onContinue();
+      }}
       maxWidth="sm"
       fullWidth
       aria-labelledby="session-warning-dialog-title"
