@@ -22,3 +22,6 @@ export const IDLE_PROMPT_BEFORE_MS = 4_000;
 
 // Throttle for idle timer updates (ms).
 export const IDLE_THROTTLE_MS = 500;
+
+// Duration of the "Resuming session…" loader shown after the user clicks Continue (ms).
+export const CONTINUE_LOADER_MS = 10_000;
