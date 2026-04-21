@@ -766,18 +766,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProjectFilterOptions'
-        "400":
-          description: BadRequest
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorPayload'
         "401":
           description: Unauthorized
         "500":
           description: InternalServerError
         "403":
           description: Forbidden
+        "404":
+          description: NotFound
+        "400":
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
   /projects/{id}/features:
     get:
       summary: Get features for a project.
@@ -802,6 +804,8 @@ paths:
           description: InternalServerError
         "403":
           description: Forbidden
+        "404":
+          description: NotFound
         "400":
           description: BadRequest
           content:
@@ -2725,10 +2729,12 @@ components:
           type: string
           description: Allowed domain list of the account
           nullable: true
+          default: ""
         classification:
           type: string
           description: Account classification
           nullable: true
+          default: ""
         isPartner:
           type: boolean
           description: Whether the account is a partner or not
