@@ -101,6 +101,31 @@ public isolated function searchCases(string idToken, string projectId, types:Cas
     };
 }
 
+# Get project features for a given project.
+#
+# + projectMetadata - Project metadata response
+# + return - Project features or error
+public isolated function getProjectFeatures(entity:ProjectMetadataResponse projectMetadata)
+    returns types:ProjectFeatures {
+
+    types:ReferenceItem[] acceptedSeverityValues =
+        from entity:ChoiceListItem item in projectMetadata.features.acceptedSeverityValues
+    select {id: item.id.toString(), label: item.label};
+    return {
+        acceptedSeverityValues,
+        hasServiceRequestWriteAccess: projectMetadata.features.hasServiceRequestWriteAccess,
+        hasServiceRequestReadAccess: projectMetadata.features.hasServiceRequestReadAccess,
+        hasSraWriteAccess: projectMetadata.features.hasSraWriteAccess,
+        hasSraReadAccess: projectMetadata.features.hasSraReadAccess,
+        hasChangeRequestReadAccess: projectMetadata.features.hasChangeRequestReadAccess,
+        hasEngagementsReadAccess: projectMetadata.features.hasEngagementsReadAccess,
+        hasUpdatesReadAccess: projectMetadata.features.hasUpdatesReadAccess,
+        hasTimeLogsReadAccess: projectMetadata.features.hasTimeLogsReadAccess,
+        hasDeploymentWriteAccess: projectMetadata.features.hasDeploymentWriteAccess,
+        hasDeploymentReadAccess: projectMetadata.features.hasDeploymentReadAccess
+    };
+}
+
 # Get project filters for a given project.
 #
 # + projectMetadata - Project metadata response
@@ -132,9 +157,6 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
         select {id: item.id.toString(), label: item.label};
     types:ReferenceItem[] engagementPaymentTypes = from entity:ChoiceListItem item in projectMetadata.engagementPaymentTypes
         select {id: item.id.toString(), label: item.label};
-    types:ReferenceItem[] acceptedSeverityValues =
-        from entity:ChoiceListItem item in projectMetadata.features.acceptedSeverityValues
-    select {id: item.id.toString(), label: item.label};
 
     return {
         caseStates,
@@ -149,20 +171,7 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
         timeCardStates,
         engagementTypes,
         engagementPaymentTypes,
-        severityBasedAllocationTime: projectMetadata.severityBasedAllocationTime,
-        features: {
-            acceptedSeverityValues,
-            hasServiceRequestWriteAccess: projectMetadata.features.hasServiceRequestWriteAccess,
-            hasServiceRequestReadAccess: projectMetadata.features.hasServiceRequestReadAccess,
-            hasSraWriteAccess: projectMetadata.features.hasSraWriteAccess,
-            hasSraReadAccess: projectMetadata.features.hasSraReadAccess,
-            hasChangeRequestReadAccess: projectMetadata.features.hasChangeRequestReadAccess,
-            hasEngagementsReadAccess: projectMetadata.features.hasEngagementsReadAccess,
-            hasUpdatesReadAccess: projectMetadata.features.hasUpdatesReadAccess,
-            hasTimeLogsReadAccess: projectMetadata.features.hasTimeLogsReadAccess,
-            hasDeploymentWriteAccess: projectMetadata.features.hasDeploymentWriteAccess,
-            hasDeploymentReadAccess: projectMetadata.features.hasDeploymentReadAccess
-        }
+        severityBasedAllocationTime: projectMetadata.severityBasedAllocationTime
     };
 }
 

@@ -308,8 +308,6 @@ public type ProjectFilterOptions record {|
     ReferenceItem[] engagementPaymentTypes;
     # Severity based allocation time mapping (severity ID to allocation time in minutes)
     map<int> severityBasedAllocationTime;
-    # Feature access configuration for the project
-    ProjectFeatures features;
 
 |};
 

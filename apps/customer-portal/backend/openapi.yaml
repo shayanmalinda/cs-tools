@@ -778,6 +778,36 @@ paths:
           description: InternalServerError
         "403":
           description: Forbidden
+  /projects/{id}/features:
+    get:
+      summary: Get features for a project.
+      operationId: getProjectsIdFeatures
+      parameters:
+      - name: id
+        in: path
+        description: ID of the project
+        required: true
+        schema:
+          $ref: '#/components/schemas/IdString'
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFeatures'
+        "401":
+          description: Unauthorized
+        "500":
+          description: InternalServerError
+        "403":
+          description: Forbidden
+        "400":
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
   /cases/classify:
     post:
       summary: Classify the case using AI chat agent.
@@ -2695,12 +2725,10 @@ components:
           type: string
           description: Allowed domain list of the account
           nullable: true
-          default: ""
         classification:
           type: string
           description: Account classification
           nullable: true
-          default: ""
         isPartner:
           type: boolean
           description: Whether the account is a partner or not
@@ -4798,7 +4826,6 @@ components:
       - deploymentTypes
       - engagementPaymentTypes
       - engagementTypes
-      - features
       - issueTypes
       - severities
       - severityBasedAllocationTime
@@ -4872,8 +4899,6 @@ components:
             format: int64
           description: Severity based allocation time mapping (severity ID to allocation
             time in minutes)
-        features:
-          $ref: '#/components/schemas/ProjectFeatures'
       additionalProperties: false
       description: Project filter options.
     ProjectResponse:
