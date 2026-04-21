@@ -27,6 +27,7 @@ import {
   type JSX,
   type ChangeEvent,
 } from "react";
+import { useSessionState } from "@hooks/useSessionState";
 import { Box, Stack } from "@wso2/oxygen-ui";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -68,13 +69,12 @@ export default function AllConversationsPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const createdByMe = searchParams.get("createdByMe") === "true";
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const sessionPrefix = `${projectId ?? ""}-conversations`;
+  const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<AllConversationsFilterValues>({});
-  const [sortField, setSortField] = useState<"createdOn" | "updatedOn">(
-    "updatedOn",
-  );
-  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
+  const [filters, setFilters] = useSessionState<AllConversationsFilterValues>(`${sessionPrefix}-filters`, {});
+  const [sortField, setSortField] = useSessionState<"createdOn" | "updatedOn">(`${sessionPrefix}-sortField`, "updatedOn");
+  const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
