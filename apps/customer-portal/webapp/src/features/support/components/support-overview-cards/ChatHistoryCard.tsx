@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { ChatHistoryItem } from "@features/support/types/supportComponents";
+import type { ChatHistoryItem } from "@features/support/types/conversations";
 import {
   Box,
   Button,
