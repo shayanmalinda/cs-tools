@@ -59,6 +59,7 @@ import { ConversationListRowAction } from "@features/support/types/conversations
 import { resolveConversationListRowAction } from "@features/support/utils/conversationsList";
 import { NOVERA_DISPLAY_NAME } from "@features/support/constants/chatConstants";
 import MarkdownIt from "markdown-it";
+import styles from "./conversations.module.css";
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -265,13 +266,13 @@ export default function ConversationDetailsPage(): JSX.Element {
   const handleBack = () => {
     const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
     if (returnTo) {
-      navigate(returnTo);
+      navigate(returnTo, { state: { fromBack: true } });
       return;
     }
     if (window.history.length > 1) {
       navigate(ROUTE_PREVIOUS_PAGE);
     } else if (projectId) {
-      navigate(`/projects/${projectId}/support/conversations`);
+      navigate(`/projects/${projectId}/support/conversations`, { state: { fromBack: true } });
     } else {
       navigate("/");
     }
