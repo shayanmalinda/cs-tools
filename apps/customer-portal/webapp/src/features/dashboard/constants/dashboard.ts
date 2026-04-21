@@ -109,7 +109,7 @@ export const SEVERITY_LABEL_TO_DISPLAY: Record<string, string> = {
   "Critical (P1)": "S1",
   "High (P2)": "S2",
   "Medium (P3)": "S3",
-  "Low (P4)": "S4",
+  "Low (P4)": "S4(Query)",
   "0 - Catastrophic": "S0",
   "1 - Critical": "S1",
   "2 - High": "S2",

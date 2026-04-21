@@ -25,7 +25,6 @@ import {
   MessageCircle,
   PlayCircle,
   RotateCcw,
-  TriangleAlert,
   XCircle,
 } from "@wso2/oxygen-ui-icons-react";
 import {
@@ -942,8 +941,6 @@ export function isS0Case(caseItem: {
   return isS0SeverityLabel(caseItem?.severity?.label);
 }
 
-
-
 /**
  * Returns the Oxygen UI color path for a given severity label.
  *
@@ -1025,10 +1022,7 @@ export function convertCodeTagsToHtml(content: string): string {
     .replace(/\[\\\/CODE\]/g, "[/code]")
     .replace(/\[\\code\]/gi, "[code]")
     .replace(/\[\\CODE\]/g, "[code]")
-    .replace(
-    /\[\/code\]\s*\[code\]/gi,
-    "[/code]\n[code]",
-  );
+    .replace(/\[\/code\]\s*\[code\]/gi, "[/code]\n[code]");
   return normalized
     .replace(/\[code\]([\s\S]*?)\[\/code\]/gi, "<code>$1</code>")
     .replace(/\[\/?code\]/gi, "\n");
@@ -1170,7 +1164,12 @@ function resolveInlineImageDisplaySrc(
   if (originMatch && id) {
     return `${originMatch[1]}/${id}.iix`;
   }
-  return attachment.previewUrl ?? attachment.downloadUrl ?? attachment.url ?? originalSrc;
+  return (
+    attachment.previewUrl ??
+    attachment.downloadUrl ??
+    attachment.url ??
+    originalSrc
+  );
 }
 
 /**
