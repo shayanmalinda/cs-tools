@@ -155,6 +155,7 @@ export default function SupportPage(): JSX.Element {
       >
         <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", minWidth: 0 }}>
           <SupportOverviewCard
+            sx={{ flex: 1, width: "100%", minWidth: 0 }}
             title="Outstanding Cases"
             subtitle={`Latest ${SUPPORT_OVERVIEW_CASES_LIMIT} support tickets`}
             icon={FileText}
@@ -191,6 +192,7 @@ export default function SupportPage(): JSX.Element {
         </Grid>
         <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", minWidth: 0 }}>
           <SupportOverviewCard
+            sx={{ flex: 1, width: "100%", minWidth: 0 }}
             title="Chat History"
             subtitle="Recent Novera conversations"
             icon={MessageSquare}
