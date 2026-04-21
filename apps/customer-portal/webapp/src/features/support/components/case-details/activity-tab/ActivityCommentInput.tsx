@@ -242,10 +242,11 @@ export default function ActivityCommentInput({
                 : "Write a comment..."
             }
             onSubmitKeyDown={handleSend}
+            enterToSubmit={!isCaseClosed}
             onAttachmentClick={handleAttachmentClick}
             attachments={attachments.map((a) => a.file)}
             onAttachmentRemove={handleAttachmentRemove}
-            showKeyboardHint={!isCaseClosed}
+            showKeyboardHint={false}
             maxHeight="310px"
             overlayElement={
               <Tooltip

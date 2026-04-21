@@ -338,6 +338,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
         rowsPerPage={pageSize}
         onPageChange={handlePageChange}
         onRowsPerPageChange={() => undefined}
+        rowsPerPageOptions={[pageSize]}
       />
     </Paper>
   );
