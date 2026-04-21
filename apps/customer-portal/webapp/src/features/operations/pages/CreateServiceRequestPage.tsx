@@ -182,6 +182,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const attachmentNamesRef = useRef<Map<string, string>>(new Map());
   const attachmentIdCounterRef = useRef(0);
+  const requestDetailsSectionRef = useRef<HTMLDivElement>(null);
   const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
 
   const { data: projectDetails, isLoading: isProjectLoading } =
@@ -360,6 +361,15 @@ export default function CreateServiceRequestPage(): JSX.Element {
     },
     [],
   );
+
+  useEffect(() => {
+    if (selectedCatalogItemId) {
+      requestDetailsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [selectedCatalogItemId]);
 
   const handleVariableChange = useCallback(
     (variableId: string, value: string) => {
@@ -618,6 +628,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
         )}
 
         {!!selectedCatalogId && !!selectedCatalogItemId && (
+          <div ref={requestDetailsSectionRef}>
           <VariableFormFields
             variables={variablesData?.variables}
             isLoading={isVariablesLoading}
@@ -634,6 +645,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
             onAttachmentClick={handleAttachmentClick}
             onAttachmentRemove={handleAttachmentRemove}
           />
+          </div>
         )}
 
         <UploadAttachmentModal
