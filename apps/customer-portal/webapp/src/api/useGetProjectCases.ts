@@ -28,6 +28,7 @@ import type { CaseSearchResponse } from "@features/support/types/cases";
 
 export interface UseGetProjectCasesOptions {
   enabled?: boolean;
+  pageSize?: number;
 }
 
 /**
@@ -48,14 +49,16 @@ export default function useGetProjectCases(
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
 
+  const limit = options?.pageSize ?? 10;
+
   return useInfiniteQuery<CaseSearchResponse, Error>({
-    queryKey: [ApiQueryKeys.PROJECT_CASES, projectId, baseRequest],
+    queryKey: [ApiQueryKeys.PROJECT_CASES, projectId, baseRequest, limit],
     queryFn: async ({ pageParam = 0 }): Promise<CaseSearchResponse> => {
       const requestBody: CaseSearchRequest = {
         ...baseRequest,
         pagination: {
           offset: pageParam as number,
-          limit: 10,
+          limit,
         },
       };
 
@@ -99,7 +102,7 @@ export default function useGetProjectCases(
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
-      const nextOffset = lastPage.offset + lastPage.limit;
+      const nextOffset = lastPage.offset + limit;
       return nextOffset < lastPage.totalRecords ? nextOffset : undefined;
     },
     enabled:

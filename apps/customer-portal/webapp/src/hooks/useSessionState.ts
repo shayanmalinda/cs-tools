@@ -15,6 +15,7 @@
 // under the License.
 
 import { type Dispatch, type SetStateAction, useState, useEffect } from "react";
+import { useNavigationType } from "react-router";
 
 /**
  * Drop-in replacement for `useState` that persists the value to `sessionStorage`.
@@ -25,13 +26,21 @@ import { type Dispatch, type SetStateAction, useState, useEffect } from "react";
  * @param validate - Optional type guard; if provided, stored values that fail the
  *   check are discarded and `defaultValue` is used instead (protects against stale
  *   or migrated enum values in storage).
+ * @param options - `popOnly`: when true, only restores the stored value when the user
+ *   navigated back (browser back button / POP navigation). Fresh visits always start
+ *   from `defaultValue`, but the value is still written so back-navigation can restore it.
  */
 export function useSessionState<T>(
   key: string,
   defaultValue: T,
   validate?: (value: unknown) => value is T,
+  options?: { popOnly?: boolean },
 ): [T, Dispatch<SetStateAction<T>>] {
+  const navigationType = useNavigationType();
+  const shouldRestore = !options?.popOnly || navigationType === "POP";
+
   const [state, setState] = useState<T>(() => {
+    if (!shouldRestore) return defaultValue;
     try {
       const stored = sessionStorage.getItem(key);
       if (stored !== null) {
