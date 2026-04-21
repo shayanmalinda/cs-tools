@@ -21,7 +21,6 @@ import {
   useMemo,
   useEffect,
   type JSX,
-  type ChangeEvent,
 } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useSessionState } from "@hooks/useSessionState";
@@ -87,16 +86,17 @@ const SecurityReportAnalysis = (): JSX.Element => {
   const validSecuritySortFields = SECURITY_REPORT_SORT_OPTIONS.map((o) => o.value as string);
   const isValidSecuritySortField = (v: unknown): v is SecurityReportCaseSortField =>
     typeof v === "string" && validSecuritySortFields.includes(v);
-  const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "");
+  const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "", undefined, { popOnly: true });
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [filters, setFilters] = useSessionState<AllCasesFilterValues>(`${sessionPrefix}-filters`, {});
+  const [filters, setFilters] = useSessionState<AllCasesFilterValues>(`${sessionPrefix}-filters`, {}, undefined, { popOnly: true });
   const [sortField, setSortField] = useSessionState<SecurityReportCaseSortField>(
     `${sessionPrefix}-sortField`,
     SecurityReportCaseSortField.createdOn,
     isValidSecuritySortField,
+    { popOnly: true },
   );
-  const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC);
-  const [page, setPage] = useSessionState<number>(`${sessionPrefix}-page`, 1);
+  const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC, undefined, { popOnly: true });
+  const [page, setPage] = useSessionState<number>(`${sessionPrefix}-page`, 1, undefined, { popOnly: true });
   const pageSize = SECURITY_REPORT_ANALYSIS_PAGE_SIZE;
 
   const { data: filterMetadata } = useGetProjectFilters(projectId || "");
@@ -144,8 +144,6 @@ const SecurityReportAnalysis = (): JSX.Element => {
     return displayedCases.slice(startIndex, startIndex + pageSize);
   }, [displayedCases, page, pageSize]);
 
-  const totalPages = Math.ceil(totalItems / pageSize);
-
   const handleCreateReport = () => {
     navigate(`/projects/${projectId}/support/security-report/create`);
   };
@@ -182,7 +180,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
     setPage(1);
   };
 
-  const handlePageChange = (_event: ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (_event: unknown, value: number) => {
     setPage(value);
   };
 
@@ -335,9 +333,11 @@ const SecurityReportAnalysis = (): JSX.Element => {
       </Box>
 
       <ListPagination
-        totalPages={totalPages}
+        totalRecords={totalItems}
         page={page}
-        onChange={handlePageChange}
+        rowsPerPage={pageSize}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={() => undefined}
       />
     </Paper>
   );

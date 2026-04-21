@@ -15,7 +15,8 @@
 // under the License.
 
 import type { CaseDetailsAttachmentsPanelProps } from "@features/support/types/supportComponents";
-import { Box, Button, Pagination, Stack, Typography } from "@wso2/oxygen-ui";
+import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
+import ListPagination from "@components/list-view/ListPagination";
 import { Paperclip } from "@wso2/oxygen-ui-icons-react";
 import { useEffect, useMemo, useState, type JSX } from "react";
 import {
@@ -262,18 +263,14 @@ export default function CaseDetailsAttachmentsPanel({
                 );
               })
             )}
-            {totalPages > 1 && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  count={totalPages}
-                  page={boundedPage}
-                  onChange={handlePageChange}
-                  color="primary"
-                  showFirstButton
-                  showLastButton
-                />
-              </Box>
-            )}
+            <ListPagination
+              totalRecords={totalRecords}
+              page={boundedPage}
+              rowsPerPage={ITEMS_PER_PAGE}
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={() => {}}
+              rowsPerPageOptions={[ITEMS_PER_PAGE]}
+            />
           </Stack>
         )}
       </Stack>
