@@ -24,7 +24,7 @@ import {
   RegistryTokenDisplayStatus,
 } from "@features/settings/types/settings";
 import type { RegistryToken } from "@features/settings/types/registryTokens";
-import { resolveDisplayTimeZone } from "@utils/dateTime";
+import { formatBackendTimestampForDisplay, resolveDisplayTimeZone } from "@utils/dateTime";
 
 /**
  * Derives display status from token fields.
@@ -89,14 +89,12 @@ export function formatRegistryTokenTimestamp(ts?: number): string {
  */
 export function formatRegistryTokenIsoDate(iso?: string | null): string {
   if (!iso) return SETTINGS_NULL_PLACEHOLDER;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return SETTINGS_NULL_PLACEHOLDER;
-  return d.toLocaleDateString(REGISTRY_TOKEN_DATE_LOCALE, {
+  const formatted = formatBackendTimestampForDisplay(iso, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    timeZone: resolveDisplayTimeZone(),
-  });
+  }, undefined, REGISTRY_TOKEN_DATE_LOCALE);
+  return formatted ?? SETTINGS_NULL_PLACEHOLDER;
 }
 
 /**

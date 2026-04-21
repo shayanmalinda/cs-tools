@@ -74,6 +74,7 @@ export default function EngagementsListSection({
         excludeS0={excludeS0}
         restrictSeverityToLow={restrictSeverityToLow}
         hideSeverityFilter
+        hideDeploymentFilter
         isProjectContextLoading={isProjectContextLoading}
       />
 

@@ -22,13 +22,13 @@ import { PROJECT_DETAILS_SERVICE_HOURS_NOT_AVAILABLE } from "@features/project-d
 import type { ServiceHoursStatCardsProps } from "@features/project-details/types/projectDetailsComponents";
 import {
   formatProjectDate,
-  formatServiceHoursDecimalAsHrMin,
+  formatServiceHoursDecimalCompact,
 } from "@features/project-details/utils/projectDetails";
 import { formatServiceHoursAllocationDisplay } from "@features/project-details/utils/serviceHoursFormat";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 
 function formatRemaining(value: number | undefined): string {
-  return formatServiceHoursDecimalAsHrMin(value);
+  return formatServiceHoursDecimalCompact(value);
 }
 
 /**

@@ -48,6 +48,7 @@ import { createElement, type ComponentType, type ReactNode } from "react";
 import { CASE_STATUS } from "@features/project-details/constants/projectDetailsConstants";
 import {
   formatBackendTimestampForDisplay,
+  parseBackendTimestamp,
   normalizeUserTimeZone,
   resolveDisplayTimeZone,
 } from "@utils/dateTime";
@@ -744,7 +745,11 @@ export function resolveColorFromTheme(path: string, theme: Theme): string {
 export function formatRelativeTime(date: string | Date | undefined): string {
   if (!date) return "--";
 
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d =
+    typeof date === "string"
+      ? parseBackendTimestamp(date)
+      : date;
+  if (!d) return "--";
   if (isNaN(d.getTime())) return "--";
 
   const now = new Date();
@@ -1436,8 +1441,8 @@ export function estimateLineCount(html: string): number {
 }
 
 /**
- * Parses API timestamps for ordering: unzoned `YYYY-MM-DD HH:mm:ss` or `YYYY-MM-DDTHH:mm:ss`
- * as local wall time; strings with `Z` or numeric offset use instant parsing.
+ * Parses API timestamps for ordering and display normalization.
+ * Unzoned backend timestamps are treated as UTC instants.
  *
  * @param dateStr - Raw timestamp from API.
  * @returns {number} Epoch ms or NaN if invalid.
@@ -1453,17 +1458,17 @@ export function parseApiLocalDateTimeMs(
     return Number.isNaN(t) ? Number.NaN : t;
   }
 
-  const local =
+  const utcLike =
     /^(\d{4})-(\d{2})-(\d{2})[\sT](\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec(
       trimmed,
     );
-  if (local) {
-    const y = Number(local[1]);
-    const mo = Number(local[2]);
-    const d = Number(local[3]);
-    const h = Number(local[4]);
-    const mi = Number(local[5]);
-    const s = Number(local[6]);
+  if (utcLike) {
+    const y = Number(utcLike[1]);
+    const mo = Number(utcLike[2]);
+    const d = Number(utcLike[3]);
+    const h = Number(utcLike[4]);
+    const mi = Number(utcLike[5]);
+    const s = Number(utcLike[6]);
     if (
       mo < 1 ||
       mo > 12 ||
@@ -1476,8 +1481,7 @@ export function parseApiLocalDateTimeMs(
     ) {
       return Number.NaN;
     }
-    const dt = new Date(y, mo - 1, d, h, mi, s);
-    return dt.getTime();
+    return Date.UTC(y, mo - 1, d, h, mi, s);
   }
 
   const t = Date.parse(trimmed);
@@ -1657,10 +1661,10 @@ export function sortCallRequestPreferredTimeStringsAsc(
   times: string[],
 ): string[] {
   return [...times].sort((a, b) => {
-    const ta = Date.parse(a.trim());
-    const tb = Date.parse(b.trim());
-    const aOk = !Number.isNaN(ta);
-    const bOk = !Number.isNaN(tb);
+    const ta = parseBackendTimestamp(a.trim())?.getTime();
+    const tb = parseBackendTimestamp(b.trim())?.getTime();
+    const aOk = ta != null;
+    const bOk = tb != null;
     if (aOk && bOk && ta !== tb) return ta - tb;
     if (aOk && !bOk) return -1;
     if (!aOk && bOk) return 1;

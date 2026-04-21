@@ -53,7 +53,6 @@ import {
   getAssignedEngineerLabel,
   getInitials,
   getStatusColor,
-  mapSeverityToDisplay,
   resolveColorFromTheme,
   hasSubmittableEditorContent,
   hasSingleCodeWrapper,
@@ -190,7 +189,6 @@ export default function ServiceRequestDetailContent({
   );
 
   const statusLabel = data?.status?.label;
-  const severityLabel = data?.severity?.label;
   const statusColorPath = getStatusColor(statusLabel ?? undefined);
   const resolvedStatusColor = resolveColorFromTheme(statusColorPath, theme);
 
@@ -383,9 +381,6 @@ export default function ServiceRequestDetailContent({
                 {statusLabel ?? "--"}
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary">
-              Priority: {mapSeverityToDisplay(severityLabel ?? undefined)}
-            </Typography>
           </Stack>
           <Typography variant="h6" color="text.primary" fontWeight={500}>
             {data?.title ?? "--"}

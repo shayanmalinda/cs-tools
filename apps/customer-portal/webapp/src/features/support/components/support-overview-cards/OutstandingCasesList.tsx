@@ -51,21 +51,34 @@ export default function OutstandingCasesList({
 }: OutstandingCasesListProps): JSX.Element {
   const theme = useTheme();
 
+  const listShellSx = {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 1.5,
+    width: "100%",
+    flex: 1,
+    minHeight: 0,
+  };
+
   if (isError) {
     return <ErrorIndicator entityName="outstanding cases" size="medium" />;
   }
 
   if (isLoading) {
-    return <OutstandingCasesSkeleton />;
+    return (
+      <Box sx={listShellSx}>
+        <OutstandingCasesSkeleton />
+      </Box>
+    );
   }
 
   if (cases.length === 0) {
     return (
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
+          ...listShellSx,
           alignItems: "center",
+          justifyContent: "center",
           py: 2,
         }}
       >
@@ -85,9 +98,7 @@ export default function OutstandingCasesList({
   }
 
   return (
-    <Box
-      sx={{ display: "flex", flexDirection: "column", gap: 1.5, width: "100%" }}
-    >
+    <Box sx={listShellSx}>
       {cases.map((c) => {
         const colorPath = getStatusColor(c.status?.label);
         const resolvedColor = resolveColorFromTheme(colorPath, theme);

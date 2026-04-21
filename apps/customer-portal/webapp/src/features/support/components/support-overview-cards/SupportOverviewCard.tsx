@@ -87,6 +87,7 @@ export default function SupportOverviewCard({
           flexDirection: "column",
           gap: 1.5,
           width: "100%",
+          height: "100%",
           minWidth: 0,
           overflow: "hidden",
         },
@@ -134,6 +135,8 @@ export default function SupportOverviewCard({
           flexDirection: "column",
           gap: 1.5,
           width: "100%",
+          flex: 1,
+          minHeight: 0,
           justifyContent: isError ? "center" : "flex-start",
           alignItems: isError ? "center" : "stretch",
         }}

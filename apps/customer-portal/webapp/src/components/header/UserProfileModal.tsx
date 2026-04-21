@@ -189,6 +189,8 @@ export default function UserProfileModal({
         const isTimeZoneUpdated =
           !hasTimeZoneInPayload || response?.timeZone === payload.timeZone;
         const isSuccessfulUpdate = isPhoneUpdated && isTimeZoneUpdated;
+        const shouldReloadForTimeZone =
+          hasTimeZoneInPayload && isTimeZoneUpdated;
 
         if (!isSuccessfulUpdate) {
           if (hasPhoneInPayload && hasTimeZoneInPayload) {
@@ -204,6 +206,10 @@ export default function UserProfileModal({
         }
 
         showSuccess("Profile updated successfully");
+        if (shouldReloadForTimeZone) {
+          window.location.reload();
+          return;
+        }
         onClose();
       },
       onError: (err) => {

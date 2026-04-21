@@ -368,7 +368,15 @@ function stripHtmlOrNA(html: string | null | undefined): string {
 
 function getDateOrNA(dateStr: string | null | undefined): string {
   if (!dateStr) return "N/A";
-  return dateStr;
+  const formatted = formatBackendTimestampForDisplay(dateStr, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return formatted ?? "N/A";
 }
 
 /**

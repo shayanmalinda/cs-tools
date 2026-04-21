@@ -42,7 +42,7 @@ export const ANNOUNCEMENTS_LIST_ENTITY_LABEL = "announcements";
 export const ANNOUNCEMENTS_SORT_CREATED_LABEL = "Created date";
 
 /** Sort row: label for state column. */
-export const ANNOUNCEMENTS_SORT_STATE_LABEL = "State";
+export const ANNOUNCEMENTS_SORT_STATE_LABEL = "Status";
 
 /** Options passed to `ListResultsBar`. */
 export const ANNOUNCEMENTS_SORT_FIELD_OPTIONS: AnnouncementSortOption[] = [

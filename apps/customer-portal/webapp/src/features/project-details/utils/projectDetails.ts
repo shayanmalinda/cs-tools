@@ -482,6 +482,38 @@ export function formatServiceHoursDecimalAsHrMin(
 }
 
 /**
+ * Formats decimal service-hours values as compact `xh ym` display.
+ *
+ * @param {number | null | undefined} hours - Decimal hours from API.
+ * @returns {string} e.g. "1h 30m", or "Not Available".
+ */
+export function formatServiceHoursDecimalCompact(
+  hours: number | null | undefined,
+): string {
+  if (
+    hours == null ||
+    typeof hours !== "number" ||
+    !Number.isFinite(hours) ||
+    hours < 0
+  ) {
+    return "Not Available";
+  }
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0 && m === 0) {
+    return "0m";
+  }
+  if (h === 0) {
+    return `${m}m`;
+  }
+  if (m === 0) {
+    return `${h}h`;
+  }
+  return `${h}h ${m}m`;
+}
+
+/**
  * Formats minute values (API minutes) as hours and minutes for display.
  *
  * @param {number | null | undefined} minutes - Total minutes from API.

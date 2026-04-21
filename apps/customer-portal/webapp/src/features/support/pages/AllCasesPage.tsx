@@ -314,6 +314,7 @@ export default function AllCasesPage(): JSX.Element {
         onClearFilters={handleClearFilters}
         excludeS0={excludeS0}
         restrictSeverityToLow={restrictSeverityToLow}
+        hideDeploymentFilter={!permissions.hasDeployments}
         isProjectContextLoading={isProjectContextLoading}
       />
 
@@ -325,7 +326,7 @@ export default function AllCasesPage(): JSX.Element {
           { value: "createdOn", label: "Created on" },
           { value: "updatedOn", label: "Updated on" },
           { value: "severity", label: "Severity", kind: "ordinal" as const },
-          { value: "state", label: "State", kind: "ordinal" as const },
+          { value: "state", label: "Status", kind: "ordinal" as const },
         ]}
         sortField={sortField}
         onSortFieldChange={(v) =>

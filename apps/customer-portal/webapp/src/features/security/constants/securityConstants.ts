@@ -118,7 +118,7 @@ export const SECURITY_REPORT_VIEW_TABS = [
 export const SECURITY_REPORT_SORT_OPTIONS = [
   { value: "createdOn", label: "Created date", kind: "chronological" },
   { value: "updatedOn", label: "Updated date", kind: "chronological" },
-  { value: "state", label: "State", kind: "ordinal" },
+  { value: "state", label: "Status", kind: "ordinal" },
 ] as const;
 
 export const SECURITY_REPORT_ENTITY_LABEL = "reports";
