@@ -942,33 +942,7 @@ export function isS0Case(caseItem: {
   return isS0SeverityLabel(caseItem?.severity?.label);
 }
 
-/**
- * Returns the icon component for a severity label (announcement cards).
- * S0/S1: TriangleAlert, S2: CircleAlert, S3: Clock, S4: CircleCheck.
- *
- * @param label - API severity label (e.g. "1 - Critical", "Critical (P1)").
- * @returns {ComponentType} Icon component.
- */
-export function getSeverityIcon(label?: string): ComponentType<{
-  size?: number;
-  color?: string;
-}> {
-  const display = mapSeverityToDisplay(label);
-  const upper = display.toUpperCase();
-  switch (upper) {
-    case CaseSeverityLevel.S0:
-    case CaseSeverityLevel.S1:
-      return TriangleAlert;
-    case CaseSeverityLevel.S2:
-      return CircleAlert;
-    case CaseSeverityLevel.S3:
-      return Clock;
-    case CaseSeverityLevel.S4:
-      return CircleCheck;
-    default:
-      return CircleAlert;
-  }
-}
+
 
 /**
  * Returns the Oxygen UI color path for a given severity label.
