@@ -331,7 +331,7 @@ export default function CaseDetailsContent({
           flexDirection: "column",
           overflow: resolvedPanelIndex === 0 ? "hidden" : "auto",
           p: resolvedPanelIndex === 0 ? 0 : 3,
-          pt: 0,
+          pt: resolvedPanelIndex === 0 ? 0 : 2,
           WebkitOverflowScrolling: "touch",
         }}
       >
