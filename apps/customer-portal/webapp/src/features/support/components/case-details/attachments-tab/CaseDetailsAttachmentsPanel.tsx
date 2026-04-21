@@ -235,8 +235,8 @@ export default function CaseDetailsAttachmentsPanel({
                     attachment={att}
                     onDownload={handleDownload}
                     onDelete={handleDeleteClick}
-                    deleteDisabled={false}
-                    onEdit={handleEditClick}
+                    deleteDisabled={isCaseClosed}
+                    onEdit={isCaseClosed ? undefined : handleEditClick}
                     hideDescription
                     isDownloadLoading={isDownloading && downloadingId === att.id}
                   />

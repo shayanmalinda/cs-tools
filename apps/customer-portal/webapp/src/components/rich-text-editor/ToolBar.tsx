@@ -101,11 +101,13 @@ const Toolbar = ({
   disabled = false,
   variant = "full",
   showKeyboardHint = false,
+  enterToSubmit = false,
 }: {
   onAttachmentClick?: () => void;
   disabled?: boolean;
   variant?: ToolbarVariant;
   showKeyboardHint?: boolean;
+  enterToSubmit?: boolean;
 }) => {
   const isDescribeIssue = variant === "describeIssue";
   const [editor] = useLexicalComposerContext();
@@ -813,34 +815,37 @@ const Toolbar = ({
             pl: 1,
           }}
         >
-          <Typography
-            component="span"
-            variant="caption"
-            sx={{
-              color: "text.secondary",
-              whiteSpace: "nowrap",
-              lineHeight: 1.4,
-            }}
-          >
-            <Typography component="span" variant="caption" fontWeight={600}>
-              Shift+Enter
+          {enterToSubmit ? (
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{ color: "text.secondary", whiteSpace: "nowrap", lineHeight: 1.4 }}
+            >
+              <Typography component="span" variant="caption" fontWeight={600}>
+                Shift+Enter
+              </Typography>
+              {" for new line and "}
+              <Typography component="span" variant="caption" fontWeight={600}>
+                Enter
+              </Typography>
+              {" to send"}
             </Typography>
-            {" for new line and "}
-          </Typography>
-          <Typography
-            component="span"
-            variant="caption"
-            sx={{
-              color: "text.secondary",
-              whiteSpace: "nowrap",
-              lineHeight: 1.4,
-            }}
-          >
-            <Typography component="span" variant="caption" fontWeight={600}>
-              &nbsp;Enter
+          ) : (
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{ color: "text.secondary", whiteSpace: "nowrap", lineHeight: 1.4 }}
+            >
+              <Typography component="span" variant="caption" fontWeight={600}>
+                Ctrl+Enter
+              </Typography>
+              {" (or "}
+              <Typography component="span" variant="caption" fontWeight={600}>
+                ⌘+Enter
+              </Typography>
+              {") to send"}
             </Typography>
-            {" to send"}
-          </Typography>
+          )}
         </Box>
       )}
     </Box>

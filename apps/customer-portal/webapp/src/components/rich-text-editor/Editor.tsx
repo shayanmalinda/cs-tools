@@ -146,6 +146,7 @@ const EnterSubmitPlugin = ({
         if (event === null) return false;
 
         if (enterToSubmit) {
+          if (event.isComposing) return false;
           if (event.ctrlKey || event.metaKey) return false;
 
           if (event.shiftKey) {
@@ -355,6 +356,7 @@ const Editor = ({
               disabled={disabled}
               variant={toolbarVariant}
               showKeyboardHint={showKeyboardHint}
+              enterToSubmit={enterToSubmit}
             />
             <Divider sx={{ my: 1 }} />
           </>

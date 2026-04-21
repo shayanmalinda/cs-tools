@@ -81,6 +81,7 @@ export default function AttachmentListItem({
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [imageExpanded, setImageExpanded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const attachmentCategory = getAttachmentFileCategory(
     attachment.name ?? "",
     attachment.type ?? "",
@@ -166,10 +167,12 @@ export default function AttachmentListItem({
                 aria-label={imageExpanded ? "Collapse image" : "Expand image"}
                 sx={{ color: "text.secondary" }}
                 onClick={() => {
-                  setImageExpanded((prev) => {
-                    if (prev) setImageLoaded(false);
-                    return !prev;
-                  });
+                  const next = !imageExpanded;
+                  setImageExpanded(next);
+                  if (!next) {
+                    setImageLoaded(false);
+                    setImageError(false);
+                  }
                 }}
               >
                 {imageExpanded ? (
@@ -209,7 +212,7 @@ export default function AttachmentListItem({
 
         {hasPreviewImage && imageExpanded && (
           <Box sx={{ position: "relative", width: "100%" }}>
-            {!imageLoaded && (
+            {!imageLoaded && !imageError && (
               <Skeleton
                 variant="rectangular"
                 width="100%"
@@ -217,36 +220,47 @@ export default function AttachmentListItem({
                 sx={{ borderRadius: 1 }}
               />
             )}
-            <Box
-              component="button"
-              type="button"
-              onClick={() => setFullscreenOpen(true)}
-              aria-label={`View ${attachment.name} full size`}
-              sx={{
-                m: 0,
-                p: 0,
-                border: "none",
-                background: "none",
-                cursor: "pointer",
-                alignSelf: "stretch",
-                width: "100%",
-                display: imageLoaded ? "block" : "none",
-              }}
-            >
+            {imageError ? (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ py: 2, textAlign: "center" }}
+              >
+                Preview unavailable
+              </Typography>
+            ) : (
               <Box
-                component="img"
-                src={attachment.previewUrl ?? undefined}
-                alt={attachment.name}
-                onLoad={() => setImageLoaded(true)}
+                component="button"
+                type="button"
+                onClick={() => setFullscreenOpen(true)}
+                aria-label={`View ${attachment.name} full size`}
                 sx={{
-                  display: "block",
-                  maxHeight: 400,
-                  maxWidth: "100%",
+                  m: 0,
+                  p: 0,
+                  border: "none",
+                  background: "none",
+                  cursor: "pointer",
+                  alignSelf: "stretch",
                   width: "100%",
-                  objectFit: "contain",
+                  display: imageLoaded ? "block" : "none",
                 }}
-              />
-            </Box>
+              >
+                <Box
+                  component="img"
+                  src={attachment.previewUrl ?? undefined}
+                  alt={attachment.name}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageError(true)}
+                  sx={{
+                    display: "block",
+                    maxHeight: 400,
+                    maxWidth: "100%",
+                    width: "100%",
+                    objectFit: "contain",
+                  }}
+                />
+              </Box>
+            )}
           </Box>
         )}
 
