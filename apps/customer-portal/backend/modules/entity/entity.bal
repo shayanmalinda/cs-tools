@@ -598,3 +598,15 @@ public isolated function searchInstanceUsage(string idToken, InstanceUsagePayloa
 
     return csEntityClient->/instances/usages/search.post(payload, generateHeaders(idToken));
 }
+
+# Search case activities by criteria.
+# 
+# + idToken - ID token for authorization
+# + caseId - Unique ID of the case for which activities are to be searched
+# + payload - Case activities search payload containing search criteria for case activities
+# + return - Case activities search response containing matching case activities or error
+public isolated function searchCaseActivities(string idToken, IdString caseId, CaseActivitySearchPayload payload)
+    returns CaseActivitySearchResponse|error {
+
+    return csEntityClient->/cases/[caseId]/activities/search.post(payload, generateHeaders(idToken));
+}

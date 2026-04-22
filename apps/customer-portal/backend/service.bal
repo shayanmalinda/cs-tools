@@ -5366,6 +5366,61 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
 
         return <http:Ok>{body: mapInstanceUsages(response)};
     }
+
+    # Search case activities for a specific case based on provided filters.
+    #
+    # + id - ID of the case
+    # + payload - Case activity search payload containing filter criteria
+    # + return - List of case activities matching the criteria or an error response
+    resource function post cases/[entity:IdString id]/activities/search(http:RequestContext ctx,
+            entity:CaseActivitySearchPayload payload)
+        returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:CaseActivitySearchResponse|error response = entity:searchCaseActivities(userInfo.idToken, id, payload);
+        if response is error {
+            if getStatusCode(response) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                logForbiddenCaseAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_CASE_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+            if getStatusCode(response) == http:STATUS_BAD_REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Invalid request parameters for searching case activities."
+                    }
+                };
+            }
+
+            string customError = "Failed to search case activities.";
+            log:printError(customError, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        return <http:Ok>{body: mapCaseActivitySummaryResponse(response)};
+    }
 }
 
 # WebSocket service to proxy messages between the browser and the upstream Python AI chat agent for real-time communication in chat sessions.

@@ -560,6 +560,8 @@ public type Comment record {|
     string? createdByFirstName;
     # Last name of the user who created the comment
     string? createdByLastName;
+    # Full name of the user who created the comment
+    string? createdByFullName;
 |};
 
 # Comments response with pagination.
@@ -1609,4 +1611,43 @@ public type InstanceUsageResponse record {|
     string startDate;
     # End date of the queried range
     string endDate;
+|};
+
+# Activity item.
+public type Activity record {|
+    # ID of the activity
+    entity:IdString id;
+    # HTML content of the activity
+    string content;
+    # Created date and time
+    string createdOn;
+    # Created by (user email)
+    string createdBy;
+    # First name of the creator
+    string? createdByFirstName;
+    # Last name of the creator
+    string? createdByLastName;
+    # Full name of the creator
+    string? createdByFullName;
+    # Activity type ("attachment" or "comment")
+    string 'type;
+    # File name (only for attachments)
+    string fileName?;
+    # Content type MIME type (only for attachments)
+    string contentType?;
+    # File size in bytes (only for attachments)
+    int sizeBytes?;
+    # Download URL (only for attachments)
+    string downloadUrl?;
+    # Comment type (only for comments, e.g., "comments")
+    string commentType?;
+|};
+
+# Case activities search response from ServiceNow.
+public type CaseActivitySearchResponse record {|
+    # List of activities
+    Activity[] activities;
+    # Total records count
+    int totalRecords;
+    *entity:Pagination;
 |};

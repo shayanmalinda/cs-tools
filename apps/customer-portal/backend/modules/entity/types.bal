@@ -762,6 +762,8 @@ public type Comment record {|
     string? createdByFirstName;
     # Last name of the user who created the comment
     string? createdByLastName;
+    # Full name of the user who created the comment
+    string? createdByFullName;
     json...;
 |};
 
@@ -2164,4 +2166,50 @@ public type UpdatedChangeRequest record {|
     # User who updated the change request
     string updatedBy;
     json...;
+|};
+
+# Request payload for searching case activities.
+public type CaseActivitySearchPayload record {|
+    # Pagination details
+    Pagination pagination?;
+|};
+
+# Activity item.
+public type Activity record {|
+    # ID of the activity
+    IdString id;
+    # HTML content of the activity
+    string content;
+    # Created date and time
+    string createdOn;
+    # Created by (user email)
+    string createdBy;
+    # First name of the creator
+    string? createdByFirstName;
+    # Last name of the creator
+    string? createdByLastName;
+    # Full name of the creator
+    string? createdByFullName;
+    # Activity type ("attachment" or "comment")
+    string 'type;
+    # File name (only for attachments)
+    string fileName?;
+    # Content type MIME type (only for attachments)
+    string contentType?;
+    # File size in bytes (only for attachments)
+    int sizeBytes?;
+    # Download URL (only for attachments)
+    string downloadUrl?;
+    # Comment type (only for comments, e.g., "comments")
+    string commentType?;
+    json...;
+|};
+
+# Case activities search response from ServiceNow.
+public type CaseActivitySearchResponse record {|
+    # List of activities
+    Activity[] activity;
+    # Total records count
+    int totalRecords;
+    *Pagination;
 |};
