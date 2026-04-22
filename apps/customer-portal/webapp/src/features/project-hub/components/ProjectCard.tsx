@@ -51,9 +51,6 @@ export default function ProjectCard({
     setLastSelectedProjectId(id);
     if (onViewDashboard) {
       onViewDashboard();
-    } else if (isSuspended) {
-      // Navigate to dashboard route — ProjectGuard will intercept and show suspension notice.
-      navigate(`/projects/${id}/dashboard`);
     } else {
       navigate(`/projects/${id}/dashboard`);
     }
