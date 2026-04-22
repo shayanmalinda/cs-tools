@@ -155,13 +155,6 @@ export type ChangeRequestsListProps = {
   onChangeRequestClick?: (item: ChangeRequestItem) => void;
 };
 
-export type OutstandingChangeRequestsListProps = {
-  changeRequests: ChangeRequestItem[];
-  isLoading?: boolean;
-  isError?: boolean;
-  onItemClick?: (item: ChangeRequestItem) => void;
-};
-
 export type ChangeRequestsCalendarViewProps = {
   changeRequests: ChangeRequestItem[];
   isLoading: boolean;

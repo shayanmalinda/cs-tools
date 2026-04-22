@@ -26,9 +26,11 @@ import {
   Box,
   Chip,
   Divider,
+  IconButton,
+  Tooltip,
   Typography,
 } from "@wso2/oxygen-ui";
-import { ChevronDown } from "@wso2/oxygen-ui-icons-react";
+import { ChevronDown, ChevronUp } from "@wso2/oxygen-ui-icons-react";
 import DeploymentCardLicenseFooter from "@features/project-details/components/deployments/deployment-card/DeploymentCardLicenseFooter";
 import DeploymentCardToolbar from "@features/project-details/components/deployments/deployment-card/DeploymentCardToolbar";
 import { useState, type JSX } from "react";
@@ -40,7 +42,8 @@ import { usePatchDeployment } from "@features/project-details/api/usePatchDeploy
 import { useDownloadDeploymentLicense } from "@features/project-details/api/useDownloadDeploymentLicense";
 
 /**
- * Renders a single deployment environment as an accordion with name, type, and description in the header.
+ * Renders a deployment environment as a collapsible accordion.
+ * Summary shows name, number chip, type chip, and description; details show products, documents, and license.
  *
  * @param {DeploymentCardProps} props - Props containing the deployment data.
  * @returns {JSX.Element} The deployment accordion card.
@@ -52,6 +55,7 @@ export default function DeploymentCard({
 }: DeploymentCardProps): JSX.Element {
   const { name, description, createdOn, updatedOn } = deployment;
   const projectId = deployment.project?.id ?? "";
+  const [expanded, setExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const patchDeployment = usePatchDeployment();
@@ -72,27 +76,27 @@ export default function DeploymentCard({
 
   return (
     <>
-      <Accordion defaultExpanded disableGutters elevation={1} sx={{ borderRadius: 1 }}>
+      <Accordion
+        expanded={expanded}
+        onChange={(_, isExpanded) => setExpanded(isExpanded)}
+        disableGutters
+        elevation={1}
+        sx={{ borderRadius: 1 }}
+      >
         <AccordionSummary
-          expandIcon={<ChevronDown size={20} />}
+          expandIcon={null}
           sx={{
             px: 3,
             py: 1.5,
+            cursor: "pointer",
             "& .MuiAccordionSummary-content": { m: 0, overflow: "hidden" },
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              width: "100%",
-              gap: 2,
-              minWidth: 0,
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 2 }}>
+            {/* Left: name row + description */}
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5, flexWrap: "wrap" }}>
+              {/* Row 1: name + number chip + divider + type chip */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.75, flexWrap: "wrap" }}>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   {displayValue(name, "Not Available")}
                 </Typography>
@@ -102,32 +106,49 @@ export default function DeploymentCard({
                   variant="outlined"
                   sx={{ height: 20, fontSize: "0.75rem", fontFamily: "monospace" }}
                 />
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 {typeLabel && (
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-                    {typeLabel}
-                  </Typography>
+                  <>
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.25 }} />
+                    <Chip
+                      label={typeLabel}
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: "0.75rem", textTransform: "capitalize" }}
+                    />
+                  </>
                 )}
-                {typeLabel && description && (
-                  <Typography variant="caption" color="text.secondary">•</Typography>
-                )}
-                {description && (
-                  <Typography variant="caption" color="text.secondary">
+              </Box>
+
+              {/* Horizontal divider + description (always visible) */}
+              {description && (
+                <>
+                  <Divider sx={{ mb: 0.75 }} />
+                  <Typography variant="body2" color="text.secondary">
                     {description}
                   </Typography>
-                )}
-              </Box>
+                </>
+              )}
             </Box>
+
+            {/* Right: toolbar + chevron in same row */}
             <Box
               onClick={(e) => e.stopPropagation()}
-              sx={{ flexShrink: 0, display: "flex", alignItems: "center" }}
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
             >
               <DeploymentCardToolbar
                 onEdit={() => setIsEditModalOpen(true)}
                 onDelete={() => setIsDeleteModalOpen(true)}
                 isDeleteDisabled={patchDeployment.isPending}
               />
+              <Tooltip title={expanded ? "Collapse" : "Expand"}>
+                <IconButton
+                  size="small"
+                  onClick={() => setExpanded((v) => !v)}
+                  aria-label={expanded ? "Collapse" : "Expand"}
+                >
+                  {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
         </AccordionSummary>
