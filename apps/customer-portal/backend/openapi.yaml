@@ -2060,14 +2060,17 @@ paths:
           description: Forbidden
   /projects/{id}/cases/time-cards/search:
     post:
+      summary: Search time cards grouped by cases based on provided filters.
       operationId: postProjectsIdCasesTimeCardsSearch
       parameters:
       - name: id
         in: path
+        description: ID of the project
         required: true
         schema:
           $ref: '#/components/schemas/IdString'
       requestBody:
+        description: Time card search payload containing filters and pagination info
         content:
           application/json:
             schema:
@@ -4198,6 +4201,16 @@ components:
     DeployedProductSearchPayload:
       type: object
       properties:
+        filters:
+          type: object
+          properties:
+            productCategories:
+              type: array
+              description: List of product categories to filter
+              items:
+                $ref: '#/components/schemas/ProductCategory'
+          additionalProperties: false
+          description: Filter criteria
         pagination:
           $ref: '#/components/schemas/Pagination'
       additionalProperties: false
@@ -4499,6 +4512,11 @@ components:
           type: string
           description: Product class (Product Model)
       description: Product data.
+    ProductCategory:
+      type: string
+      description: Valid product category values.
+      enum:
+      - cl
     ProductClass:
       type: string
       description: Valid product class values.
