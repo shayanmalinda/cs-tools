@@ -15,14 +15,14 @@
 // under the License.
 
 import { type JSX, useMemo } from "react";
-import { Box, Grid, Stack, Typography } from "@wso2/oxygen-ui";
+import { Box, Button, Grid, Stack, Typography } from "@wso2/oxygen-ui";
 import { useNavigate, useParams } from "react-router";
-import { FileText } from "@wso2/oxygen-ui-icons-react";
+import { ArrowRight, FileText } from "@wso2/oxygen-ui-icons-react";
 import ListStatGrid from "@components/list-view/ListStatGrid";
 import SupportOverviewCard from "@features/support/components/support-overview-cards/SupportOverviewCard";
 import { SupportOverviewIconVariant } from "@features/support/types/supportOverview";
 import OutstandingCasesList from "@features/support/components/support-overview-cards/OutstandingCasesList";
-import ChangeRequestsOverviewSection from "@features/operations/components/change-requests/ChangeRequestsOverviewSection";
+import type { CaseListItem } from "@features/support/types/cases";
 import {
   OPERATIONS_STAT_CONFIGS,
   OPERATIONS_OVERVIEW_LIST_LIMIT,
@@ -124,6 +124,31 @@ export default function OperationsPage(): JSX.Element {
     { enabled: !!projectId && permissionsReady && isChangeRequestEnabled },
   );
   const changeRequests = crData?.changeRequests ?? [];
+
+  const changeRequestsAsCases = useMemo<CaseListItem[]>(
+    () =>
+      changeRequests.map((cr) => ({
+        id: cr.id,
+        internalId: cr.id,
+        number: cr.number,
+        title: cr.title,
+        description: cr.description ?? "",
+        assignedEngineer: cr.assignedEngineer,
+        project: cr.project ?? { id: "", label: "" },
+        issueType: null,
+        deployedProduct: cr.deployedProduct,
+        deployment: cr.deployment,
+        severity: null,
+        status: cr.state,
+        type: cr.type,
+        caseTypes: null,
+        createdOn: cr.createdOn,
+        updatedOn: cr.updatedOn,
+        createdBy: cr.createdBy,
+        updatedBy: cr.updatedBy,
+      })),
+    [changeRequests],
+  );
 
   const {
     data: srStats,
@@ -265,7 +290,7 @@ export default function OperationsPage(): JSX.Element {
               iconVariant={SupportOverviewIconVariant.Blue}
               footerButtons={[]}
             >
-              <ChangeRequestsOverviewSection changeRequests={[]} isLoading />
+              <OutstandingCasesList cases={[]} isLoading />
             </SupportOverviewCard>
           </Grid>
         </Grid>
@@ -338,28 +363,46 @@ export default function OperationsPage(): JSX.Element {
                   footerButtons={[]}
                   isError={isCrError}
                 >
-                  <ChangeRequestsOverviewSection
-                    changeRequests={changeRequests}
-                    isLoading={isCrLoading}
-                    onItemClick={
-                      projectId
-                        ? (cr) =>
-                            navigate(
-                              `/projects/${projectId}/operations/change-requests/${cr.id}`,
-                              { state: { returnTo: operationsPath } },
-                            )
-                        : undefined
-                    }
-                    onViewAll={
-                      projectId
-                        ? () =>
+                  <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                    <OutstandingCasesList
+                      cases={changeRequestsAsCases}
+                      isLoading={isCrLoading}
+                      isError={isCrError}
+                      onCaseClick={
+                        projectId
+                          ? (c) =>
+                              navigate(
+                                `/projects/${projectId}/operations/change-requests/${c.id}`,
+                                { state: { returnTo: operationsPath } },
+                              )
+                          : undefined
+                      }
+                    />
+                    {projectId && !isCrLoading && !isCrError && (
+                      <>
+                        <Box sx={{ borderTop: 1, borderColor: "divider", mt: 1.5 }} />
+                        <Button
+                          fullWidth
+                          variant="text"
+                          color="primary"
+                          onClick={() =>
                             navigate(
                               `/projects/${projectId}/operations/change-requests`,
                               { state: { returnTo: operationsPath } },
                             )
-                        : undefined
-                    }
-                  />
+                          }
+                          endIcon={<ArrowRight size={16} />}
+                          sx={{
+                            justifyContent: "flex-start",
+                            textTransform: "none",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {OPERATIONS_HUB_FOOTER_VIEW_ALL_CR}
+                        </Button>
+                      </>
+                    )}
+                  </Box>
                 </SupportOverviewCard>
               </Grid>
             )}
