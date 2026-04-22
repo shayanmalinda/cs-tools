@@ -29,20 +29,34 @@ import type { TimeTrackingCardProps } from "@features/project-details/types/proj
 export default function TimeTrackingCard({
   card,
 }: TimeTrackingCardProps): JSX.Element {
-  const { case: caseData, totalTime, billable, nonBillable } = card;
+  const { case: caseData, totalTime, billable } = card;
 
   const caseNumber = caseData?.number?.trim() || "--";
   const caseName = caseData?.name?.trim() || "--";
 
   const totalTimeDisplay = formatMinutesAsHrMin(totalTime);
   const billableDisplay = formatMinutesAsHrMin(billable.totalTime);
-  const nonBillableDisplay = formatMinutesAsHrMin(nonBillable.totalTime);
 
   return (
     <Card sx={{ p: "20px", display: "flex", flexDirection: "column", gap: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, flexWrap: "wrap" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mb: 1,
+              flexWrap: "wrap",
+            }}
+          >
             <Chip
               label={caseNumber}
               size="small"
@@ -55,45 +69,14 @@ export default function TimeTrackingCard({
           </Typography>
         </Box>
         <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-          <Typography variant="h5" sx={{ fontWeight: 400, fontSize: "1.5rem", color: "text.primary" }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 400, fontSize: "1.5rem", color: "text.primary" }}
+          >
             {totalTimeDisplay === "Not Available" ? "--" : totalTimeDisplay}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            total
           </Typography>
         </Box>
       </Box>
-
-      <Divider />
-
-      <Stack direction="row" spacing={3}>
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Billable
-          </Typography>
-          <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
-            {billable.totalTime > 0 ? billableDisplay : "--"}
-            {billable.count > 0 && (
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-                ({billable.count})
-              </Typography>
-            )}
-          </Typography>
-        </Box>
-        <Box>
-          <Typography variant="caption" color="text.secondary" display="block">
-            Non-Billable
-          </Typography>
-          <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
-            {nonBillable.totalTime > 0 ? nonBillableDisplay : "--"}
-            {nonBillable.count > 0 && (
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-                ({nonBillable.count})
-              </Typography>
-            )}
-          </Typography>
-        </Box>
-      </Stack>
     </Card>
   );
 }
