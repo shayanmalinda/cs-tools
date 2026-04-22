@@ -240,7 +240,14 @@ export default function CaseDetailsContent({
           borderRadius: 0,
         }}
       >
-        {!focusMode && <CaseDetailsBackButton onClick={onBack} />}
+        <CaseDetailsBackButton
+          onClick={onBack}
+          sx={{
+            ml: focusMode ? 2 : -0.5,
+            mt: focusMode ? 2 : 0,
+            alignSelf: "flex-start",
+          }}
+        />
 
         {isError ? (
           <Box
