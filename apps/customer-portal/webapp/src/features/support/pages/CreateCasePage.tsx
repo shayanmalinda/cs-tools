@@ -74,6 +74,7 @@ import {
 import { SecurityTabId } from "@features/security/types/security";
 import {
   filterDeploymentsForCaseCreation,
+  getProductCategoriesForCaseCreation,
   getProjectSeverityPolicy,
   shouldRestrictToPrimaryProductionDeployments,
 } from "@utils/permission";
@@ -85,9 +86,9 @@ import UploadAttachmentModal from "@features/support/components/case-details/att
 import { ROUTE_PREVIOUS_PAGE } from "@features/project-hub/constants/navigationConstants";
 import type { ProjectDeploymentItem } from "@features/project-details/types/deployments";
 import type {
-  ChatMessageForClassification,
   RelatedCaseState,
 } from "@features/support/types/createCasePage";
+import { ChatSender, type Message } from "@features/support/types/conversations";
 
 const DEFAULT_CASE_TITLE = "Support case";
 const DEFAULT_CASE_DESCRIPTION = "Please describe your issue here.";
@@ -194,7 +195,11 @@ export default function CreateCasePage(): JSX.Element {
     selectedDeploymentMatch?.id ?? relatedCase?.deploymentId ?? "";
   const deploymentProductsQuery = usePostDeploymentProductsSearchInfinite(
     selectedDeploymentId,
-    { pageSize: 10, enabled: !!selectedDeploymentId },
+    {
+      pageSize: 10,
+      enabled: !!selectedDeploymentId,
+      request: { filters: { productCategories: getProductCategoriesForCaseCreation() } },
+    },
   );
   const deploymentProductsLoading = deploymentProductsQuery.isLoading;
   const deploymentProductsError = deploymentProductsQuery.isError;
@@ -243,7 +248,7 @@ export default function CreateCasePage(): JSX.Element {
   const queryClient = useQueryClient();
 
   const locationState = location.state as {
-    messages?: ChatMessageForClassification[];
+    messages?: Message[];
     classificationResponse?: {
       issueType?: string;
       severityLevel?: string;
@@ -260,6 +265,7 @@ export default function CreateCasePage(): JSX.Element {
 
   const STORAGE_KEY = `case_classification_data_${projectId}`;
   const CONVERSATION_ID_STORAGE_KEY = `case_conversation_id_${projectId}`;
+  const CHAT_MESSAGES_STORAGE_KEY = `case_chat_messages_${projectId}`;
 
   const [classificationResponse, setClassificationResponse] = useState<
     | {
@@ -288,6 +294,32 @@ export default function CreateCasePage(): JSX.Element {
     }
   });
 
+  const [chatMessages, setChatMessages] = useState<Message[]>(() => {
+    const stateMessages = (locationState as { messages?: Message[] } | null)?.messages;
+    if (stateMessages?.length) {
+      return stateMessages;
+    }
+    try {
+      const stored = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY);
+      if (!stored) return [];
+      const parsed = JSON.parse(stored) as Message[];
+      return parsed.map((message) => {
+        const parsedTimestamp = new Date(message.timestamp);
+        return {
+          id: message.id || `restored-${crypto.randomUUID()}`,
+          text: message.text,
+          sender:
+            message.sender === ChatSender.BOT ? ChatSender.BOT : ChatSender.USER,
+          timestamp: Number.isNaN(parsedTimestamp.getTime())
+            ? new Date()
+            : parsedTimestamp,
+        };
+      });
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     if (locationState?.classificationResponse) {
       try {
@@ -304,6 +336,18 @@ export default function CreateCasePage(): JSX.Element {
       setClassificationResponse(locationState.classificationResponse);
     }
   }, [locationState?.classificationResponse, STORAGE_KEY, logger]);
+
+  useEffect(() => {
+    const stateMessages = (locationState as { messages?: Message[] } | null)?.messages;
+    if (stateMessages?.length) {
+      setChatMessages(stateMessages);
+      try {
+        sessionStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(stateMessages));
+      } catch {
+        // ignore storage write errors
+      }
+    }
+  }, [locationState, CHAT_MESSAGES_STORAGE_KEY]);
 
   // Persist conversationId to survive page refresh
   const [conversationId, setConversationId] = useState<string | undefined>(
@@ -637,6 +681,14 @@ export default function CreateCasePage(): JSX.Element {
   ]);
 
   const handleBack = () => {
+    if (projectId && conversationId) {
+      navigate(`/projects/${projectId}/support/chat/${conversationId}`, {
+        state: {
+          messages: chatMessages,
+        },
+      });
+      return;
+    }
     if (window.history.length > 1) {
       navigate(ROUTE_PREVIOUS_PAGE);
     } else if (projectId) {
@@ -824,6 +876,7 @@ export default function CreateCasePage(): JSX.Element {
         try {
           sessionStorage.removeItem(STORAGE_KEY);
           sessionStorage.removeItem(CONVERSATION_ID_STORAGE_KEY);
+          sessionStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY);
         } catch (e) {
           logger.error(
             "Failed to cleanup sessionStorage after case creation",

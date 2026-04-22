@@ -225,6 +225,7 @@ export type ChatNavState = {
   initialEnvProducts?: Record<string, string[]>;
   accountId?: string;
   chatNumber?: string;
+  messages?: Message[];
 };
 
 // Model type for a generic chat WebSocket event.

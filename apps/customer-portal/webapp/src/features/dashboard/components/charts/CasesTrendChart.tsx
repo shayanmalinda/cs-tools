@@ -21,11 +21,12 @@ import {
   Cell,
   ResponsiveContainer,
 } from "@wso2/oxygen-ui-charts-react";
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 import { ChartLegend } from "@features/dashboard/components/charts/ChartLegend";
 import { OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA } from "@/features/dashboard/constants/dashboard";
 import {
   DASHBOARD_CHART_CAPTION_TOTAL,
+  DASHBOARD_CHART_DARK_MODE_OPACITY,
   DASHBOARD_CHART_DARK_MODE_SHADE,
   DASHBOARD_CHART_LEGEND_SKELETON_WIDTH_WIDE_PX,
   DASHBOARD_CHART_PIE_AREA_HEIGHT_PX,
@@ -42,7 +43,10 @@ import {
 } from "@features/dashboard/utils/dashboardCharts";
 
 function normalizeCategory(value: string): string {
-  return value.trim().toLowerCase().replace(/[\s_-]+/g, "-");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "-");
 }
 
 /**
@@ -72,47 +76,50 @@ export const CasesTrendChart = ({
     errorGrey,
     fallbackGrey,
   );
-  const darkModeColorByCategory = new Map<string, string>([
-    [
-      normalizeCategory("onboarding"),
-      colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.blue?.[300] ??
-        "#93C5FD",
-    ],
-    [
-      normalizeCategory("migration"),
-      colors.orange?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.orange?.[300] ??
-        "#FDBA74",
-    ],
-    [
-      normalizeCategory("services"),
-      colors.green?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.green?.[300] ??
-        "#86EFAC",
-    ],
-    [
-      normalizeCategory("follow-up"),
-      colors.purple?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.purple?.[300] ??
-        "#D8B4FE",
-    ],
-    [
-      normalizeCategory("improvements"),
-      colors.brown?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.brown?.[300] ??
-        "#D6BFA8",
-    ],
-  ]);
+  const darkModeColorByCategory = useMemo(
+    () =>
+      new Map<string, string>([
+        [
+          normalizeCategory("onboarding"),
+          colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.blue?.[300] ??
+            "#93C5FD",
+        ],
+        [
+          normalizeCategory("migration"),
+          colors.orange?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.orange?.[300] ??
+            "#FDBA74",
+        ],
+        [
+          normalizeCategory("services"),
+          colors.green?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.green?.[300] ??
+            "#86EFAC",
+        ],
+        [
+          normalizeCategory("follow-up"),
+          colors.purple?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.purple?.[300] ??
+            "#D8B4FE",
+        ],
+        [
+          normalizeCategory("improvements"),
+          colors.brown?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.brown?.[300] ??
+            "#D6BFA8",
+        ],
+      ]),
+    [],
+  );
   const displayChartData = isDarkMode
     ? chartData.map((entry) => ({
         ...entry,
         color:
-          darkModeColorByCategory.get(normalizeCategory(entry.name)) ?? entry.color,
+          darkModeColorByCategory.get(normalizeCategory(entry.name)) ??
+          entry.color,
       }))
     : chartData;
-  const darkModeCenterTextColor =
-    colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ?? colors.blue?.[300];
 
   // total
   const total = resolveEngagementsNumericTotal(
@@ -213,6 +220,7 @@ export const CasesTrendChart = ({
                         key={`cell-${index}`}
                         fill={entry.color}
                         stroke="none"
+                        opacity={isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1}
                       />
                     ))}
                   </Pie>
@@ -240,12 +248,7 @@ export const CasesTrendChart = ({
                 </>
               ) : (
                 <>
-                  <Typography
-                    variant="h4"
-                    color={isDarkMode ? darkModeCenterTextColor : undefined}
-                  >
-                    {centerValue}
-                  </Typography>
+                  <Typography variant="h4">{centerValue}</Typography>
                   <Typography variant="caption">
                     {DASHBOARD_CHART_CAPTION_TOTAL}
                   </Typography>

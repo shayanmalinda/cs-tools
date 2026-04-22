@@ -40,6 +40,8 @@ import {
 import { Plus, Server } from "@wso2/oxygen-ui-icons-react";
 import { useCallback, useEffect, useState, type JSX } from "react";
 import { useNavigate } from "react-router";
+import useGetProjectDetails from "@api/useGetProjectDetails";
+import { isProjectRestricted } from "@utils/permission";
 
 /**
  * Displays deployment environments for a project.
@@ -53,6 +55,9 @@ export default function ProjectDeployments({
   const navigate = useNavigate();
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
+
+  const { data: projectDetails } = useGetProjectDetails(projectId);
+  const isRestricted = isProjectRestricted(projectDetails?.closureState);
 
   const deploymentsQuery = usePostProjectDeploymentsSearchInfinite(projectId, {
     pageSize: PAGE_SIZE,
@@ -79,16 +84,18 @@ export default function ProjectDeployments({
 
   const isPageLoaded =
     (deploymentsQuery.data?.pages?.length ?? 0) > currentPageIndex;
+  const isPendingPageFetch = !isPageLoaded && deploymentsQuery.isFetchingNextPage;
   const isShowingDeployments = currentDeployments.length > 0;
 
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = deploymentsQuery;
   useEffect(() => {
     if (!projectId) return;
     if (!clampedPage) return;
     if (isPageLoaded) return;
-    if (!deploymentsQuery.hasNextPage) return;
-    if (deploymentsQuery.isFetchingNextPage) return;
-    void deploymentsQuery.fetchNextPage();
-  }, [projectId, clampedPage, isPageLoaded, deploymentsQuery]);
+    if (!hasNextPage) return;
+    if (isFetchingNextPage) return;
+    void fetchNextPage();
+  }, [projectId, clampedPage, isPageLoaded, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
@@ -190,25 +197,29 @@ export default function ProjectDeployments({
           </>
         ) : (
           <>
-            <Button
-              variant="contained"
-              color="warning"
-              size="small"
-              disabled={!selectedProduct}
-              startIcon={<Server size={16} aria-hidden />}
-              onClick={handleCreateServiceRequest}
-            >
-              {`Create Service Request${selectedProduct ? " (1)" : ""}`}
-            </Button>
-            <Button
-              variant="contained"
-              color="warning"
-              size="small"
-              startIcon={<Plus size={16} aria-hidden />}
-              onClick={handleOpenModal}
-            >
-              Add Deployment
-            </Button>
+            {!isRestricted && (
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                disabled={!selectedProduct}
+                startIcon={<Server size={16} aria-hidden />}
+                onClick={handleCreateServiceRequest}
+              >
+                {`Create Service Request${selectedProduct ? " (1)" : ""}`}
+              </Button>
+            )}
+            {!isRestricted && (
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                startIcon={<Plus size={16} aria-hidden />}
+                onClick={handleOpenModal}
+              >
+                Add Deployment
+              </Button>
+            )}
           </>
         )}
       </Box>
@@ -216,7 +227,7 @@ export default function ProjectDeployments({
   );
 
   const renderContent = () => {
-    if (showLoading) {
+    if (showLoading || isPendingPageFetch) {
       return (
         <>
           {deploymentsToolbar(0, true)}
@@ -260,7 +271,7 @@ export default function ProjectDeployments({
     if (!isShowingDeployments && (totalRecords ?? 0) === 0) {
       return (
         <>
-          <DeploymentHeader count={0} onAddClick={handleOpenModal} />
+          <DeploymentHeader count={0} onAddClick={isRestricted ? undefined : handleOpenModal} />
           <EmptyState description="It seems there are no deployments associated with this project." />
         </>
       );

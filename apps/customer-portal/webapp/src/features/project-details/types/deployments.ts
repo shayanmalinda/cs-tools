@@ -225,9 +225,16 @@ export type DeploymentSearchRequest = SearchRequestBase & {
   filters?: DeploymentSearchFilters;
 };
 
+/** Product category values matching the backend ProductCategory enum. */
+export enum ProductCategory {
+  CLOUD = "cl",
+  PDP = "pdp",
+}
+
 // Filter type for searching deployed products.
 export type DeployedProductSearchFilters = {
   consumption?: ConsumptionFilter;
+  productCategories?: ProductCategory[];
 };
 
 // Request type for searching deployed products.

@@ -21,11 +21,12 @@ import {
   Cell,
   ResponsiveContainer,
 } from "@wso2/oxygen-ui-charts-react";
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 import { ChartLegend } from "@features/dashboard/components/charts/ChartLegend";
 import {
   DASHBOARD_CHART_CAPTION_TOTAL,
+  DASHBOARD_CHART_DARK_MODE_OPACITY,
   DASHBOARD_CHART_DARK_MODE_SHADE,
   DASHBOARD_CHART_ERROR_ENTITY_ACTIVE_CASES,
   DASHBOARD_CHART_LEGEND_SKELETON_WIDTH_WIDE_PX,
@@ -75,20 +76,24 @@ export const ActiveCasesChart = ({
     Boolean(isError),
     errorGrey,
   );
-  const darkModeColorByName = new Map<string, string>([
-    [
-      "Service Requests (SR)",
-      colors.orange?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.orange?.[300] ??
-        "#FDBA74",
-    ],
-    [
-      "Change Requests (CR)",
-      colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.blue?.[300] ??
-        "#93C5FD",
-    ],
-  ]);
+  const darkModeColorByName = useMemo(
+    () =>
+      new Map<string, string>([
+        [
+          "Service Requests (SR)",
+          colors.orange?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.orange?.[300] ??
+            "#FDBA74",
+        ],
+        [
+          "Change Requests (CR)",
+          colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.blue?.[300] ??
+            "#93C5FD",
+        ],
+      ]),
+    [],
+  );
   const displayChartData = isDarkMode
     ? chartData.map((entry) => ({
         ...entry,
@@ -101,8 +106,6 @@ export const ActiveCasesChart = ({
         color: darkModeColorByName.get(entry.name) ?? entry.color,
       }))
     : buildActiveCasesLegendRows(seriesConfig, safeData);
-  const darkModeCenterTextColor =
-    colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ?? colors.blue?.[300];
 
   return (
     <Card sx={{ height: "100%", p: 2 }}>
@@ -163,6 +166,7 @@ export const ActiveCasesChart = ({
                     key={`cell-${index}`}
                     fill={entry.color}
                     stroke="none"
+                    opacity={isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1}
                   />
                 ))}
               </Pie>
@@ -195,10 +199,7 @@ export const ActiveCasesChart = ({
               </Box>
             ) : (
               <>
-                <Typography
-                  variant="h4"
-                  color={isDarkMode ? darkModeCenterTextColor : undefined}
-                >
+                <Typography variant="h4">
                   {formatActiveCasesCenterTotal(Boolean(data), safeData.total)}
                 </Typography>
                 <Typography variant="caption">

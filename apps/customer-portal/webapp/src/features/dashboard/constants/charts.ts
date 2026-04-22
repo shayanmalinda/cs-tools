@@ -56,4 +56,7 @@ export const DASHBOARD_CHART_LEGEND_SKELETON_WIDTH_WIDE_PX = 80;
 export const DASHBOARD_CHART_SPAN = { xs: 12 as const, md: 4 as const };
 
 // Dark-mode shade used for dashboard chart slices and legends.
-export const DASHBOARD_CHART_DARK_MODE_SHADE = 300;
+export const DASHBOARD_CHART_DARK_MODE_SHADE = 500;
+
+// Opacity applied to chart slice areas in dark mode only.
+export const DASHBOARD_CHART_DARK_MODE_OPACITY = 0.6;

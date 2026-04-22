@@ -23,12 +23,14 @@ import type {
   ProjectOperationsStatsResult,
   ProjectPermissions,
 } from "@/types/permission";
-import { ProjectType } from "@/types/permission";
+import { ProjectClosureState, ProjectType } from "@/types/permission";
+import { ProductCategory } from "@features/project-details/types/deployments";
 import { convertMinutesToHours } from "@features/project-details/utils/projectDetails";
 import { formatBackendTimestampForDisplay } from "@utils/dateTime";
 
 export { PRIMARY_PRODUCTION_DEPLOYMENT_TYPE_LABEL } from "@constants/permissionConstants";
-export { ProjectType } from "@/types/permission";
+export { ProjectClosureState, ProjectType } from "@/types/permission";
+export { ProductCategory } from "@features/project-details/types/deployments";
 export type {
   GetProjectPermissionsOptions,
   ProjectOperationsStatsResult,
@@ -228,6 +230,48 @@ export function shouldHideOnboardingData(
 ): boolean {
   const normalized = (onboardingStatus ?? "").trim().toLowerCase();
   return normalized === NOT_APPLICABLE_ONBOARDING_STATUS;
+}
+
+/**
+ * Returns the product categories to pass when fetching products for case creation.
+ * Always filters to Cloud products.
+ *
+ * @returns Product category filter array for case creation flows.
+ */
+export function getProductCategoriesForCaseCreation(): ProductCategory[] {
+  return [ProductCategory.CLOUD];
+}
+
+/**
+ * Returns the product categories to pass when fetching products for service request creation.
+ * Only Cloud Subscription and Cloud Evaluation Support projects use PDP products.
+ *
+ * @param projectTypeLabel - Value from project.type.label.
+ * @returns Product category filter array, or undefined when no filter should be applied.
+ */
+export function getProductCategoriesForServiceRequest(
+  projectTypeLabel: string | null | undefined,
+): ProductCategory[] | undefined {
+  if (
+    projectTypeLabel === ProjectType.CLOUD_SUBSCRIPTION ||
+    projectTypeLabel === ProjectType.CLOUD_EVALUATION_SUPPORT
+  ) {
+    return [ProductCategory.PDP];
+  }
+  return undefined;
+}
+
+/**
+ * Whether the project is in a Restricted closure state.
+ * When restricted, action buttons (create SR, add deployment, add user, etc.) must be hidden.
+ *
+ * @param closureState - Value from project.closureState.
+ * @returns True when the project is restricted.
+ */
+export function isProjectRestricted(
+  closureState: string | null | undefined,
+): boolean {
+  return closureState === ProjectClosureState.RESTRICTED;
 }
 
 /**

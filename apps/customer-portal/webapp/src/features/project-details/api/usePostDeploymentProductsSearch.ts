@@ -82,20 +82,30 @@ function buildDeployedProductSearchPayload(
     pagination: { offset, limit },
   };
   const consumption = request?.filters?.consumption;
-  if (
-    consumption &&
+  const productCategories = request?.filters?.productCategories;
+  const hasConsumption =
+    !!consumption &&
     (consumption.include !== undefined ||
       (consumption.startDate != null && consumption.startDate !== "") ||
-      (consumption.endDate != null && consumption.endDate !== ""))
-  ) {
+      (consumption.endDate != null && consumption.endDate !== ""));
+  if (hasConsumption || productCategories?.length) {
     payload.filters = {
-      consumption: {
-        ...(consumption.include !== undefined
-          ? { include: consumption.include }
-          : {}),
-        ...(consumption.startDate ? { startDate: consumption.startDate } : {}),
-        ...(consumption.endDate ? { endDate: consumption.endDate } : {}),
-      },
+      ...(hasConsumption
+        ? {
+            consumption: {
+              ...(consumption!.include !== undefined
+                ? { include: consumption!.include }
+                : {}),
+              ...(consumption!.startDate
+                ? { startDate: consumption!.startDate }
+                : {}),
+              ...(consumption!.endDate
+                ? { endDate: consumption!.endDate }
+                : {}),
+            },
+          }
+        : {}),
+      ...(productCategories?.length ? { productCategories } : {}),
     };
   }
   return payload;

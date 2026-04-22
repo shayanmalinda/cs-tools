@@ -17,8 +17,9 @@
 import type { ChatMessageBubbleProps } from "@features/support/types/supportComponents";
 import { Avatar, Box, Paper, Stack, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
 import { Bot, User } from "@wso2/oxygen-ui-icons-react";
-import MarkdownIt from "markdown-it";
 import { type JSX, useEffect, useMemo, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChatSender } from "@features/support/types/conversations";
 import {
   NOVERA_ANALYZING_PLACEHOLDER_TEXT,
@@ -26,6 +27,7 @@ import {
 } from "@features/support/constants/chatConstants";
 import RecommendationsCard from "@features/support/components/novera-ai-assistant/novera-chat-page/RecommendationsCard";
 import { resolveDisplayTimeZone } from "@utils/dateTime";
+import { buildBotMarkdownComponents } from "@features/support/utils/markdown";
 
 /** Tighter line breaks while tokens stream (model often sends blank lines). */
 function collapseStreamLineBreaks(s: string): string {
@@ -59,45 +61,58 @@ const primaryWaveTextSx = {
   },
 } as const;
 
-/** Safe URL protocols for markdown links. Blocks javascript:, data:, etc. */
-const SAFE_PROTOCOLS = ["http:", "https:"];
-
-function isSafeHref(href: string | undefined): href is string {
-  if (!href || typeof href !== "string") return false;
-  try {
-    const parsed = new URL(href, "https://invalid.invalid");
-    return SAFE_PROTOCOLS.includes(parsed.protocol);
-  } catch {
-    return false;
-  }
-}
-
-const md = new MarkdownIt({ linkify: true, breaks: false });
-
-/** Block unsafe href attributes before the HTML reaches the DOM. */
-const defaultLinkOpenRenderer =
-  md.renderer.rules.link_open ??
-  ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
-
-md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-  const token = tokens[idx];
-  const hrefIndex = token.attrIndex("href");
-  if (hrefIndex >= 0) {
-    const href = token.attrs?.[hrefIndex]?.[1];
-    if (!isSafeHref(href)) {
-      // Strip the href so the anchor renders as plain text wrapper
-      token.attrs?.splice(hrefIndex, 1);
-    } else {
-      token.attrSet("target", "_blank");
-      token.attrSet("rel", "noopener noreferrer");
-    }
-  }
-  return defaultLinkOpenRenderer(tokens, idx, options, env, self);
-};
-
 function MarkdownContent({ text }: { text: string }) {
-  const html = useMemo(() => md.render(text), [text]);
-  return <Box dangerouslySetInnerHTML={{ __html: html }} />;
+  const markdownComponents: React.ComponentProps<
+    typeof ReactMarkdown
+  >["components"] = useMemo(
+    () => buildBotMarkdownComponents(),
+    [],
+  );
+
+  return (
+    <Box
+      sx={{
+        "& h1:first-of-type, & h2:first-of-type, & h3:first-of-type, & p:first-of-type":
+          { mt: 0 },
+        "& ul, & ol": { mt: 0, mb: 1, pl: 2.5 },
+        "& li": { mb: 0.5 },
+        "& p": { margin: "0 0 0.25em 0", whiteSpace: "pre-wrap", wordBreak: "break-word" },
+        "& p:last-child": { marginBottom: 0 },
+        "& pre": {
+          overflowX: "auto",
+          maxWidth: "100%",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          backgroundColor: "action.disabledBackground",
+          p: 1,
+          m: 0,
+          boxSizing: "border-box",
+        },
+        "& code": {
+          fontFamily: "monospace",
+          fontSize: "inherit",
+          backgroundColor: "action.hover",
+          px: 0.75,
+          py: 0,
+          whiteSpace: "normal",
+          display: "inline",
+        },
+        "& pre code": {
+          backgroundColor: "transparent",
+          display: "block",
+          boxSizing: "border-box",
+          px: 0,
+          py: 0.5,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        },
+      }}
+    >
+      <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+        {text}
+      </ReactMarkdown>
+    </Box>
+  );
 }
 
 /**
@@ -320,12 +335,7 @@ export default function ChatMessageBubble({
                 </Box>
               </Paper>
             ) : (
-              <Box
-                sx={{
-                  "& h1:first-of-type, & h2:first-of-type, & h3:first-of-type, & p:first-of-type":
-                    { mt: 0 },
-                }}
-              >
+              <Box>
                 <MarkdownContent text={displayText} />
                 {message.thinkingSteps && message.thinkingSteps.length > 0 && (
                   <Box sx={{ mt: 1 }}>

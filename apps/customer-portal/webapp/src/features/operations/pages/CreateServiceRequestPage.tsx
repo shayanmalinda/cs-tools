@@ -65,6 +65,7 @@ import {
 } from "@features/operations/utils/caseRefresh";
 import {
   filterDeploymentsForCaseCreation,
+  getProductCategoriesForServiceRequest,
   getProjectPermissions,
   shouldRestrictToPrimaryProductionDeployments,
 } from "@utils/permission";
@@ -251,9 +252,18 @@ export default function CreateServiceRequestPage(): JSX.Element {
   );
   const selectedDeploymentId = selectedDeploymentMatch?.id ?? "";
 
+  const srProductCategories = getProductCategoriesForServiceRequest(
+    projectDetails?.type?.label,
+  );
   const deploymentProductsQuery = usePostDeploymentProductsSearchInfinite(
     selectedDeploymentId,
-    { pageSize: 10, enabled: !!selectedDeploymentId },
+    {
+      pageSize: 10,
+      enabled: !!selectedDeploymentId,
+      request: srProductCategories
+        ? { filters: { productCategories: srProductCategories } }
+        : undefined,
+    },
   );
   const deploymentProductsLoading = deploymentProductsQuery.isLoading;
   const deploymentProductsData = useMemo(

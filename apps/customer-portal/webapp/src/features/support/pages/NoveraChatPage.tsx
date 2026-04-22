@@ -48,7 +48,6 @@ import {
   CHAT_TYPING_INTERVAL_MS,
   NOVERA_ANALYZING_PLACEHOLDER_TEXT,
   NOVERA_INITIAL_WELCOME_TEXT,
-  VISIBILITY_EVENT_LISTENER,
 } from "@features/support/constants/chatConstants";
 import {
   formatChatHistoryForClassification,
@@ -92,6 +91,7 @@ export default function NoveraChatPage(): JSX.Element {
   const navState = location.state as ChatNavState | null;
   const initialUserMessage = navState?.initialUserMessage;
   const conversationResponse = navState?.conversationResponse;
+  const preloadedMessages = navState?.messages;
   const navAccountId = navState?.accountId;
   const chatNumber = navState?.chatNumber;
 
@@ -103,9 +103,10 @@ export default function NoveraChatPage(): JSX.Element {
     }
   };
 
-  const { data: allProjectDeployments } = usePostProjectDeploymentsSearchAll(
-    projectId || "",
-  );
+  const {
+    data: allProjectDeployments,
+    isLoading: isDeploymentsLoading,
+  } = usePostProjectDeploymentsSearchAll(projectId || "");
   const { data: projectDetails } = useGetProjectDetails(projectId || "");
   const queryClient = useQueryClient();
   const projectTypeId = useMemo(() => {
@@ -129,8 +130,9 @@ export default function NoveraChatPage(): JSX.Element {
       ),
     [allProjectDeployments, projectDetails?.type?.label],
   );
-  const { productsByDeploymentId, isLoading: isAllProductsLoading } =
+  const { productsByDeploymentId, isLoading: isProductsLoading } =
     useAllDeploymentProducts(projectDeployments);
+  const isAllProductsLoading = isDeploymentsLoading || isProductsLoading;
   const envProducts = useMemo(
     () => buildEnvProducts(productsByDeploymentId, projectDeployments),
     [productsByDeploymentId, projectDeployments],
@@ -148,23 +150,23 @@ export default function NoveraChatPage(): JSX.Element {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    refetch: refetchMessages,
   } = useGetConversationMessages(urlConversationId || "", { pageSize: 10 });
   const [isCreateCaseLoading, setIsCreateCaseLoading] = useState(false);
   const [isWaitingForClassification, setIsWaitingForClassification] =
     useState(false);
   const [messages, setMessages] = useState<Message[]>(() => {
-    if (urlConversationId) {
-      return [];
+    if (preloadedMessages && preloadedMessages.length > 0) {
+      return preloadedMessages.map((message, index) => ({
+        ...message,
+        id: message.id || `restored-${index}`,
+        sender:
+          message.sender === ChatSender.BOT ? ChatSender.BOT : ChatSender.USER,
+        timestamp:
+          message.timestamp instanceof Date
+            ? message.timestamp
+            : new Date(message.timestamp ?? Date.now()),
+      }));
     }
-
-    const botWelcome: Message = {
-      id: "1",
-      text: NOVERA_INITIAL_WELCOME_TEXT,
-      sender: ChatSender.BOT,
-      timestamp: new Date(),
-    };
-
     if (conversationResponse?.message) {
       const userMsg = initialUserMessage?.trim();
       const msgs: Message[] = [
@@ -189,13 +191,29 @@ export default function NoveraChatPage(): JSX.Element {
       }
       return msgs;
     }
+    if (urlConversationId) {
+      return [];
+    }
+
+    const botWelcome: Message = {
+      id: "1",
+      text: NOVERA_INITIAL_WELCOME_TEXT,
+      sender: ChatSender.BOT,
+      timestamp: new Date(),
+    };
     return [botWelcome];
   });
 
-  // Load and convert conversation history when resuming
+  // Load and convert conversation history when resuming.
   useEffect(() => {
     if (!urlConversationId || !conversationHistory?.pages) return;
-    if (messages.length > 0) return;
+    if (lastProcessedConversationIdRef.current !== urlConversationId) {
+      lastProcessedConversationIdRef.current = urlConversationId;
+      processedHistoryPageCountRef.current = 0;
+    }
+    const pageCount = conversationHistory.pages.length;
+    if (pageCount <= processedHistoryPageCountRef.current) return;
+    processedHistoryPageCountRef.current = pageCount;
 
     const allMessages = conversationHistory.pages.flatMap(
       (page) => page.comments,
@@ -218,24 +236,18 @@ export default function NoveraChatPage(): JSX.Element {
         };
       });
 
-    setMessages(convertedMessages);
-  }, [urlConversationId, conversationHistory, messages.length]);
+    setMessages((prev) => {
+      // Keep optimistic/nav-state messages when history API returns empty.
+      if (convertedMessages.length === 0 && prev.length > 0) {
+        return prev;
+      }
+      return convertedMessages;
+    });
+    queryClient.invalidateQueries({
+      queryKey: [ApiQueryKeys.CONVERSATION_MESSAGES, urlConversationId, 10],
+    });
+  }, [urlConversationId, conversationHistory, queryClient]);
 
-  // Refetch messages when user returns from create-case page (detects navigate back)
-  useEffect(() => {
-    if (!urlConversationId) return;
-
-    const handleRefetch = () => {
-      refetchMessages();
-    };
-
-    // Listen for visibility changes (when user returns to tab)
-    document.addEventListener(VISIBILITY_EVENT_LISTENER, handleRefetch);
-
-    return () => {
-      document.removeEventListener(VISIBILITY_EVENT_LISTENER, handleRefetch);
-    };
-  }, [urlConversationId, refetchMessages]);
 
   // Update URL with conversationId from describe-issue flow
   useEffect(() => {
@@ -322,6 +334,8 @@ export default function NoveraChatPage(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeBotMessageIdRef = useRef<string | null>(null);
   const initialMessageSentRef = useRef(false);
+  const processedHistoryPageCountRef = useRef(0);
+  const lastProcessedConversationIdRef = useRef<string | null>(null);
   const tokenQueueRef = useRef<string[]>([]);
   const pendingFinalRef = useRef<{
     payload: Record<string, unknown>;
@@ -514,6 +528,12 @@ export default function NoveraChatPage(): JSX.Element {
           }
           pendingFinalRef.current = { payload, finalMessage };
           flushPendingFinalIfReady();
+          const activeConversationId = nextConversationId || urlConversationId;
+          if (activeConversationId) {
+            queryClient.invalidateQueries({
+              queryKey: [ApiQueryKeys.CONVERSATION_MESSAGES, activeConversationId, 10],
+            });
+          }
           break;
         }
         case "error":
@@ -663,7 +683,7 @@ export default function NoveraChatPage(): JSX.Element {
           <ChatHeader
             onBack={handleBack}
             onCreateCase={handleCreateCase}
-            isCreateCaseLoading={isCreateCaseLoading}
+            isCreateCaseLoading={isCreateCaseLoading || isAllProductsLoading}
             chatNumber={chatNumber}
           />
         </Box>
@@ -701,7 +721,7 @@ export default function NoveraChatPage(): JSX.Element {
             inputValue={inputValue}
             setInputValue={setInputValueAndRef}
             onCreateCase={handleCreateCase}
-            isCreateCaseLoading={isCreateCaseLoading}
+            isCreateCaseLoading={isCreateCaseLoading || isAllProductsLoading}
             isSending={isSending}
             resetTrigger={resetTrigger}
             forceRichText={showRichText}

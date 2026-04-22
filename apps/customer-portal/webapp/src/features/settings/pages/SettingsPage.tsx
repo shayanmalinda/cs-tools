@@ -31,6 +31,7 @@ import {
 import { SettingsPageTabId } from "@features/settings/types/settings";
 import { resolveSettingsPageTabId } from "@features/settings/utils/settingsPage";
 import { ProjectType } from "@/types/permission";
+import { isProjectRestricted } from "@utils/permission";
 
 /**
  * Settings page with User Management and AI Assistant tabs.
@@ -47,6 +48,8 @@ export default function SettingsPage(): JSX.Element {
     () => (userDetails?.roles ?? []).includes(SETTINGS_CUSTOMER_ADMIN_ROLE),
     [userDetails?.roles],
   );
+
+  const isRestricted = isProjectRestricted(projectDetails?.closureState);
 
   const hideRestrictedTabs = useMemo(() => {
     const projectTypeLabel = projectDetails?.type?.label;
@@ -110,7 +113,7 @@ export default function SettingsPage(): JSX.Element {
       {displayTab === SettingsPageTabId.USERS && (
         <SettingsUserManagement
           projectId={projectId}
-          canAddOrRemoveUsers={isCustomerAdmin}
+          canAddOrRemoveUsers={isCustomerAdmin && !isRestricted}
         />
       )}
       {displayTab === SettingsPageTabId.AI && (
@@ -120,6 +123,7 @@ export default function SettingsPage(): JSX.Element {
         <SettingsRegistryTokens
           projectId={projectId}
           isAdmin={isCustomerAdmin}
+          isRestricted={isRestricted}
         />
       )}
     </Box>

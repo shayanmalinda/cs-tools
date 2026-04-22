@@ -35,7 +35,7 @@ import useGetProjectCases from "@api/useGetProjectCases";
 import useGetChangeRequests from "@features/operations/api/useGetChangeRequests";
 import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import { useGetProjectChangeRequestsStats } from "@features/dashboard/api/useGetProjectChangeRequestsStats";
-import { getProjectPermissions } from "@utils/permission";
+import { getProjectPermissions, isProjectRestricted } from "@utils/permission";
 import { SortOrder } from "@/types/common";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 import {
@@ -90,6 +90,7 @@ export default function OperationsPage(): JSX.Element {
 
   const isServiceRequestEnabled = permissions.hasSR;
   const isChangeRequestEnabled = permissions.hasCR;
+  const isRestricted = isProjectRestricted(project?.closureState);
   const operationsPath = `/projects/${projectId}/operations`;
 
   const {
@@ -276,13 +277,17 @@ export default function OperationsPage(): JSX.Element {
                   subtitle={srOverviewSubtitle}
                   icon={FileText}
                   iconVariant={SupportOverviewIconVariant.Orange}
-                  headerAction={{
-                    label: OPERATIONS_HUB_HEADER_ACTION_CREATE_SR,
-                    onClick: () =>
-                      navigate(
-                        `/projects/${projectId}/operations/service-requests/create`,
-                      ),
-                  }}
+                  headerAction={
+                    isRestricted
+                      ? undefined
+                      : {
+                          label: OPERATIONS_HUB_HEADER_ACTION_CREATE_SR,
+                          onClick: () =>
+                            navigate(
+                              `/projects/${projectId}/operations/service-requests/create`,
+                            ),
+                        }
+                  }
                   footerButtons={[
                     {
                       label: OPERATIONS_HUB_FOOTER_VIEW_MINE,

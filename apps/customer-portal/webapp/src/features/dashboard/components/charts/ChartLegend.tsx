@@ -18,6 +18,8 @@ import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 import { Box, Typography } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
 import type { ChartLegendProps } from "@/features/dashboard/types/charts";
+import { useDarkMode } from "@utils/useDarkMode";
+import { DASHBOARD_CHART_DARK_MODE_OPACITY } from "@/features/dashboard/constants/charts";
 
 /**
  * ChartLegend component renders a legend for a chart.
@@ -30,7 +32,9 @@ export const ChartLegend = ({
   data,
   isError,
   showValues = false,
-}: ChartLegendProps): JSX.Element => (
+}: ChartLegendProps): JSX.Element => {
+  const isDarkMode = useDarkMode();
+  return (
   <Box
     sx={{
       mt: 2,
@@ -59,6 +63,7 @@ export const ChartLegend = ({
                 height: 12,
                 borderRadius: "50%",
                 bgcolor: entry.color,
+                opacity: isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1,
               }}
             />
           )}
@@ -75,4 +80,5 @@ export const ChartLegend = ({
       </Box>
     ))}
   </Box>
-);
+  );
+};

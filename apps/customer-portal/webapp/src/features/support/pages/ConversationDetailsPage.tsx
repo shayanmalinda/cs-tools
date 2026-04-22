@@ -58,9 +58,9 @@ import { ROUTE_PREVIOUS_PAGE } from "@features/project-hub/constants/navigationC
 import { ConversationListRowAction } from "@features/support/types/conversations";
 import { resolveConversationListRowAction } from "@features/support/utils/conversationsList";
 import { NOVERA_DISPLAY_NAME } from "@features/support/constants/chatConstants";
-import MarkdownIt from "markdown-it";
-
-const md = new MarkdownIt({ linkify: true, breaks: true });
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { buildBotMarkdownComponents } from "@features/support/utils/markdown";
 
 function ConversationMsgBubble({
   message,
@@ -85,7 +85,12 @@ function ConversationMsgBubble({
       ? message.timestamp.toISOString()
       : String(message.timestamp ?? "");
 
-  const html = useMemo(() => md.render(message.text ?? ""), [message.text]);
+  const markdownComponents: React.ComponentProps<
+    typeof ReactMarkdown
+  >["components"] = useMemo(
+    () => buildBotMarkdownComponents(),
+    [],
+  );
 
   return (
     <Stack
@@ -168,18 +173,36 @@ function ConversationMsgBubble({
             "& code": {
               fontFamily: "monospace",
               backgroundColor: "action.hover",
-              px: 0.5,
+              px: 0.75,
+              py: 0,
+              whiteSpace: "normal",
+              display: "inline",
             },
             "& pre": {
               overflowX: "auto",
+              maxWidth: "100%",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
               backgroundColor: "action.disabledBackground",
               p: 1,
               m: 0,
+              boxSizing: "border-box",
+            },
+            "& pre code": {
+              backgroundColor: "transparent",
+              display: "block",
+              boxSizing: "border-box",
+              px: 0,
+              py: 0.5,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
             },
           }}
         >
           {isBot ? (
-            <Box dangerouslySetInnerHTML={{ __html: html }} />
+            <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+              {message.text ?? ""}
+            </ReactMarkdown>
           ) : (
             <Typography
               variant="body2"

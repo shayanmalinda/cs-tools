@@ -63,7 +63,7 @@ import {
   parseSecurityReportCaseSortField,
   parseSecurityReportViewMode,
 } from "@features/security/utils/securityPage";
-import { getProjectPermissions } from "@utils/permission";
+import { getProjectPermissions, isProjectRestricted } from "@utils/permission";
 
 /**
  * SecurityReportAnalysis displays security vulnerability reports uploaded for analysis.
@@ -79,10 +79,13 @@ const SecurityReportAnalysis = (): JSX.Element => {
     useGetProjectFeatures(projectId || "");
   const areFeaturePermissionsReady =
     !isProjectLoading && !isProjectFeaturesLoading && !!projectFeatures;
-  const canCreateSecurityReport = areFeaturePermissionsReady
-    ? getProjectPermissions(projectDetails?.type?.label, { projectFeatures })
-        .hasSecurityReportAnalysis
-    : false;
+  const isSecurityReportAvailable =
+    areFeaturePermissionsReady &&
+    getProjectPermissions(projectDetails?.type?.label, { projectFeatures })
+      .hasSecurityReportAnalysis;
+  const canCreateSecurityReport =
+    isSecurityReportAvailable &&
+    !isProjectRestricted(projectDetails?.closureState);
 
   const [viewMode, setViewMode] = useState<SecurityReportViewMode>(
     SecurityReportViewMode.ALL,
@@ -131,7 +134,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
     caseSearchRequest,
     {
       enabled:
-        !!projectId && areFeaturePermissionsReady && canCreateSecurityReport,
+        !!projectId && areFeaturePermissionsReady && isSecurityReportAvailable,
     },
   );
 
@@ -199,7 +202,7 @@ const SecurityReportAnalysis = (): JSX.Element => {
     [],
   );
 
-  if (areFeaturePermissionsReady && projectDetails && !canCreateSecurityReport) {
+  if (areFeaturePermissionsReady && projectDetails && !isSecurityReportAvailable) {
     return (
       <Paper
         sx={{

@@ -82,6 +82,7 @@ export type SettingsUserManagementProps = {
 export type SettingsRegistryTokensProps = {
   projectId: string;
   isAdmin: boolean;
+  isRestricted?: boolean;
 };
 
 export type SettingsAiAssistantProps = {
