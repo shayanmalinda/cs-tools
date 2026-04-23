@@ -100,18 +100,13 @@ const SecurityPage = (): JSX.Element => {
   return (
     <Box>
       <SecurityStats />
-
-      <Box sx={{ mt: 3 }}>
-        <TabBar
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-
-        <Box>
-          {/* Using the switch case result here */}
-          {renderTabContent()}
-        </Box>
+      <TabBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+      <Box>
+        {renderTabContent()}
       </Box>
     </Box>
   );

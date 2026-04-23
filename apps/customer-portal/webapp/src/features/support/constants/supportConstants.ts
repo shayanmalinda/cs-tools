@@ -34,7 +34,6 @@ import {
   Phone,
   Server,
   TriangleAlert,
-  TrendingUp,
   RotateCcw,
   XCircle,
   FileCheck,
@@ -277,7 +276,6 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     iconColor: "error",
     key: "ongoingCases",
     label: "Outstanding Cases",
-    secondaryIcon: TrendingUp,
   },
   {
     icon: Clock,
