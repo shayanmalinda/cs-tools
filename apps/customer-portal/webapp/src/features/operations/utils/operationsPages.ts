@@ -75,19 +75,22 @@ export function formatOperationsOverviewChangeRequestsSubtitle(
   return `Latest ${limit} change requests`;
 }
 
-/**
- * Builds the change-request search payload for the list/calendar/export flows.
- *
- * @param filters - UI filter state.
- * @param searchTerm - Raw search string.
- * @returns Request body without pagination.
- */
 /** CR state IDs for "Action Required" (Customer Approval + Customer Review). */
 const ACTION_REQUIRED_CR_STATE_IDS = [5, 1] as const;
 
 /** CR state IDs for "Scheduled Only" (Upcoming). */
 const SCHEDULED_ONLY_CR_STATE_IDS = [-2] as const;
 
+/**
+ * Builds the change-request search payload for the list/calendar/export flows.
+ *
+ * @param filters - UI filter state.
+ * @param searchTerm - Raw search string.
+ * @param outstandingOnly - Restrict to outstanding states via {@link OUTSTANDING_CHANGE_REQUEST_STATE_IDS}.
+ * @param actionRequired - Restrict to action-required states via {@link ACTION_REQUIRED_CR_STATE_IDS}.
+ * @param scheduledOnly - Restrict to scheduled state via {@link SCHEDULED_ONLY_CR_STATE_IDS}.
+ * @returns Request body without pagination.
+ */
 export function buildChangeRequestSearchRequest(
   filters: ChangeRequestFilterValues,
   searchTerm: string,
