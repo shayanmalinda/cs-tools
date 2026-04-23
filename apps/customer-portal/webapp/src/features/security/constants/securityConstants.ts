@@ -37,7 +37,7 @@ export const SECURITY_STAT_CONFIGS: SupportStatConfig<SecurityStatKey>[] = [
     icon: Shield,
     iconColor: "warning",
     key: SecurityStatKey.activeSecurityReports,
-    label: "Active Security Reports",
+    label: "Outstanding Security Reports",
   },
   {
     icon: FileCheck,

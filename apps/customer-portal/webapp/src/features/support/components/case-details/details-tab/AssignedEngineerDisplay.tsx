@@ -15,7 +15,7 @@
 // under the License.
 
 import type { AssignedEngineerDisplayProps } from "@features/support/types/supportComponents";
-import { Avatar, Stack, Typography, colors } from "@wso2/oxygen-ui";
+import { Avatar, Stack, Typography, alpha, useTheme } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
 import { formatValue, getInitials } from "@features/support/utils/support";
 
@@ -28,24 +28,31 @@ import { formatValue, getInitials } from "@features/support/utils/support";
 export default function AssignedEngineerDisplay({
   assignedEngineer,
 }: AssignedEngineerDisplayProps): JSX.Element {
+  const theme = useTheme();
   const initials = getInitials(assignedEngineer);
 
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5}>
-      <Avatar
-        sx={{
-          width: 32,
-          height: 32,
-          fontSize: "0.7rem",
-          bgcolor: colors.blue[100],
-          color: colors.blue[700],
-        }}
-      >
-        {initials}
-      </Avatar>
-      <Typography variant="body2" color="text.primary">
-        {formatValue(assignedEngineer)}
+    <Stack spacing={0.5}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+        Support Engineer
       </Typography>
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <Avatar
+          sx={{
+            width: 32,
+            height: 32,
+            fontSize: "0.75rem",
+            flexShrink: 0,
+            bgcolor: alpha(theme.palette.info?.light ?? "#0288d1", 0.2),
+            color: theme.palette.info?.main ?? "#0288d1",
+          }}
+        >
+          {initials}
+        </Avatar>
+        <Typography variant="body2" color="text.primary">
+          {formatValue(assignedEngineer)}
+        </Typography>
+      </Stack>
     </Stack>
   );
 }

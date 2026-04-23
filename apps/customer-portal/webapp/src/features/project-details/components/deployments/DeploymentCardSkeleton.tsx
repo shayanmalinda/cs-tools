@@ -30,28 +30,33 @@ import type { JSX } from "react";
  */
 export default function DeploymentCardSkeleton(): JSX.Element {
   return (
-    <Paper elevation={1} sx={{ borderRadius: 1, overflow: "hidden" }}>
+    <Paper
+      variant="outlined"
+      elevation={0}
+      sx={{ borderRadius: 1, overflow: "hidden" }}
+    >
       {/* Accordion summary skeleton */}
       <Box
         sx={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "space-between",
           px: 3,
           py: 1.5,
           gap: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1 }}>
-          <Skeleton variant="text" width={160} height={32} />
-          <Skeleton variant="rounded" width={80} height={20} />
-          <Skeleton variant="rounded" width={70} height={20} />
+        <Box sx={{ flex: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+            <Skeleton variant="text" width={160} height={28} />
+            <Skeleton variant="rounded" width={72} height={20} />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Skeleton variant="text" width={80} height={18} />
+            <Skeleton variant="text" width={200} height={18} />
+          </Box>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Skeleton variant="rounded" width={32} height={32} />
-          <Skeleton variant="rounded" width={32} height={32} />
-          <Skeleton variant="circular" width={20} height={20} />
-        </Box>
+        <Skeleton variant="circular" width={20} height={20} sx={{ mt: 0.5 }} />
       </Box>
 
       {/* Accordion details skeleton */}

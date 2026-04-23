@@ -19,8 +19,10 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   Paper,
   Stack,
+  Tooltip,
   Typography,
   alpha,
   useTheme,
@@ -38,6 +40,7 @@ import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
 import {
   ACTION_TO_CASE_STATE_LABEL,
+  getAssignedEngineerLabel,
   getAvailableCaseActions,
   isWithinOpenRelatedCaseWindow,
   toPresentContinuousActionLabel,
@@ -83,6 +86,8 @@ function getStateKeyForAction(
 }
 
 export default function CaseDetailsActionRow({
+  assignedEngineer,
+  engineerInitials,
   statusLabel,
   closedOn,
   onOpenRelatedCase,
@@ -90,6 +95,7 @@ export default function CaseDetailsActionRow({
   caseId = "",
   isLoading = false,
   showOnlyEngineer = false,
+  hideAssignedEngineer = false,
 }: CaseDetailsActionRowProps): JSX.Element {
   void isLoading;
   const theme = useTheme();
@@ -141,6 +147,57 @@ export default function CaseDetailsActionRow({
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
+          {!hideAssignedEngineer && getAssignedEngineerLabel(assignedEngineer) && (
+            <>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    bgcolor: "primary.light",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "primary.main",
+                    fontSize: "0.6rem",
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    opacity: 0.9,
+                  }}
+                >
+                  {engineerInitials}
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Tooltip title={getAssignedEngineerLabel(assignedEngineer)}>
+                    <Typography
+                      variant="caption"
+                      color="text.primary"
+                      sx={{
+                        fontSize: "0.7rem",
+                        display: "block",
+                        lineHeight: 1.3,
+                        maxWidth: 120,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {getAssignedEngineerLabel(assignedEngineer)}
+                    </Typography>
+                  </Tooltip>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: "0.65rem", display: "block", lineHeight: 1.3 }}
+                  >
+                    Support Engineer
+                  </Typography>
+                </Box>
+              </Box>
+              <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+            </>
+          )}
           <CirclePlay size={12} color={theme.palette.primary.main} />
           <Typography
             variant="caption"

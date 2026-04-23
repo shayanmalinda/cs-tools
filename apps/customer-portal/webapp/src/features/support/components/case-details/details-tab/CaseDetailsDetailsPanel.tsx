@@ -45,7 +45,6 @@ import CaseDetailsCard from "@case-details-details/CaseDetailsCard";
 import ApiErrorState from "@components/error/ApiErrorState";
 import {
   formatValue,
-  formatSlaResponseTime,
   formatUtcToLocal,
   formatDateOnly,
   getAssignedEngineerLabel,
@@ -188,33 +187,35 @@ export default function CaseDetailsDetailsPanel({
               </Typography>
             </Stack>
           </Box>
-          <Box>
-            <Typography {...labelSx}>Severity</Typography>
-            <Chip
-              label={mapSeverityToDisplay(severityLabel ?? undefined)}
-              size="small"
-              variant="outlined"
-              sx={{
-                bgcolor: alpha(
-                  getSeverityLegendColor(severityLabel ?? undefined),
-                  0.1,
-                ),
-                color: getSeverityLegendColor(severityLabel ?? undefined),
-                borderColor: alpha(
-                  getSeverityLegendColor(severityLabel ?? undefined),
-                  0.3,
-                ),
-                fontWeight: 500,
-                px: 0,
-                height: 20,
-                fontSize: "0.75rem",
-                "& .MuiChip-label": {
-                  pl: "6px",
-                  pr: "6px",
-                },
-              }}
-            />
-          </Box>
+          {!isEngagement && !isSecurityReportAnalysis && (
+            <Box>
+              <Typography {...labelSx}>Severity</Typography>
+              <Chip
+                label={mapSeverityToDisplay(severityLabel ?? undefined)}
+                size="small"
+                variant="outlined"
+                sx={{
+                  bgcolor: alpha(
+                    getSeverityLegendColor(severityLabel ?? undefined),
+                    0.1,
+                  ),
+                  color: getSeverityLegendColor(severityLabel ?? undefined),
+                  borderColor: alpha(
+                    getSeverityLegendColor(severityLabel ?? undefined),
+                    0.3,
+                  ),
+                  fontWeight: 500,
+                  px: 0,
+                  height: 20,
+                  fontSize: "0.75rem",
+                  "& .MuiChip-label": {
+                    pl: "6px",
+                    pr: "6px",
+                  },
+                }}
+              />
+            </Box>
+          )}
           {(!isServiceRequest || data?.issueType) && (
             <Box>
               <Typography {...labelSx}>Category</Typography>
@@ -320,14 +321,6 @@ export default function CaseDetailsDetailsPanel({
               </Box>
             </>
           ) : null}
-          {!isEngagement && (
-            <Box>
-              <Typography {...labelSx}>SLA Response Time</Typography>
-              <Typography {...valueSx}>
-                {formatSlaResponseTime(data?.slaResponseTime)}
-              </Typography>
-            </Box>
-          )}
           {isSecurityReportAnalysis ? (
             <>
               <Box>

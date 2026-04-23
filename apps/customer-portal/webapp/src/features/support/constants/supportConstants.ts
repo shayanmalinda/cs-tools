@@ -276,7 +276,7 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     icon: FileText,
     iconColor: "error",
     key: "ongoingCases",
-    label: "Active Cases",
+    label: "Outstanding Cases",
     secondaryIcon: TrendingUp,
   },
   {
@@ -286,16 +286,16 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     label: "Resolved Recently (Last 30d)",
   },
   {
+    icon: Clock,
+    iconColor: "warning",
+    key: "activeChats",
+    label: "Outstanding Chats",
+  },
+  {
     icon: CircleCheck,
     iconColor: "info",
     key: "resolvedChats",
     label: "Resolved via Chat",
-  },
-  {
-    icon: Clock,
-    iconColor: "warning",
-    key: "activeChats",
-    label: "Active Chats",
   },
 ];
 
@@ -569,13 +569,13 @@ export const OPERATIONS_STAT_CONFIGS: SupportStatConfig<OperationsStatKey>[] = [
     icon: Server,
     iconColor: "info",
     key: "activeServiceRequests",
-    label: "Active Service Requests",
+    label: "Outstanding Service Requests",
   },
   {
     icon: CalendarDays,
     iconColor: "primary",
     key: "activeChangeRequests",
-    label: "Active Change Requests",
+    label: "Outstanding Change Requests",
   },
   {
     icon: CircleCheck,

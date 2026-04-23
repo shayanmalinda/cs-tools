@@ -25,7 +25,7 @@ import {
   colors,
   useTheme,
 } from "@wso2/oxygen-ui";
-import { Bot, CircleAlert, Sparkles } from "@wso2/oxygen-ui-icons-react";
+import { Bot, Sparkles } from "@wso2/oxygen-ui-icons-react";
 import { useCallback, useState, useMemo, useEffect, type JSX } from "react";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import useInfiniteProjects from "@api/useGetProjects";
@@ -35,8 +35,6 @@ import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { setNoveraChatEnabled } from "@features/settings/utils/settingsStorage";
 import {
   SETTINGS_AI_ADMIN_ONLY_HINT,
-  SETTINGS_AI_BEST_PRACTICES_ITEMS,
-  SETTINGS_AI_BEST_PRACTICES_TITLE,
   SETTINGS_AI_CAPABILITIES_SECTION_TITLE,
   SETTINGS_AI_HEADER_BODY,
   SETTINGS_AI_HEADER_TITLE,
@@ -243,45 +241,6 @@ export default function SettingsAiAssistant({
         </Box>
       </Box>
 
-      <Paper
-        sx={{
-          p: 2.5,
-          bgcolor: alpha(theme.palette.warning.main, 0.08),
-          border: "1px solid",
-          borderColor: alpha(theme.palette.warning.main, 0.2),
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-          <Paper
-            sx={{
-              width: 40,
-              height: 40,
-              bgcolor: alpha(theme.palette.warning.light, 0.15),
-              color: theme.palette.warning.main,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <CircleAlert size={20} color={colors.orange[600]} />
-          </Paper>
-          <Box>
-            <Typography variant="h6" color="text.primary" sx={{ mb: 1 }}>
-              {SETTINGS_AI_BEST_PRACTICES_TITLE}
-            </Typography>
-            <Box component="ul" sx={{ m: 0, pl: 2.5, "& li": { mb: 0.5 } }}>
-              {SETTINGS_AI_BEST_PRACTICES_ITEMS.map((item) => (
-                <li key={item}>
-                  <Typography variant="body2" color="text.secondary">
-                    {item}
-                  </Typography>
-                </li>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-      </Paper>
     </Box>
   );
 }

@@ -74,35 +74,26 @@ export default function UpdatesPage(): JSX.Element {
     }
   }, [isError, showError, logger, projectId]);
 
-  const renderContent = (): JSX.Element => {
-    if (activeTab === UpdatesPageTabId.MyUpdates) {
-      return (
-        <Stack spacing={2}>
-          <UpdatesStatsGrid
-            data={data}
-            isLoading={isLoading}
-            isError={isError}
-          />
-          <UpdateProductGrid
-            data={data}
-            isLoading={isLoading}
-            isError={isError}
-            projectId={projectId}
-          />
-        </Stack>
-      );
-    }
-    return <AllUpdatesTab />;
-  };
-
   return (
     <Box sx={{ width: "100%", pt: 0 }}>
+      <UpdatesStatsGrid data={data} isLoading={isLoading} isError={isError} />
+      <Box sx={{ mt: 2 }}>
       <TabBar
         tabs={UPDATES_PAGE_TABS}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
-      {renderContent()}
+      </Box>
+      {activeTab === UpdatesPageTabId.MyUpdates ? (
+        <UpdateProductGrid
+          data={data}
+          isLoading={isLoading}
+          isError={isError}
+          projectId={projectId}
+        />
+      ) : (
+        <AllUpdatesTab />
+      )}
     </Box>
   );
 }
