@@ -41,6 +41,11 @@ import {
   isS0Case,
 } from "@features/support/utils/support";
 import {
+  buildDashboardCaseSearchFilters,
+  getDashboardOutstandingCasesDescription,
+  getDashboardOutstandingCasesTitle,
+} from "@features/dashboard/utils/dashboardNavigation";
+import {
   CaseType,
   ALL_CASES_STAT_CONFIGS,
   getAllCasesFlattenedStats,
@@ -53,13 +58,6 @@ import {
 import type { AllCasesFilterValues } from "@features/support/types/cases";
 import ListStatGrid from "@components/list-view/ListStatGrid";
 
-const SEVERITY_ID_TO_LABEL: Record<string, string> = {
-  "14": "S0",
-  "10": "S1",
-  "11": "S2",
-  "12": "S3",
-  "13": "S4",
-};
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListResultsBar from "@components/list-view/ListResultsBar";
 import ListPagination from "@components/list-view/ListPagination";
@@ -79,6 +77,7 @@ export default function AllCasesPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const createdByMe = searchParams.get("createdByMe") === "true";
   const initialSeverityId = searchParams.get("severityId");
+  const isDashboardSeverityNavigation = Boolean(initialSeverityId);
 
   const sessionPrefix = `${projectId ?? "unknown"}-cases`;
   const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "", undefined, { popOnly: true });
@@ -144,14 +143,20 @@ export default function AllCasesPage(): JSX.Element {
     () => ({
       filters: {
         caseTypes: [CaseType.DEFAULT_CASE],
-        statusIds: filters.statusId ? [Number(filters.statusId)] : undefined,
-        severityId: filters.severityId ? Number(filters.severityId) : undefined,
-        issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
-        deploymentId: permissions.hasDeployments
-          ? filters.deploymentId || undefined
-          : undefined,
-        searchQuery: searchTerm.trim() || undefined,
-        createdByMe: createdByMe || undefined,
+        ...buildDashboardCaseSearchFilters({
+          statusId: filters.statusId,
+          severityId: filters.severityId,
+          issueTypes: filters.issueTypes,
+          deploymentId: permissions.hasDeployments
+            ? filters.deploymentId || undefined
+            : undefined,
+          searchQuery: searchTerm,
+          createdByMe: createdByMe || undefined,
+          caseStates: filterMetadata?.caseStates,
+          isDashboardSeverityNavigation:
+            isDashboardSeverityNavigation &&
+            filters.severityId === initialSeverityId,
+        }),
       },
       sortBy: {
         field: sortField,
@@ -165,6 +170,9 @@ export default function AllCasesPage(): JSX.Element {
       sortOrder,
       createdByMe,
       permissions.hasDeployments,
+      filterMetadata?.caseStates,
+      isDashboardSeverityNavigation,
+      initialSeverityId,
     ],
   );
 
@@ -288,16 +296,23 @@ export default function AllCasesPage(): JSX.Element {
     <Stack spacing={3} sx={{ minWidth: 0 }}>
       <ListPageHeader
         title={(() => {
-          const sLabel = initialSeverityId ? SEVERITY_ID_TO_LABEL[initialSeverityId] : undefined;
-          if (sLabel) return `${sLabel} Cases`;
+          const dashboardTitle = getDashboardOutstandingCasesTitle(initialSeverityId);
+          if (dashboardTitle) return dashboardTitle;
           return createdByMe ? "My Cases" : "All Cases";
         })()}
         description={
-          createdByMe
-            ? "Manage and track your support cases"
-            : "Manage and track all your support cases"
+          (() => {
+            const dashboardDescription =
+              getDashboardOutstandingCasesDescription(initialSeverityId);
+            if (dashboardDescription) {
+              return dashboardDescription;
+            }
+            return createdByMe
+              ? "Manage and track your support cases"
+              : "Manage and track all your support cases";
+          })()
         }
-        backLabel={returnTo && initialSeverityId ? "Back to Dashboard" : "Back to Support Center"}
+        backLabel={returnTo ? "Back to Dashboard" : "Back to Support Center"}
         onBack={() => {
           if (returnTo) {
             setFilters({});
@@ -347,6 +362,8 @@ export default function AllCasesPage(): JSX.Element {
         onClearFilters={handleClearFilters}
         excludeS0={excludeS0}
         restrictSeverityToLow={restrictSeverityToLow}
+        hideSeverityFilter={isDashboardSeverityNavigation}
+        hideStatusFilter={isDashboardSeverityNavigation}
         hideDeploymentFilter={!permissions.hasDeployments}
         isProjectContextLoading={isProjectContextLoading}
         excludeFromCount={
