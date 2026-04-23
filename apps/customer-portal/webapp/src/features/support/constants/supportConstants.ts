@@ -68,6 +68,9 @@ export const KB_ARTICLE_VIEW_BASE_URL =
 export const ChatAction = {
   VIEW: "view",
   RESUME: "resume",
+  ACTIVE : "active",
+  OPEN : "open",
+  ABANDONED: "abandoned"
 } as const;
 
 export type ChatAction = (typeof ChatAction)[keyof typeof ChatAction];
