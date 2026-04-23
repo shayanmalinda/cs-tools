@@ -273,12 +273,6 @@ export const getAllCasesFlattenedStats = (
 // Configuration for the support statistics cards.
 export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
   {
-    icon: FileCheck,
-    iconColor: "success",
-    key: "resolvedPast30DaysCasesCount",
-    label: "Resolved Recently (Last 30d)",
-  },
-  {
     icon: FileText,
     iconColor: "error",
     key: "ongoingCases",
@@ -290,6 +284,12 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     iconColor: "warning",
     key: "activeChats",
     label: "Outstanding Chats",
+  },
+  {
+    icon: FileCheck,
+    iconColor: "success",
+    key: "resolvedPast30DaysCasesCount",
+    label: "Resolved Recently (Last 30d)",
   },
   {
     icon: CircleCheck,

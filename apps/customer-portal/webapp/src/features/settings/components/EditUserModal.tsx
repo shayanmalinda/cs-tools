@@ -18,26 +18,61 @@ import { useCallback, useEffect, useState, type JSX } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  FormControlLabel,
   IconButton,
-  Switch,
   Typography,
   alpha,
   useTheme,
 } from "@wso2/oxygen-ui";
-import { Shield, X } from "@wso2/oxygen-ui-icons-react";
+import { Lock, Settings, Shield, User, X } from "@wso2/oxygen-ui-icons-react";
 import { NULL_PLACEHOLDER } from "@features/settings/constants/settingsConstants";
 import { getAvatarColor, getInitials } from "@features/settings/utils/settings";
 import type { EditUserModalProps } from "@features/settings/types/settings";
 
+const USER_ROLES = [
+  {
+    id: "portal",
+    label: "Portal User",
+    description: "Can access and manage general support cases",
+    Icon: User,
+    color: "primary" as const,
+  },
+  {
+    id: "system",
+    label: "System User",
+    description: "API access only, does not have support portal access",
+    Icon: Settings,
+    color: "warning" as const,
+  },
+  {
+    id: "admin",
+    label: "Admin User",
+    description: "Full administrative privileges and user management",
+    Icon: Lock,
+    color: "error" as const,
+  },
+  {
+    id: "security",
+    label: "Security User",
+    description: "Receives security bulletins and critical security announcements",
+    Icon: Shield,
+    color: "error" as const,
+  },
+] as const;
+
+type RoleId = (typeof USER_ROLES)[number]["id"];
+
 /**
- * Admin-only modal for editing an existing contact.
- * Currently only toggles the Security Contact flag, and only for Portal Users.
- * System Users cannot be converted to security contacts.
+ * Admin-only modal for editing a user's roles.
+ * System User selection makes other roles readonly.
+ * Only the Security User role is wired to the API (isSecurityContact); others are UI-only.
  *
  * @param {EditUserModalProps} props - Modal props.
  * @returns {JSX.Element} The modal.
@@ -50,11 +85,18 @@ export default function EditUserModal({
   onSubmit,
 }: EditUserModalProps): JSX.Element {
   const theme = useTheme();
-  const [isSecurity, setIsSecurity] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<Set<RoleId>>(new Set());
 
   useEffect(() => {
     if (open && contact) {
-      setIsSecurity(!!contact.isSecurityContact);
+      const initial = new Set<RoleId>();
+      if (contact.isCsIntegrationUser) {
+        initial.add("system");
+      } else {
+        initial.add("portal");
+        if (contact.isSecurityContact) initial.add("security");
+      }
+      setSelectedRoles(initial);
     }
   }, [open, contact]);
 
@@ -63,21 +105,41 @@ export default function EditUserModal({
     onClose();
   }, [isSubmitting, onClose]);
 
-  const handleSave = useCallback(() => {
-    onSubmit({ isSecurityContact: isSecurity });
-  }, [isSecurity, onSubmit]);
+  const isSystemSelected = selectedRoles.has("system");
 
-  const isSystemUser = !!contact?.isCsIntegrationUser;
-  const initialValue = !!contact?.isSecurityContact;
-  const isDirty = isSecurity !== initialValue;
+  const handleRoleToggle = (roleId: RoleId) => {
+    setSelectedRoles((prev) => {
+      const next = new Set(prev);
+      if (roleId === "system") {
+        if (next.has("system")) {
+          next.delete("system");
+          next.add("portal");
+        } else {
+          next.clear();
+          next.add("system");
+        }
+      } else {
+        if (next.has(roleId)) {
+          next.delete(roleId);
+        } else {
+          next.add(roleId);
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleSave = useCallback(() => {
+    onSubmit({ isSecurityContact: selectedRoles.has("security") });
+  }, [selectedRoles, onSubmit]);
+
+  const initialIsSecurity = !!contact?.isSecurityContact;
+  const isDirty = selectedRoles.has("security") !== initialIsSecurity;
 
   const displayName = contact
     ? contact.firstName && contact.lastName
       ? `${contact.firstName} ${contact.lastName}`
-      : contact.firstName ||
-        contact.lastName ||
-        contact.email ||
-        NULL_PLACEHOLDER
+      : contact.firstName || contact.lastName || contact.email || NULL_PLACEHOLDER
     : NULL_PLACEHOLDER;
 
   return (
@@ -100,10 +162,7 @@ export default function EditUserModal({
       </IconButton>
       <DialogTitle id="edit-user-modal-title">Edit User</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Manage this user&apos;s security contact status for the project.
-        </Typography>
-
+        {/* User info header */}
         {contact && (
           <Box
             sx={{
@@ -146,152 +205,118 @@ export default function EditUserModal({
           </Box>
         )}
 
-        {isSystemUser ? (
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 1,
-              border: "1px solid",
-              borderColor: alpha(theme.palette.error.main, 0.3),
-              bgcolor: alpha(theme.palette.error.main, 0.06),
-            }}
-          >
-            <Typography variant="subtitle2" color="error" sx={{ mb: 0.5 }}>
-              Not available for System Users
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              System Users are used for machine-to-machine integrations and
-              cannot receive security advisories. To designate a security
-              contact, remove this user and invite them again as a Security
-              User.
-            </Typography>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 1,
-              border: "1px solid",
-              borderColor: isSecurity
-                ? alpha(theme.palette.error.main, 0.3)
-                : "divider",
-              bgcolor: isSecurity
-                ? alpha(theme.palette.error.main, 0.04)
-                : "transparent",
-              transition: "background-color 0.2s, border-color 0.2s",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                gap: 2,
-              }}
-            >
-              <Box sx={{ display: "flex", gap: 1.25, flex: 1, minWidth: 0 }}>
-                <Box
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: alpha(theme.palette.error.main, 0.12),
-                    color: theme.palette.error.main,
-                    flexShrink: 0,
-                  }}
-                >
-                  <Shield size={18} />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2">Security Contact</Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", mt: 0.25 }}
-                  >
-                    Designate this user to receive WSO2 security advisories, CVE
-                    notifications, and vulnerability reports for the project.
-                    They will also be able to create security cases.
-                  </Typography>
-                </Box>
-              </Box>
-              <Switch
-                checked={isSecurity}
-                onChange={(e) => setIsSecurity(e.target.checked)}
-                disabled={isSubmitting}
-                color="error"
-                inputProps={{ "aria-label": "Toggle security contact" }}
-              />
-            </Box>
+        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+          User Roles
+        </Typography>
+        {isSystemSelected && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+            System User is selected — other roles are not available for system users.
+          </Typography>
+        )}
 
-            <Box
-              sx={{
-                mt: 1.5,
-                pt: 1.5,
-                borderTop: "1px dashed",
-                borderColor: "divider",
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                {isSecurity && !initialValue && (
-                  <>
-                    <strong>{displayName}</strong> will be promoted to a
-                    Security User and start receiving security notifications
-                    once you save.
-                  </>
-                )}
-                {!isSecurity && initialValue && (
-                  <>
-                    <strong>{displayName}</strong> will be reverted to a regular
-                    Portal User and will no longer receive security
-                    notifications.
-                  </>
-                )}
-                {isSecurity === initialValue && (
-                  <>
-                    This user is currently{" "}
-                    <strong>
-                      {initialValue
-                        ? "a Security Contact"
-                        : "not a Security Contact"}
-                    </strong>
-                    . Toggle the switch to change it.
-                  </>
-                )}
-              </Typography>
-            </Box>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+          {USER_ROLES.map((role, index) => {
+            const RoleIcon = role.Icon;
+            const isSystem = role.id === "system";
+            const isChecked = selectedRoles.has(role.id);
+            const isReadonly = !isSystem && isSystemSelected;
+            const paletteColor = theme.palette[role.color];
+
+            return (
+              <Box key={role.id}>
+                {index > 0 && <Divider sx={{ my: 0.5 }} />}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isChecked}
+                      onChange={() => !isReadonly && !isSubmitting && handleRoleToggle(role.id)}
+                      disabled={isReadonly || isSubmitting}
+                      size="small"
+                      sx={{
+                        color: isReadonly ? "action.disabled" : paletteColor?.main,
+                        "&.Mui-checked": { color: paletteColor?.main },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, py: 0.5 }}>
+                      <Box
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 0.75,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          bgcolor: isReadonly
+                            ? alpha(theme.palette.action.disabled, 0.08)
+                            : alpha(paletteColor?.main ?? "#000", 0.1),
+                          color: isReadonly
+                            ? "action.disabled"
+                            : paletteColor?.main,
+                          flexShrink: 0,
+                          mt: 0.25,
+                        }}
+                      >
+                        <RoleIcon size={14} />
+                      </Box>
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            color: isReadonly ? "text.disabled" : "text.primary",
+                          }}
+                        >
+                          {role.label}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color={isReadonly ? "text.disabled" : "text.secondary"}
+                        >
+                          {role.description}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  }
+                  sx={{ alignItems: "flex-start", mx: 0, width: "100%" }}
+                />
+              </Box>
+            );
+          })}
+        </Box>
+
+        {isSystemSelected && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 1.5,
+              borderRadius: 1,
+              border: "1px solid",
+              borderColor: alpha(theme.palette.warning.main, 0.3),
+              bgcolor: alpha(theme.palette.warning.main, 0.05),
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              System Users are used for machine-to-machine integrations and cannot hold additional roles.
+            </Typography>
           </Box>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={handleClose}
-          disabled={isSubmitting}
-        >
+        <Button variant="outlined" onClick={handleClose} disabled={isSubmitting}>
           Cancel
         </Button>
         <Button
           variant="contained"
           color="warning"
           onClick={handleSave}
-          disabled={isSubmitting || isSystemUser || !isDirty}
+          disabled={isSubmitting || isSystemSelected || !isDirty}
           startIcon={
-            isSubmitting ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : undefined
+            isSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined
           }
         >
-          {isSubmitting
-            ? "Saving..."
-            : isDirty
-              ? isSecurity
-                ? "Make Security Contact"
-                : "Remove Security Contact"
-              : "Save Changes"}
+          {isSubmitting ? "Saving..." : "Save Changes"}
         </Button>
       </DialogActions>
     </Dialog>

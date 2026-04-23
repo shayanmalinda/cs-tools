@@ -45,7 +45,6 @@ export type ProjectCardProps = {
 
 export type ProjectCardBadgesProps = {
   projectKey: string;
-  slaStatus: string;
 };
 
 export type ProjectCardStatsProps = {
