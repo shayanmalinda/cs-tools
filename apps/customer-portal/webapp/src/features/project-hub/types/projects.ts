@@ -128,6 +128,12 @@ export type ProjectStatsSummary = {
   activeChats: number;
   deployments: number;
   slaStatus: string;
+  outstandingCaseCount: number;
+  outstandingServiceRequestCount: number;
+  outstandingEngagementCount: number;
+  outstandingSraCount: number;
+  outstandingChangeRequestCount: number;
+  outstandingAnnouncementCount: number;
 };
 
 // Item type for recent activity inside a project stats response.

@@ -173,20 +173,38 @@ export default function SettingsAiAssistant({
       </Paper>
 
       <Box>
-        <Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
-          {SETTINGS_AI_CAPABILITIES_SECTION_TITLE}
-        </Typography>
-        {!canEdit && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 1.5, fontStyle: "italic" }}
-          >
-            {SETTINGS_AI_ADMIN_ONLY_HINT}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="text.primary">
+            {SETTINGS_AI_CAPABILITIES_SECTION_TITLE}
           </Typography>
-        )}
+          {!canEdit && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontStyle: "italic", textAlign: "right", flexShrink: 0 }}
+            >
+              {SETTINGS_AI_ADMIN_ONLY_HINT}
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          <Paper sx={{ p: 2.5 }}>
+          <Paper
+            sx={{
+              p: 2.5,
+              ...(!canEdit && {
+                bgcolor: "action.disabledBackground",
+                opacity: 0.7,
+              }),
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -204,19 +222,30 @@ export default function SettingsAiAssistant({
                     mb: 1,
                   }}
                 >
-                  <Bot size={20} color={colors.orange[600]} />
-                  <Typography variant="body1" id="ai-chat-assistant-label">
+                  <Bot
+                    size={20}
+                    color={!canEdit ? colors.grey[400] : colors.orange[600]}
+                  />
+                  <Typography
+                    variant="body1"
+                    id="ai-chat-assistant-label"
+                    color={!canEdit ? "text.disabled" : "text.primary"}
+                  >
                     {SETTINGS_AI_NOVERA_LABEL}
                   </Typography>
                   <Chip
                     label={noveraEnabled ? "Active" : "Inactive"}
                     size="small"
-                    color={noveraEnabled ? "success" : "default"}
+                    color={!canEdit ? "default" : noveraEnabled ? "success" : "default"}
                     variant="outlined"
-                    sx={{ height: 20, fontSize: "0.7rem" }}
+                    sx={{
+                      height: 20,
+                      fontSize: "0.7rem",
+                      ...(!canEdit && { color: "text.disabled", borderColor: "action.disabled" }),
+                    }}
                   />
                 </Box>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color={!canEdit ? "text.disabled" : "text.secondary"}>
                   {SETTINGS_AI_NOVERA_DESCRIPTION}
                 </Typography>
               </Box>
@@ -229,6 +258,17 @@ export default function SettingsAiAssistant({
                     color="warning"
                     inputProps={{
                       "aria-labelledby": "ai-chat-assistant-label",
+                    }}
+                    sx={{
+                      ...(!canEdit && {
+                        "& .MuiSwitch-track": {
+                          bgcolor: "action.disabled",
+                          opacity: 1,
+                        },
+                        "& .MuiSwitch-thumb": {
+                          bgcolor: colors.grey[400],
+                        },
+                      }),
                     }}
                   />
                 }
