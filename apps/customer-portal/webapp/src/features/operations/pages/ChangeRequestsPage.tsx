@@ -275,7 +275,7 @@ export default function ChangeRequestsPage(): JSX.Element {
       <ListPageHeader
         title={CHANGE_REQUESTS_PAGE_TITLE}
         description={CHANGE_REQUESTS_PAGE_DESCRIPTION}
-        backLabel={OPERATIONS_LIST_BACK_LABEL}
+        backLabel={returnTo ? "Back to Dashboard" : OPERATIONS_LIST_BACK_LABEL}
         onBack={() => (returnTo ? navigate(returnTo) : navigate(".."))}
         actions={exportButton}
       />

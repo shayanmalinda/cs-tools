@@ -52,6 +52,14 @@ import {
 } from "@utils/permission";
 import type { AllCasesFilterValues } from "@features/support/types/cases";
 import ListStatGrid from "@components/list-view/ListStatGrid";
+
+const SEVERITY_ID_TO_LABEL: Record<string, string> = {
+  "14": "S0",
+  "10": "S1",
+  "11": "S2",
+  "12": "S3",
+  "13": "S4",
+};
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListResultsBar from "@components/list-view/ListResultsBar";
 import ListPagination from "@components/list-view/ListPagination";
@@ -70,11 +78,17 @@ export default function AllCasesPage(): JSX.Element {
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams] = useSearchParams();
   const createdByMe = searchParams.get("createdByMe") === "true";
+  const initialSeverityId = searchParams.get("severityId");
 
   const sessionPrefix = `${projectId ?? "unknown"}-cases`;
   const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "", undefined, { popOnly: true });
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [filters, setFilters] = useSessionState<AllCasesFilterValues>(`${sessionPrefix}-filters`, {}, undefined, { popOnly: true });
+  const [filters, setFilters] = useSessionState<AllCasesFilterValues>(
+    `${sessionPrefix}-filters`,
+    initialSeverityId ? { severityId: initialSeverityId } : {},
+    undefined,
+    { popOnly: true },
+  );
   const [sortField, setSortField] = useSessionState<"createdOn" | "updatedOn" | "severity" | "state">(`${sessionPrefix}-sortField`, "createdOn", undefined, { popOnly: true });
   const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC, undefined, { popOnly: true });
   const [page, setPage] = useSessionState<number>(`${sessionPrefix}-page`, 1, undefined, { popOnly: true });
@@ -273,26 +287,39 @@ export default function AllCasesPage(): JSX.Element {
   return (
     <Stack spacing={3} sx={{ minWidth: 0 }}>
       <ListPageHeader
-        title={createdByMe ? "My Cases" : "All Cases"}
+        title={(() => {
+          const sLabel = initialSeverityId ? SEVERITY_ID_TO_LABEL[initialSeverityId] : undefined;
+          if (sLabel) return `${sLabel} Cases`;
+          return createdByMe ? "My Cases" : "All Cases";
+        })()}
         description={
           createdByMe
             ? "Manage and track your support cases"
             : "Manage and track all your support cases"
         }
-        backLabel="Back to Support Center"
-        onBack={() => (returnTo ? navigate(returnTo) : navigate(".."))}
+        backLabel={returnTo && initialSeverityId ? "Back to Dashboard" : "Back to Support Center"}
+        onBack={() => {
+          if (returnTo) {
+            setFilters({});
+            navigate(returnTo);
+          } else {
+            navigate("..");
+          }
+        }}
       />
 
-      {/* Stat cards */}
-      <Box sx={{ mb: 3 }}>
-        <ListStatGrid
-          isLoading={isStatsLoading}
-          isError={isStatsError}
-          entityName="case"
-          configs={ALL_CASES_STAT_CONFIGS}
-          stats={getAllCasesFlattenedStats(stats)}
-        />
-      </Box>
+      {/* Stat cards — hidden when arriving from severity chart click */}
+      {!initialSeverityId && (
+        <Box sx={{ mb: 3 }}>
+          <ListStatGrid
+            isLoading={isStatsLoading}
+            isError={isStatsError}
+            entityName="case"
+            configs={ALL_CASES_STAT_CONFIGS}
+            stats={getAllCasesFlattenedStats(stats)}
+          />
+        </Box>
+      )}
 
       <ListSearchPanel
         searchTerm={searchTerm}
@@ -322,6 +349,11 @@ export default function AllCasesPage(): JSX.Element {
         restrictSeverityToLow={restrictSeverityToLow}
         hideDeploymentFilter={!permissions.hasDeployments}
         isProjectContextLoading={isProjectContextLoading}
+        excludeFromCount={
+          initialSeverityId && filters.severityId === initialSeverityId
+            ? ["severityId"]
+            : []
+        }
       />
 
       <ListResultsBar

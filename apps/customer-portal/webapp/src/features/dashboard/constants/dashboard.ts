@@ -33,7 +33,12 @@ import {
   type SeverityLegendEntry,
 } from "@features/dashboard/types/dashboard";
 
-export type { StatCardColor, StatConfigItem, CasesTrendChartDataItem, CaseTypeChipConfig };
+export type {
+  StatCardColor,
+  StatConfigItem,
+  CasesTrendChartDataItem,
+  CaseTypeChipConfig,
+};
 
 // Case type labels to filter stats by (Incident, Query, Service Request, Security Report Analysis).
 export const DASHBOARD_CASE_TYPE_LABELS = [
@@ -68,14 +73,14 @@ export const DASHBOARD_STATS: StatConfigItem[] = [
   },
   {
     id: "openCases",
-    label: "Outstanding Interactions",
+    label: "Outstanding",
     icon: AlertCircle,
     iconColor: "warning",
     tooltipText: "Currently active and unresolved cases",
   },
   {
     id: "resolvedCases",
-    label: "Resolved Support Cases (Last 30d)",
+    label: "Closed",
     icon: CheckCircle,
     iconColor: "success",
     tooltipText: "Successfully closed and resolved cases",
@@ -165,6 +170,15 @@ export const OUTSTANDING_INCIDENTS_CHART_DATA = SEVERITY_LEGEND_ORDER;
 export const SEVERITY_API_LABELS = SEVERITY_LEGEND_ORDER.map(
   (item) => item.label,
 );
+
+// Maps SeverityLegendKey to the numeric string ID used by the cases filter API.
+export const SEVERITY_LEGEND_KEY_TO_ID: Record<SeverityLegendKey, string> = {
+  [SeverityLegendKey.Catastrophic]: "14",
+  [SeverityLegendKey.Critical]: "10",
+  [SeverityLegendKey.High]: "11",
+  [SeverityLegendKey.Medium]: "12",
+  [SeverityLegendKey.Low]: "13",
+};
 
 // Alternate severity labels for announcements (e.g. "1 - Critical", "2 - High") mapped to legend keys.
 export const SEVERITY_ALT_TO_LEGEND_KEY: Record<string, SeverityLegendKey> = {

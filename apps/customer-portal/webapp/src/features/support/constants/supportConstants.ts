@@ -283,19 +283,19 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     icon: Clock,
     iconColor: "warning",
     key: "activeChats",
-    label: "Outstanding Chats",
+    label: "Active Chats",
   },
   {
     icon: FileCheck,
     iconColor: "success",
     key: "resolvedPast30DaysCasesCount",
-    label: "Resolved Recently (Last 30d)",
+    label: "Resolved Cases (Last 30d)",
   },
   {
     icon: CircleCheck,
     iconColor: "info",
     key: "resolvedChats",
-    label: "Resolved via Chat",
+    label: "Resolved via Chat (Last 30d)",
   },
 ];
 

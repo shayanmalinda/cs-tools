@@ -15,7 +15,9 @@
 // under the License.
 
 import type { JSX } from "react";
-import { Stack } from "@wso2/oxygen-ui";
+import { useLocation, useNavigate } from "react-router";
+import { Box, Button, Stack } from "@wso2/oxygen-ui";
+import { ArrowLeft } from "@wso2/oxygen-ui-icons-react";
 import EngagementsStatCards from "@features/engagements/components/EngagementsStatCards";
 import EngagementsListSection from "@features/engagements/components/EngagementsListSection";
 import { useEngagementsPageState } from "@features/engagements/hooks/useEngagementsPageState";
@@ -26,6 +28,10 @@ import { useEngagementsPageState } from "@features/engagements/hooks/useEngageme
  * @returns {JSX.Element} Engagements page.
  */
 export default function EngagementsPage(): JSX.Element {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
+
   const {
     projectReady,
     excludeS0,
@@ -59,6 +65,17 @@ export default function EngagementsPage(): JSX.Element {
 
   return (
     <Stack spacing={3}>
+      {returnTo && (
+        <Box>
+          <Button
+            startIcon={<ArrowLeft size={16} />}
+            onClick={() => navigate(returnTo)}
+            variant="text"
+          >
+            Back to Dashboard
+          </Button>
+        </Box>
+      )}
       <EngagementsStatCards
         stats={stats}
         isLoading={isStatsLoading}

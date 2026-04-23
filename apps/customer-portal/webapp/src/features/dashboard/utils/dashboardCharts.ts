@@ -18,6 +18,7 @@ import {
   ACTIVE_CASES_CHART_DATA,
   OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA,
   OUTSTANDING_INCIDENTS_CHART_DATA,
+  SEVERITY_LEGEND_KEY_TO_ID,
 } from "@/features/dashboard/constants/dashboard";
 import {
   DASHBOARD_CHART_TOTAL_PLACEHOLDER_DASH,
@@ -119,6 +120,7 @@ export function buildOutstandingIncidentsPieSlices(
         name: item.displayName,
         value: countForSeverityKey(safeData, item.key),
         color: item.color,
+        id: SEVERITY_LEGEND_KEY_TO_ID[item.key],
       }));
   }
 }
@@ -138,6 +140,7 @@ export function buildOutstandingIncidentsLegendRows(
     name: item.displayName,
     value: countForSeverityKey(safeData, item.key),
     color: item.color,
+    id: SEVERITY_LEGEND_KEY_TO_ID[item.key],
   }));
 }
 
@@ -245,6 +248,7 @@ export function buildActiveCasesLegendRows(
       item.key as "serviceRequests" | "changeRequests",
     ),
     color: item.color,
+    id: item.key,
   }));
 }
 

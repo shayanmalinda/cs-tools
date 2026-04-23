@@ -15,8 +15,8 @@
 // under the License.
 
 import { Box, Grid } from "@wso2/oxygen-ui";
-import { useParams } from "react-router";
-import { useEffect, useRef, useMemo, type JSX } from "react";
+import { useParams, useNavigate, useLocation } from "react-router";
+import { useCallback, useEffect, useRef, useMemo, type JSX } from "react";
 import { useAsgardeo } from "@asgardeo/react";
 import { useLogger } from "@hooks/useLogger";
 import { useLoader } from "@context/linear-loader/LoaderContext";
@@ -61,6 +61,39 @@ export default function DashboardPage(): JSX.Element {
   const logger = useLogger();
   // project id
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleSeverityClick = useCallback(
+    (severityId: string) => {
+      navigate(
+        `/projects/${projectId}/support/cases?severityId=${severityId}`,
+        { state: { returnTo: location.pathname } },
+      );
+    },
+    [navigate, projectId, location.pathname],
+  );
+
+  const handleOperationsClick = useCallback(
+    (key: string) => {
+      const segment = key === "serviceRequests" ? "service-requests" : "change-requests";
+      navigate(
+        `/projects/${projectId}/operations/${segment}`,
+        { state: { returnTo: location.pathname } },
+      );
+    },
+    [navigate, projectId, location.pathname],
+  );
+
+  const handleEngagementsClick = useCallback(
+    () => {
+      navigate(
+        `/projects/${projectId}/engagements`,
+        { state: { returnTo: location.pathname } },
+      );
+    },
+    [navigate, projectId, location.pathname],
+  );
 
   // loader
   const { showLoader, hideLoader } = useLoader();
@@ -398,113 +431,7 @@ export default function DashboardPage(): JSX.Element {
     <Box sx={{ width: "100%", pt: 0, position: "relative" }}>
       {/* Dashboard stats grid */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid
-          size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{
-            border: "1px solid",
-            borderColor: "disabled",
-            p: 2,
-            borderRadius: 1,
-          }}
-        >
-          <Grid container spacing={2}>
-            {DASHBOARD_STATS.slice(0, 2).map((stat) => {
-              let value: string | number = 0;
-              let trend:
-                | {
-                    value: string;
-                    direction: TrendDirection;
-                    color: TrendColor;
-                  }
-                | undefined;
-              let isCardLoading = false;
-              let isCardError = false;
-
-              switch (stat.id) {
-                case "totalCases": {
-                  isCardLoading = crBranchState.isCardLoading;
-                  isCardError = crBranchState.isCardError;
-
-                  const combinedTotal = crBranchState.hasCombined
-                    ? (combinedCasesStats?.totalCount ??
-                      combinedCasesStats?.totalCases ??
-                      0)
-                    : 0;
-                  const changeTotal = crBranchState.hasChange
-                    ? (changeRequestStats?.totalCount ?? 0)
-                    : 0;
-
-                  value = includeCrStats
-                    ? !isCardError &&
-                      crBranchState.hasCombined &&
-                      crBranchState.hasChange
-                      ? combinedTotal + changeTotal
-                      : 0
-                    : combinedTotal;
-                  break;
-                }
-                case "openCases": {
-                  isCardLoading = crBranchState.isCardLoading;
-                  isCardError = crBranchState.isCardError;
-
-                  const combinedActive = crBranchState.hasCombined
-                    ? (combinedCasesStats?.activeCount ??
-                      combinedCasesStats?.stateCount
-                        ?.filter((state) => state.label !== "Closed")
-                        .reduce((sum, state) => sum + state.count, 0) ??
-                      0)
-                    : 0;
-
-                  const changeActive = crBranchState.hasChange
-                    ? (changeRequestStats?.activeCount ??
-                      changeRequestStats?.stateCount
-                        ?.filter(
-                          (state) =>
-                            state.label !== "Closed" &&
-                            state.label !== "Canceled",
-                        )
-                        .reduce((sum, state) => sum + state.count, 0) ??
-                      0)
-                    : 0;
-
-                  value = includeCrStats
-                    ? !isCardError &&
-                      crBranchState.hasCombined &&
-                      crBranchState.hasChange
-                      ? combinedActive + changeActive
-                      : 0
-                    : combinedActive;
-                  break;
-                }
-                default:
-                  break;
-              }
-
-              const showTrend =
-                stat.id !== "totalCases" && stat.id !== "openCases";
-
-              return (
-                <Grid key={stat.id} size={{ xs: 12, sm: 6 }}>
-                  <StatCard
-                    label={stat.label}
-                    value={value}
-                    icon={<stat.icon size={20} />}
-                    iconColor={stat.iconColor}
-                    tooltipText={stat.tooltipText}
-                    trend={trend}
-                    showTrend={showTrend}
-                    isLoading={isCardLoading}
-                    isError={isCardError}
-                    isTrendError={false}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Grid>
-
-        {/* Remaining stats cards */}
-        {DASHBOARD_STATS.slice(2).map((stat) => {
+        {DASHBOARD_STATS.map((stat) => {
           let value: string | number = 0;
           let trend:
             | {
@@ -517,6 +444,61 @@ export default function DashboardPage(): JSX.Element {
           let isCardError = false;
 
           switch (stat.id) {
+            case "totalCases": {
+              isCardLoading = crBranchState.isCardLoading;
+              isCardError = crBranchState.isCardError;
+
+              const combinedTotal = crBranchState.hasCombined
+                ? (combinedCasesStats?.totalCount ??
+                  combinedCasesStats?.totalCases ??
+                  0)
+                : 0;
+              const changeTotal = crBranchState.hasChange
+                ? (changeRequestStats?.totalCount ?? 0)
+                : 0;
+
+              value = includeCrStats
+                ? !isCardError &&
+                  crBranchState.hasCombined &&
+                  crBranchState.hasChange
+                  ? combinedTotal + changeTotal
+                  : 0
+                : combinedTotal;
+              break;
+            }
+            case "openCases": {
+              isCardLoading = crBranchState.isCardLoading;
+              isCardError = crBranchState.isCardError;
+
+              const combinedActive = crBranchState.hasCombined
+                ? (combinedCasesStats?.activeCount ??
+                  combinedCasesStats?.stateCount
+                    ?.filter((state) => state.label !== "Closed")
+                    .reduce((sum, state) => sum + state.count, 0) ??
+                  0)
+                : 0;
+
+              const changeActive = crBranchState.hasChange
+                ? (changeRequestStats?.activeCount ??
+                  changeRequestStats?.stateCount
+                    ?.filter(
+                      (state) =>
+                        state.label !== "Closed" &&
+                        state.label !== "Canceled",
+                    )
+                    .reduce((sum, state) => sum + state.count, 0) ??
+                  0)
+                : 0;
+
+              value = includeCrStats
+                ? !isCardError &&
+                  crBranchState.hasCombined &&
+                  crBranchState.hasChange
+                  ? combinedActive + changeActive
+                  : 0
+                : combinedActive;
+              break;
+            }
             case "resolvedCases": {
               const hasDefault = !!defaultCaseStats && !isErrorDefaultCase;
               const resolved =
@@ -530,17 +512,6 @@ export default function DashboardPage(): JSX.Element {
               isCardError = isErrorDefaultCase;
               isCardLoading =
                 !isCardError && isDefaultCaseLoading && !defaultCaseStats;
-
-              const changeRate = defaultCaseStats?.changeRate;
-              if (typeof changeRate?.resolvedEngagements === "number") {
-                const rate = changeRate.resolvedEngagements;
-                trend = {
-                  value: `${rate >= 0 ? "+" : ""}${rate}%`,
-                  direction:
-                    rate >= 0 ? TrendDirection.UP : TrendDirection.DOWN,
-                  color: rate >= 0 ? TrendColor.SUCCESS : TrendColor.ERROR,
-                };
-              }
               break;
             }
             case "avgResponseTime": {
@@ -554,25 +525,11 @@ export default function DashboardPage(): JSX.Element {
               isCardError = isErrorCombinedCases;
               isCardLoading =
                 !isCardError && isCombinedCasesLoading && !combinedCasesStats;
-
-              const changeRate = combinedCasesStats?.changeRate;
-              if (typeof changeRate?.averageResponseTime === "number") {
-                const rate = changeRate.averageResponseTime;
-                trend = {
-                  value: `${rate >= 0 ? "+" : ""}${rate}%`,
-                  direction:
-                    rate >= 0 ? TrendDirection.UP : TrendDirection.DOWN,
-                  color: TrendColor.SUCCESS,
-                };
-              }
-
               break;
             }
             default:
               break;
           }
-
-          const showTrend = stat.id !== "totalCases" && stat.id !== "openCases";
 
           return (
             <Grid key={stat.id} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -583,7 +540,7 @@ export default function DashboardPage(): JSX.Element {
                 iconColor={stat.iconColor}
                 tooltipText={stat.tooltipText}
                 trend={trend}
-                showTrend={showTrend}
+                showTrend={false}
                 isLoading={isCardLoading}
                 isError={isCardError}
                 isTrendError={false}
@@ -612,6 +569,9 @@ export default function DashboardPage(): JSX.Element {
         showOperationsChart={showOpsChart}
         operationsChartMode={operationsChartMode}
         showEngagementsChart={permissions.hasEngagements}
+        onSeverityClick={handleSeverityClick}
+        onOperationsClick={handleOperationsClick}
+        onEngagementsClick={handleEngagementsClick}
       />
       {/* Cases Table */}
       {projectId && (

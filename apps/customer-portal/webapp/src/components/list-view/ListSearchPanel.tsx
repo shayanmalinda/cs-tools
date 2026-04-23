@@ -45,6 +45,7 @@ export interface ListSearchPanelProps {
   onLoadMoreDeployments?: () => void;
   hasMoreDeployments?: boolean;
   isFetchingMoreDeployments?: boolean;
+  excludeFromCount?: string[];
 }
 
 /**
@@ -72,11 +73,14 @@ export default function ListSearchPanel({
   onLoadMoreDeployments,
   hasMoreDeployments = false,
   isFetchingMoreDeployments = false,
+  excludeFromCount = [],
 }: ListSearchPanelProps): JSX.Element {
+  const excluded = Object.fromEntries(excludeFromCount.map((k) => [k, undefined]));
   const filtersForCount = {
     ...filters,
     ...(hideSeverityFilter ? { severityId: undefined } : {}),
     ...(hideDeploymentFilter ? { deploymentId: undefined } : {}),
+    ...excluded,
   };
   return (
     <ListSearchBar

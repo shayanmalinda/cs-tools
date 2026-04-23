@@ -14,7 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Card, Typography, Box, Skeleton, colors } from "@wso2/oxygen-ui";
+import { Card, Typography, Box, Skeleton, colors, alpha } from "@wso2/oxygen-ui";
+import { Inbox } from "@wso2/oxygen-ui-icons-react";
 import {
   PieChart,
   Pie,
@@ -60,6 +61,7 @@ export const CasesTrendChart = ({
   isLoading,
   isError,
   centerContent = false,
+  onSliceClick,
 }: CasesTrendChartProps): JSX.Element => {
   const isDarkMode = useDarkMode();
   // safe data
@@ -135,6 +137,8 @@ export const CasesTrendChart = ({
     total,
   );
 
+  const isEmpty = !isLoading && !isError && !!data && safeData.total === 0;
+
   return (
     <Card sx={{ p: 2, height: "100%" }}>
       <Typography
@@ -178,55 +182,57 @@ export const CasesTrendChart = ({
             ))}
           </Box>
         </>
+      ) : isEmpty ? (
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 5, gap: 1.5 }}>
+          <Box sx={{ width: 52, height: 52, borderRadius: "50%", bgcolor: alpha(colors.grey?.[500] ?? "#6B7280", 0.08), display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Inbox size={24} color={colors.grey?.[400] ?? "#9CA3AF"} />
+          </Box>
+          <Typography variant="body2" color="text.disabled">No data found</Typography>
+        </Box>
       ) : (
         <>
           <Box
             sx={{
               height: DASHBOARD_CHART_PIE_AREA_HEIGHT_PX,
               position: "relative",
+              opacity: isError ? 0.3 : 1,
+              filter: isError ? "grayscale(1)" : "none",
+              "& *:focus": { outline: "none" },
+              ...(onSliceClick && !isError && { "& .recharts-pie-sector": { cursor: "pointer" } }),
             }}
           >
-            <Box
-              sx={{
-                height: "100%",
-                opacity: isError ? 0.3 : 1,
-                filter: isError ? "grayscale(1)" : "none",
-                "& *:focus": { outline: "none" },
-                position: "relative",
-              }}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart
-                  legend={{ show: false }}
-                  tooltip={{ show: !isError, wrapperStyle: { zIndex: 1000 } }}
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart
+                legend={{ show: false }}
+                tooltip={{ show: !isError, wrapperStyle: { zIndex: 1000 } }}
+              >
+                <Pie
+                  data={displayChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={0}
+                  minAngle={15}
+                  dataKey="value"
+                  nameKey="name"
+                  startAngle={90}
+                  endAngle={-270}
+                  label={false}
+                  labelLine={false}
+                  onClick={onSliceClick && !isError ? onSliceClick : undefined}
                 >
-                  <Pie
-                    data={displayChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={0}
-                    minAngle={15}
-                    dataKey="value"
-                    nameKey="name"
-                    startAngle={90}
-                    endAngle={-270}
-                    label={false}
-                    labelLine={false}
-                  >
-                    {displayChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                        stroke="none"
-                        opacity={isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1}
-                      />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
+                  {displayChartData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="none"
+                      opacity={isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
             <Box
               sx={{
                 position: "absolute",
@@ -239,19 +245,13 @@ export const CasesTrendChart = ({
             >
               {isError ? (
                 <>
-                  <Typography variant="h4" color="text.disabled">
-                    {centerValue}
-                  </Typography>
-                  <Typography variant="caption" color="text.disabled">
-                    {DASHBOARD_CHART_CAPTION_TOTAL}
-                  </Typography>
+                  <Typography variant="h4" color="text.disabled">{centerValue}</Typography>
+                  <Typography variant="caption" color="text.disabled">{DASHBOARD_CHART_CAPTION_TOTAL}</Typography>
                 </>
               ) : (
                 <>
                   <Typography variant="h4">{centerValue}</Typography>
-                  <Typography variant="caption">
-                    {DASHBOARD_CHART_CAPTION_TOTAL}
-                  </Typography>
+                  <Typography variant="caption">{DASHBOARD_CHART_CAPTION_TOTAL}</Typography>
                 </>
               )}
             </Box>
@@ -268,9 +268,11 @@ export const CasesTrendChart = ({
                 name: item.name,
                 value: item.value,
                 color: item.color,
+                id: item.name,
               }))}
               isError={isError}
               showValues
+              onItemClick={onSliceClick ? (_id) => onSliceClick() : undefined}
             />
           </Box>
         </>
