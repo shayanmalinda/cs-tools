@@ -585,12 +585,12 @@ export function getChatStatusAction(status: string): ChatAction {
   const normalized = status?.toLowerCase() || "";
 
   switch (true) {
-    case normalized.includes("resolved"):
+    case normalized.includes("open"):
+    case normalized.includes("active"):
     case normalized.includes("abandoned"):
-    case normalized.includes("converted"):
-      return ChatAction.VIEW;
-    default:
       return ChatAction.RESUME;
+    default:
+      return ChatAction.VIEW;
   }
 }
 

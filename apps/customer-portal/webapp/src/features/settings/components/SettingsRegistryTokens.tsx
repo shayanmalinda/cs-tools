@@ -85,7 +85,7 @@ import {
 import { resolveRegistryTokenSubTabId } from "@features/settings/utils/settingsPage";
 
 /**
- * Registry Tokens settings tab: stat cards, sub-tabs (User/Service), search, table.
+ * Registry Tokens settings tab: sub-tabs (User/Service), search, table.
  *
  * @param {SettingsRegistryTokensProps} props - Component props.
  * @returns {JSX.Element} The component.
@@ -186,29 +186,6 @@ export default function SettingsRegistryTokens({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* Stat cards */}
-      <Grid container spacing={2}>
-        {statCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Grid key={card.label} size={{ xs: 12, sm: 4 }}>
-              <StatCard
-                label={card.label}
-                value={
-                  isTableLoading
-                    ? NULL_PLACEHOLDER
-                    : error
-                      ? NULL_PLACEHOLDER
-                      : card.value.toString()
-                }
-                icon={<Icon />}
-                iconColor={card.iconColor}
-              />
-            </Grid>
-          );
-        })}
-      </Grid>
-
       {/* Header + description */}
       <Box>
         <Typography variant="h6" sx={{ mb: 0.5 }}>
