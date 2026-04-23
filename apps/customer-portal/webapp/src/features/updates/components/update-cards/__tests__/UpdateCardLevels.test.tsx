@@ -22,7 +22,7 @@ describe("UpdateCardLevels", () => {
   it("renders all level information", () => {
     render(
       <UpdateCardLevels
-        startingUpdateLevel={10}
+        currentUpdateLevel={10}
         recommendedUpdateLevel={15}
         pendingLevels={5}
       />,

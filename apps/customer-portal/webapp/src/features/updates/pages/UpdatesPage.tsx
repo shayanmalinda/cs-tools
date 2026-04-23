@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack } from "@wso2/oxygen-ui";
+import { Box } from "@wso2/oxygen-ui";
 import { useParams } from "react-router";
 import { useState, useEffect, useRef, type JSX } from "react";
 import TabBar from "@components/tab-bar/TabBar";
