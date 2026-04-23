@@ -58,9 +58,11 @@ import {
   OPERATIONS_LIST_PAGE_SIZE,
   SERVICE_REQUESTS_ENTITY_LABEL,
   SERVICE_REQUESTS_NEW_BUTTON_LABEL,
+  SERVICE_REQUESTS_PAGE_DESCRIPTION_ACTION_REQUIRED,
   SERVICE_REQUESTS_PAGE_DESCRIPTION_ALL,
   SERVICE_REQUESTS_PAGE_DESCRIPTION_MINE,
   SERVICE_REQUESTS_PAGE_DESCRIPTION_OUTSTANDING,
+  SERVICE_REQUESTS_PAGE_TITLE_ACTION_REQUIRED,
   SERVICE_REQUESTS_PAGE_TITLE_ALL,
   SERVICE_REQUESTS_PAGE_TITLE_MINE,
   SERVICE_REQUESTS_PAGE_TITLE_OUTSTANDING,
@@ -87,8 +89,9 @@ export default function ServiceRequestsPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const createdByMe = searchParams.get("createdByMe") === "true";
   const navSegment = getOperationsNavSegment(location.pathname);
-  const returnTo = (location.state as { returnTo?: string; outstandingOnly?: boolean } | null)?.returnTo;
+  const returnTo = (location.state as { returnTo?: string; outstandingOnly?: boolean; actionRequired?: boolean } | null)?.returnTo;
   const outstandingOnly = (location.state as { outstandingOnly?: boolean } | null)?.outstandingOnly ?? false;
+  const actionRequired = (location.state as { actionRequired?: boolean } | null)?.actionRequired ?? false;
 
   const listMode = createdByMe ? "mine" : "all";
   const sessionPrefix = `${projectId ?? "unknown"}-service-requests-${listMode}`;
@@ -135,13 +138,17 @@ export default function ServiceRequestsPage(): JSX.Element {
   const deploymentsList =
     deploymentsQuery.data?.pages.flatMap((p) => p.deployments ?? []) ?? [];
 
-  const outstandingStatusIds = useMemo(
-    () =>
-      outstandingOnly
-        ? resolveCasesTableDefaultStatusIds(filterMetadata?.caseStates)
-        : [],
-    [outstandingOnly, filterMetadata?.caseStates],
-  );
+  const outstandingStatusIds = useMemo(() => {
+    if (actionRequired) {
+      return (filterMetadata?.caseStates ?? [])
+        .filter((s) => s.label === "Awaiting Info" || s.label === "Solution Proposed")
+        .map((s) => Number(s.id));
+    }
+    if (outstandingOnly) {
+      return resolveCasesTableDefaultStatusIds(filterMetadata?.caseStates);
+    }
+    return [];
+  }, [actionRequired, outstandingOnly, filterMetadata?.caseStates]);
 
   const caseSearchRequest = useMemo(
     () =>
@@ -339,14 +346,18 @@ export default function ServiceRequestsPage(): JSX.Element {
     <Stack spacing={3}>
       <ListPageHeader
         title={
-          outstandingOnly
+          actionRequired
+            ? SERVICE_REQUESTS_PAGE_TITLE_ACTION_REQUIRED
+            : outstandingOnly
             ? SERVICE_REQUESTS_PAGE_TITLE_OUTSTANDING
             : createdByMe
             ? SERVICE_REQUESTS_PAGE_TITLE_MINE
             : SERVICE_REQUESTS_PAGE_TITLE_ALL
         }
         description={
-          outstandingOnly
+          actionRequired
+            ? SERVICE_REQUESTS_PAGE_DESCRIPTION_ACTION_REQUIRED
+            : outstandingOnly
             ? SERVICE_REQUESTS_PAGE_DESCRIPTION_OUTSTANDING
             : createdByMe
             ? SERVICE_REQUESTS_PAGE_DESCRIPTION_MINE
@@ -384,7 +395,7 @@ export default function ServiceRequestsPage(): JSX.Element {
         onClearFilters={handleClearFilters}
         excludeS0={excludeS0}
         restrictSeverityToLow={restrictSeverityToLow}
-        hideStatusFilter={outstandingOnly}
+        hideStatusFilter={outstandingOnly || actionRequired}
         hideSeverityFilter
         hideDeploymentFilter={!permissions.hasDeployments}
         isProjectContextLoading={isProjectContextLoading}
