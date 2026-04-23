@@ -34,24 +34,31 @@ const SKELETON_COUNT = 9;
 
 const StatCardSkeleton = ({ gridSize }: { gridSize: object }): JSX.Element => (
   <Grid size={gridSize} sx={{ display: "flex" }}>
+    {/* Mirrors StatCard: outlined Card > CardContent > flex row (icon left, value+label right) */}
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
         width: "100%",
-        p: 2,
         border: 1,
         borderColor: "divider",
-        borderRadius: 2,
-        gap: 2,
+        borderRadius: 1,
       }}
     >
-      <Box sx={{ flex: 1 }}>
-        <Skeleton variant="text" width="60%" height={16} sx={{ mb: 1 }} />
-        <Skeleton variant="rounded" width={48} height={28} />
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          p: 2,
+          width: "100%",
+        }}
+      >
+        <Skeleton variant="circular" width={24} height={24} sx={{ flexShrink: 0 }} />
+        <Box>
+          <Skeleton variant="text" width={40} height={32} sx={{ mb: 0.5 }} />
+          <Skeleton variant="text" width={90} height={16} />
+        </Box>
       </Box>
-      <Skeleton variant="circular" width={40} height={40} />
     </Box>
   </Grid>
 );
