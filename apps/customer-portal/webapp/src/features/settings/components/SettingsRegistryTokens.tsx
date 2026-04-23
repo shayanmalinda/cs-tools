@@ -19,7 +19,6 @@ import {
   Box,
   Button,
   Chip,
-  Grid,
   IconButton,
   InputAdornment,
   ListItemIcon,
@@ -28,7 +27,6 @@ import {
   MenuItem,
   Paper,
   Skeleton,
-  StatCard,
   Table,
   TableBody,
   TableCell,
@@ -41,8 +39,6 @@ import {
   useTheme,
 } from "@wso2/oxygen-ui";
 import {
-  AlertCircle,
-  CheckCircle,
   KeyRound,
   Monitor,
   MoreVertical,
@@ -70,16 +66,11 @@ import {
   REGISTRY_SEARCH_PLACEHOLDER_SERVICE,
   REGISTRY_SEARCH_PLACEHOLDER_USER,
   REGISTRY_SERVICE_TOKENS_EMPTY,
-  REGISTRY_STAT_ACTIVE_LABEL,
-  REGISTRY_STAT_EXPIRING_LABEL,
-  REGISTRY_STAT_TOTAL_LABEL,
   REGISTRY_SUBTAB_SERVICE_BASE,
   REGISTRY_SUBTAB_USER_BASE,
-  REGISTRY_TOKEN_EXPIRY_WARNING_DAYS,
   REGISTRY_USER_TOKENS_EMPTY,
 } from "@features/settings/constants/settingsConstants";
 import {
-  RegistryTokenDisplayStatus,
   RegistryTokenSubTabId,
   type SettingsRegistryTokensProps,
 } from "@features/settings/types/settings";
@@ -90,12 +81,11 @@ import {
   formatRegistryTokenTimestamp,
   getRegistryTokenDisplayStatus,
   getRegistryTokenStatusChipColor,
-  registryTokenExpiresWithinDays,
 } from "@features/settings/utils/registryTokens";
 import { resolveRegistryTokenSubTabId } from "@features/settings/utils/settingsPage";
 
 /**
- * Registry Tokens settings tab: stat cards, sub-tabs (User/Service), search, table.
+ * Registry Tokens settings tab: sub-tabs (User/Service), search, table.
  *
  * @param {SettingsRegistryTokensProps} props - Component props.
  * @returns {JSX.Element} The component.
@@ -134,29 +124,6 @@ export default function SettingsRegistryTokens({
     () => allTokens.filter((t) => t.tokenType === RegistryTokenType.SERVICE),
     [allTokens],
   );
-
-  const stats = useMemo(() => {
-    const active = allTokens.filter(
-      (t) =>
-        getRegistryTokenDisplayStatus(t) === RegistryTokenDisplayStatus.Active,
-    ).length;
-    const revokedOrExpired = allTokens.filter((t) => {
-      const s = getRegistryTokenDisplayStatus(t);
-      return (
-        s === RegistryTokenDisplayStatus.Expired ||
-        s === RegistryTokenDisplayStatus.Revoked
-      );
-    }).length;
-    const expiringSoon = allTokens.filter((t) =>
-      registryTokenExpiresWithinDays(t, REGISTRY_TOKEN_EXPIRY_WARNING_DAYS),
-    ).length;
-    return {
-      total: allTokens.length,
-      active,
-      revokedOrExpired,
-      expiringSoon,
-    };
-  }, [allTokens]);
 
   const subTabs = useMemo(() => {
     const tabs = [
@@ -205,27 +172,6 @@ export default function SettingsRegistryTokens({
     );
   }, [activeTokens, searchQuery]);
 
-  const statCards = [
-    {
-      value: stats.total,
-      label: REGISTRY_STAT_TOTAL_LABEL,
-      icon: KeyRound,
-      iconColor: "warning" as const,
-    },
-    {
-      value: stats.active,
-      label: REGISTRY_STAT_ACTIVE_LABEL,
-      icon: CheckCircle,
-      iconColor: "success" as const,
-    },
-    {
-      value: stats.expiringSoon,
-      label: REGISTRY_STAT_EXPIRING_LABEL,
-      icon: AlertCircle,
-      iconColor: "error" as const,
-    },
-  ];
-
   const skeletonRows = (colCount: number) =>
     Array.from({ length: 3 }).map((_, i) => (
       <TableRow key={i}>
@@ -240,29 +186,6 @@ export default function SettingsRegistryTokens({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* Stat cards */}
-      <Grid container spacing={2}>
-        {statCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Grid key={card.label} size={{ xs: 12, sm: 4 }}>
-              <StatCard
-                label={card.label}
-                value={
-                  isTableLoading
-                    ? NULL_PLACEHOLDER
-                    : error
-                      ? NULL_PLACEHOLDER
-                      : card.value.toString()
-                }
-                icon={<Icon />}
-                iconColor={card.iconColor}
-              />
-            </Grid>
-          );
-        })}
-      </Grid>
-
       {/* Header + description */}
       <Box>
         <Typography variant="h6" sx={{ mb: 0.5 }}>

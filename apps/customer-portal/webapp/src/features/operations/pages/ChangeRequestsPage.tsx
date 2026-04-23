@@ -23,7 +23,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { useSessionState } from "@hooks/useSessionState";
-import { Box, Button, CircularProgress, Stack } from "@wso2/oxygen-ui";
+import { Button, CircularProgress, Stack } from "@wso2/oxygen-ui";
 import { Download } from "@wso2/oxygen-ui-icons-react";
 import type { ChangeRequestFilterValues, ChangeRequestItem } from "@features/operations/types/changeRequests";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -31,11 +31,7 @@ import useGetChangeRequests, {
   useGetChangeRequestsInfinite,
 } from "@features/operations/api/useGetChangeRequests";
 import { useGetProjectChangeRequestStats } from "@features/operations/api/useGetProjectChangeRequestStats";
-import {
-  CHANGE_REQUEST_FILTER_DEFINITIONS,
-  CHANGE_REQUEST_STAT_CONFIGS,
-} from "@features/operations/constants/operationsConstants";
-import ListStatGrid from "@components/list-view/ListStatGrid";
+import { CHANGE_REQUEST_FILTER_DEFINITIONS } from "@features/operations/constants/operationsConstants";
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListSearchBar from "@components/list-view/ListSearchBar";
 import ListFiltersPanel from "@components/list-view/ListFiltersPanel";
@@ -99,8 +95,6 @@ export default function ChangeRequestsPage(): JSX.Element {
   const {
     data: stats,
     isLoading: isStatsLoading,
-    isError: isStatsError,
-    isFetched: isStatsFetched,
   } = useGetProjectChangeRequestStats(projectId || "", {
     enabled: !!projectId,
   });
@@ -253,16 +247,6 @@ export default function ChangeRequestsPage(): JSX.Element {
         : CHANGE_REQUEST_FILTER_DEFINITIONS,
     [outstandingOnly],
   );
-  const normalizedStats = useMemo(
-    () => ({
-      totalRequests: stats?.totalRequests ?? 0,
-      awaitingYourAction: stats?.awaitingYourAction ?? 0,
-      ongoing: stats?.ongoing ?? 0,
-      completed: stats?.completed ?? 0,
-    }),
-    [stats],
-  );
-
   const exportButton = (
     <Button
       variant="contained"
@@ -302,18 +286,6 @@ export default function ChangeRequestsPage(): JSX.Element {
         onBack={() => (returnTo ? navigate(returnTo) : navigate(".."))}
         actions={exportButton}
       />
-
-      {!outstandingOnly && (
-        <Box sx={{ mb: 3 }}>
-          <ListStatGrid
-            isLoading={isStatsLoading || (!isStatsFetched && !isStatsError)}
-            isError={isStatsError}
-            entityName="change request"
-            configs={CHANGE_REQUEST_STAT_CONFIGS}
-            stats={normalizedStats}
-          />
-        </Box>
-      )}
 
       <ListSearchBar
         searchPlaceholder={CHANGE_REQUESTS_SEARCH_PLACEHOLDER}

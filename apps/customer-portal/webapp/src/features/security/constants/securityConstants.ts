@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { CircleAlert, Shield, FileCheck, Siren, Package } from "@wso2/oxygen-ui-icons-react";
+import { Shield, FileCheck, Siren, Package } from "@wso2/oxygen-ui-icons-react";
 import type { SupportStatConfig } from "@features/support/constants/supportConstants";
 import type { FilterDefinition } from "@components/list-view/ListFiltersPanel";
 import {
@@ -44,12 +44,6 @@ export const SECURITY_STAT_CONFIGS: SupportStatConfig<SecurityStatKey>[] = [
     iconColor: "success",
     key: SecurityStatKey.resolvedSecurityReports,
     label: "Resolved Security Reports (Last 30d)",
-  },
-  {
-    icon: CircleAlert,
-    iconColor: "error",
-    key: SecurityStatKey.totalVulnerabilities,
-    label: "Total Vulnerabilities",
   },
 ];
 

@@ -47,7 +47,7 @@ import {
   OPERATIONS_HUB_HEADER_ACTION_CREATE_SR,
   OPERATIONS_HUB_PROJECT_ERROR_MESSAGE,
   OPERATIONS_HUB_STAT_ENTITY_NAME,
-  ALLOWED_CHANGE_REQUEST_STATE_IDS,
+  OUTSTANDING_CHANGE_REQUEST_STATE_IDS,
 } from "@features/operations/constants/operationsConstants";
 import {
   formatOperationsOverviewChangeRequestsSubtitle,
@@ -105,8 +105,9 @@ export default function OperationsPage(): JSX.Element {
     },
     { enabled: !!projectId && permissionsReady && isServiceRequestEnabled },
   );
-  const serviceRequests =
-    srData?.pages?.[0]?.cases?.slice(0, OPERATIONS_OVERVIEW_LIST_LIMIT) ?? [];
+  const serviceRequests = (srData?.pages?.[0]?.cases ?? [])
+    .filter((c) => c.status?.label?.trim().toLowerCase() !== "closed")
+    .slice(0, OPERATIONS_OVERVIEW_LIST_LIMIT);
 
   const {
     data: crData,
@@ -116,7 +117,7 @@ export default function OperationsPage(): JSX.Element {
     projectId || "",
     {
       filters: {
-        stateKeys: [...ALLOWED_CHANGE_REQUEST_STATE_IDS],
+        stateKeys: [...OUTSTANDING_CHANGE_REQUEST_STATE_IDS],
       },
     },
     0,
@@ -368,6 +369,7 @@ export default function OperationsPage(): JSX.Element {
                       cases={changeRequestsAsCases}
                       isLoading={isCrLoading}
                       isError={isCrError}
+                      useChangeRequestColors
                       onCaseClick={
                         projectId
                           ? (c) =>

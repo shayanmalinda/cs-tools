@@ -187,7 +187,7 @@ export default function CaseDetailsDetailsPanel({
               </Typography>
             </Stack>
           </Box>
-          {!isEngagement && !isSecurityReportAnalysis && (
+          {!isEngagement && !isSecurityReportAnalysis && !isServiceRequest && (
             <Box>
               <Typography {...labelSx}>Severity</Typography>
               <Chip
@@ -269,14 +269,6 @@ export default function CaseDetailsDetailsPanel({
             <Box>
               <Typography {...labelSx}>Duration</Typography>
               <Typography {...valueSx}>{formatValue(data.duration)}</Typography>
-            </Box>
-          ) : null}
-          {isServiceRequest ? (
-            <Box>
-              <Typography {...labelSx}>Assigned team</Typography>
-              <Typography {...valueSx}>
-                {formatValue(data?.assignedTeam ?? null)}
-              </Typography>
             </Box>
           ) : null}
           {/* Related change request action is rendered in the card header (top-right) */}

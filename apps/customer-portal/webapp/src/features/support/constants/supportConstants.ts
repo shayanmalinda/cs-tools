@@ -34,7 +34,6 @@ import {
   Phone,
   Server,
   TriangleAlert,
-  TrendingUp,
   RotateCcw,
   XCircle,
   FileCheck,
@@ -69,6 +68,9 @@ export const KB_ARTICLE_VIEW_BASE_URL =
 export const ChatAction = {
   VIEW: "view",
   RESUME: "resume",
+  ACTIVE : "active",
+  OPEN : "open",
+  ABANDONED: "abandoned"
 } as const;
 
 export type ChatAction = (typeof ChatAction)[keyof typeof ChatAction];
@@ -277,7 +279,6 @@ export const SUPPORT_STAT_CONFIGS: SupportStatConfig[] = [
     iconColor: "error",
     key: "ongoingCases",
     label: "Outstanding Cases",
-    secondaryIcon: TrendingUp,
   },
   {
     icon: Clock,

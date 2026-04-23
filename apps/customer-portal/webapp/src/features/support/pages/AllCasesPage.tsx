@@ -29,8 +29,7 @@ import {
 } from "react";
 import { useSessionState } from "@hooks/useSessionState";
 import { useLoader } from "@context/linear-loader/LoaderContext";
-import { Box, Stack } from "@wso2/oxygen-ui";
-import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
+import { Stack } from "@wso2/oxygen-ui";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import useGetProjectFeatures from "@api/useGetProjectFeatures";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -45,20 +44,13 @@ import {
   getDashboardOutstandingCasesDescription,
   getDashboardOutstandingCasesTitle,
 } from "@features/dashboard/utils/dashboardNavigation";
-import {
-  CaseType,
-  ALL_CASES_STAT_CONFIGS,
-  getAllCasesFlattenedStats,
-  CaseStatus,
-} from "@features/support/constants/supportConstants";
+import { CaseType } from "@features/support/constants/supportConstants";
 import { SortOrder } from "@/types/common";
 import {
   getProjectPermissions,
   getProjectSeverityPolicy,
 } from "@utils/permission";
 import type { AllCasesFilterValues } from "@features/support/types/cases";
-import ListStatGrid from "@components/list-view/ListStatGrid";
-
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListResultsBar from "@components/list-view/ListResultsBar";
 import ListPagination from "@components/list-view/ListPagination";
@@ -146,16 +138,6 @@ export default function AllCasesPage(): JSX.Element {
   const deploymentsList =
     deploymentsQuery.data?.pages.flatMap((p) => p.deployments ?? []) ?? [];
 
-  const {
-    data: stats,
-    isLoading: isStatsQueryLoading,
-    isError: isStatsError,
-  } = useGetProjectCasesStats(projectId || "", {
-    caseTypes: [CaseType.DEFAULT_CASE],
-    createdByMe: createdByMe || undefined,
-    enabled: !!projectId,
-  });
-
   const caseSearchRequest = useMemo(
     () => ({
       filters: {
@@ -210,21 +192,15 @@ export default function AllCasesPage(): JSX.Element {
 
   const { showLoader, hideLoader } = useLoader();
 
-  // Show loader only for initial load (until first stats + cases response), not for background refetches or fetchNextPage.
-  const hasStatsResponse = stats !== undefined;
   const hasCasesResponse = data !== undefined;
   const isProjectContextLoading = isProjectLoading;
-  const isStatsLoading =
-    isProjectContextLoading ||
-    isStatsQueryLoading ||
-    (!!projectId && !hasStatsResponse && !isStatsError);
 
   const isCasesAreaLoading =
     isCasesQueryLoading ||
     (!!projectId && !hasCasesResponse) ||
     isFetchingNextPage;
 
-  const isInitialPageLoading = isStatsLoading || isCasesAreaLoading;
+  const isInitialPageLoading = isCasesAreaLoading;
 
   useEffect(() => {
     if (isInitialPageLoading) {
@@ -355,19 +331,6 @@ export default function AllCasesPage(): JSX.Element {
           }
         }}
       />
-
-      {/* Stat cards — hidden when arriving from severity chart click or resolved filter */}
-      {!initialSeverityId && statusFilter !== "resolved" && (
-        <Box sx={{ mb: 3 }}>
-          <ListStatGrid
-            isLoading={isStatsLoading}
-            isError={isStatsError}
-            entityName="case"
-            configs={ALL_CASES_STAT_CONFIGS}
-            stats={getAllCasesFlattenedStats(stats)}
-          />
-        </Box>
-      )}
 
       <ListSearchPanel
         searchTerm={searchTerm}

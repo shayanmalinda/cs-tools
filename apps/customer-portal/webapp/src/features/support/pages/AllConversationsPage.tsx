@@ -28,22 +28,16 @@ import {
   type ChangeEvent,
 } from "react";
 import { useSessionState } from "@hooks/useSessionState";
-import { Box, Stack } from "@wso2/oxygen-ui";
+import { Stack } from "@wso2/oxygen-ui";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import { useSearchConversations } from "@features/support/api/useSearchConversations";
-import { useGetConversationStats } from "@features/support/api/useGetConversationStats";
 import type {
   AllConversationsFilterValues,
   Conversation,
 } from "@features/support/types/conversations";
-import {
-  ALL_CONVERSATIONS_STAT_CONFIGS,
-  ALL_CONVERSATIONS_FILTER_DEFINITIONS,
-  type AllConversationsStatKey,
-} from "@features/support/constants/supportConstants";
+import { ALL_CONVERSATIONS_FILTER_DEFINITIONS } from "@features/support/constants/supportConstants";
 import type { CaseMetadataResponse } from "@features/support/types/cases";
-import ListStatGrid from "@components/list-view/ListStatGrid";
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListSearchBar from "@components/list-view/ListSearchBar";
 import ListFiltersPanel from "@components/list-view/ListFiltersPanel";
@@ -112,27 +106,6 @@ export default function AllConversationsPage(): JSX.Element {
     isLoading: isConversationsLoading,
     isError: isConversationsError,
   } = useSearchConversations(projectId || "", searchRequest);
-
-  const {
-    data: statsData,
-    isLoading: isStatsLoading,
-    isError: isStatsError,
-  } = useGetConversationStats(projectId || "", {
-    createdByMe: createdByMe || undefined,
-  });
-
-  const stats: Partial<Record<AllConversationsStatKey, number>> | undefined =
-    statsData
-      ? {
-          resolved: statsData.resolvedCount,
-          open: statsData.openCount,
-          abandoned: statsData.abandonedCount,
-          totalChats:
-            statsData.resolvedCount +
-            statsData.openCount +
-            statsData.abandonedCount,
-        }
-      : undefined;
 
   const { showLoader, hideLoader } = useLoader();
 
@@ -222,16 +195,6 @@ export default function AllConversationsPage(): JSX.Element {
         backLabel="Back to Support Center"
         onBack={() => (returnTo ? navigate(returnTo) : navigate(".."))}
       />
-
-      <Box sx={{ mb: 3 }}>
-        <ListStatGrid
-          isLoading={isStatsLoading}
-          isError={isStatsError}
-          entityName="conversation"
-          configs={ALL_CONVERSATIONS_STAT_CONFIGS}
-          stats={stats}
-        />
-      </Box>
 
       <ListSearchBar
         searchPlaceholder="Search chats by message, ID, or category..."

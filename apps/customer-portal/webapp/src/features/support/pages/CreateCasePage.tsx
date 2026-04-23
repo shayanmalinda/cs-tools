@@ -857,8 +857,6 @@ export default function CreateCasePage(): JSX.Element {
           isSecurityReport,
         );
 
-        showSuccess("Case created successfully");
-
         if (projectId) {
           await triggerPostCreationApiCalls(
             authFetch,
@@ -892,6 +890,7 @@ export default function CreateCasePage(): JSX.Element {
         } else {
           navigate(`/projects/${projectId}/support/cases/${caseId}`);
         }
+        showSuccess("Case created successfully");
       },
       onError: (error) => {
         setIsNavigatingAfterCreate(false);

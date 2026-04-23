@@ -31,7 +31,6 @@ import { useSessionState } from "@hooks/useSessionState";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { Box, Button, Stack, Typography } from "@wso2/oxygen-ui";
 import { ArrowLeft, Plus } from "@wso2/oxygen-ui-icons-react";
-import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import useGetProjectFeatures from "@api/useGetProjectFeatures";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -42,17 +41,11 @@ import {
   isS0Case,
 } from "@features/support/utils/support";
 import {
-  CaseType,
-  ALL_CASES_STAT_CONFIGS,
-  getAllCasesFlattenedStats,
-} from "@features/support/constants/supportConstants";
-import {
   getProjectPermissions,
   getProjectSeverityPolicy,
 } from "@utils/permission";
 import { SortOrder } from "@/types/common";
 import type { AllCasesFilterValues } from "@features/support/types/cases";
-import ListStatGrid from "@components/list-view/ListStatGrid";
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListResultsBar from "@components/list-view/ListResultsBar";
 import ListPagination from "@components/list-view/ListPagination";
@@ -73,7 +66,6 @@ import {
   SERVICE_REQUESTS_PAGE_TITLE_OUTSTANDING,
   SERVICE_REQUESTS_SEARCH_PLACEHOLDER,
   SERVICE_REQUESTS_SORT_FIELD_OPTIONS,
-  SERVICE_REQUESTS_STAT_ENTITY_NAME,
   SERVICE_REQUESTS_ERROR_ENTITY_NAME,
 } from "@features/operations/constants/operationsConstants";
 import {
@@ -143,16 +135,6 @@ export default function ServiceRequestsPage(): JSX.Element {
   const deploymentsList =
     deploymentsQuery.data?.pages.flatMap((p) => p.deployments ?? []) ?? [];
 
-  const {
-    data: stats,
-    isLoading: isStatsQueryLoading,
-    isError: isStatsError,
-  } = useGetProjectCasesStats(projectId || "", {
-    caseTypes: [CaseType.SERVICE_REQUEST],
-    createdByMe: createdByMe || undefined,
-    enabled: !!projectId && permissions.hasSR,
-  });
-
   const outstandingStatusIds = useMemo(
     () =>
       outstandingOnly
@@ -188,15 +170,9 @@ export default function ServiceRequestsPage(): JSX.Element {
 
   const { showLoader, hideLoader } = useLoader();
 
-  const hasStatsResponse = stats !== undefined;
   const hasCasesResponse = data !== undefined;
   const isProjectContextLoading = isProjectLoading;
   const canLoadServiceRequests = !projectDetailsReady || permissions.hasSR;
-  const isStatsLoading =
-    canLoadServiceRequests &&
-    (isProjectContextLoading ||
-      isStatsQueryLoading ||
-      (!!projectId && !hasStatsResponse && !isStatsError));
 
   const isCasesAreaLoading =
     canLoadServiceRequests &&
@@ -204,7 +180,7 @@ export default function ServiceRequestsPage(): JSX.Element {
       (!!projectId && !hasCasesResponse) ||
       isFetchingNextPage);
 
-  const isInitialPageLoading = isStatsLoading || isCasesAreaLoading;
+  const isInitialPageLoading = isCasesAreaLoading;
 
   useEffect(() => {
     if (isInitialPageLoading) {
@@ -380,18 +356,6 @@ export default function ServiceRequestsPage(): JSX.Element {
         onBack={() => (returnTo ? navigate(returnTo) : navigate(".."))}
         actions={newRequestButton}
       />
-
-      {!outstandingOnly && (
-        <Box sx={{ mb: 3 }}>
-          <ListStatGrid
-            isLoading={isStatsLoading}
-            isError={isStatsError}
-            entityName={SERVICE_REQUESTS_STAT_ENTITY_NAME}
-            configs={ALL_CASES_STAT_CONFIGS}
-            stats={getAllCasesFlattenedStats(stats)}
-          />
-        </Box>
-      )}
 
       <ListSearchPanel
         searchTerm={searchTerm}

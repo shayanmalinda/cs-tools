@@ -18,7 +18,6 @@ import { Box } from "@wso2/oxygen-ui";
 import { useParams } from "react-router";
 import { type JSX } from "react";
 import ListStatGrid from "@components/list-view/ListStatGrid";
-import { usePostProductVulnerabilitiesSearch } from "@features/security/api/usePostProductVulnerabilitiesSearch";
 import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import { CaseType } from "@features/support/constants/supportConstants";
 import {
@@ -36,39 +35,23 @@ export default function SecurityStats(): JSX.Element {
   const { projectId } = useParams<{ projectId: string }>();
 
   const {
-    data: vulnerabilitiesData,
-    isLoading: isVulnerabilitiesLoading,
-    isError: isVulnerabilitiesError,
-  } = usePostProductVulnerabilitiesSearch({
-    pagination: {
-      offset: 0,
-      limit: 10,
-    },
-  });
-
-  const {
     data: securityReportStats,
-    isLoading: isSecurityReportLoading,
-    isError: isSecurityReportError,
+    isLoading,
+    isError,
   } = useGetProjectCasesStats(projectId || "", {
     caseTypes: [CaseType.SECURITY_REPORT_ANALYSIS],
     enabled: !!projectId,
   });
 
   const stats: Partial<Record<SecurityStatKey, number>> = {
-    [SecurityStatKey.totalVulnerabilities]:
-      vulnerabilitiesData?.totalRecords ?? 0,
     [SecurityStatKey.activeSecurityReports]:
       securityReportStats?.activeCount ?? 0,
     [SecurityStatKey.resolvedSecurityReports]:
       securityReportStats?.resolvedCases?.pastThirtyDays ?? 0,
   };
 
-  const isLoading = isVulnerabilitiesLoading || isSecurityReportLoading;
-  const isError = isVulnerabilitiesError || isSecurityReportError;
-
   return (
-    <Box>
+    <Box sx={{ mb: 3 }}>
       <ListStatGrid
         isLoading={isLoading}
         isError={isError}

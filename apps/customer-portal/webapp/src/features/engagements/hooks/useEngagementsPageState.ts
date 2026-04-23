@@ -16,17 +16,17 @@
 
 import { useNavigate, useParams, useLocation } from "react-router";
 import { useState, useMemo, useEffect, type ChangeEvent } from "react";
-import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import useGetProjectFeatures from "@api/useGetProjectFeatures";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
+import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import { useLoader } from "@context/linear-loader/LoaderContext";
-import { CaseType } from "@features/support/constants/supportConstants";
 import { getProjectSeverityPolicy } from "@utils/permission";
 import { isS0Case } from "@features/support/utils/support";
 import { hasListSearchOrFilters } from "@features/support/utils/support";
 import type { AllCasesFilterValues } from "@features/support/types/cases";
+import { CaseType } from "@features/support/constants/supportConstants";
 import { SortOrder } from "@/types/common";
 import { ENGAGEMENTS_PAGE_SIZE } from "@/features/engagements/constants/engagements";
 import { EngagementsSortField } from "@features/engagements/types/engagements";
@@ -34,7 +34,6 @@ import {
   buildEngagementSearchRequest,
   buildEngagementDetailPath,
   computeEngagementsCasesAreaLoading,
-  computeEngagementsInitialPageLoading,
   computeEngagementsStatsLoading,
   computeEngagementsTotalItems,
   getEngagementsCurrentPageCases,
@@ -91,6 +90,13 @@ export function useEngagementsPageState() {
     enabled: !!projectId,
   });
 
+  const hasStatsResponse = stats !== undefined;
+  const isStatsLoading = computeEngagementsStatsLoading(
+    isStatsQueryLoading,
+    hasStatsResponse,
+    projectId,
+  );
+
   const engagementSearchRequest = useMemo(
     () =>
       buildEngagementSearchRequest(filters, searchTerm, sortField, sortOrder),
@@ -111,23 +117,14 @@ export function useEngagementsPageState() {
 
   const { showLoader, hideLoader } = useLoader();
 
-  const hasStatsResponse = stats !== undefined;
   const hasCasesResponse = data !== undefined;
-  const isStatsLoading = computeEngagementsStatsLoading(
-    isStatsQueryLoading,
-    hasStatsResponse,
-    projectId,
-  );
   const isCasesAreaLoading = computeEngagementsCasesAreaLoading(
     isCasesQueryLoading,
     hasCasesResponse,
     projectId,
   );
 
-  const isInitialPageLoading = computeEngagementsInitialPageLoading(
-    isStatsLoading,
-    isCasesAreaLoading,
-  );
+  const isInitialPageLoading = isCasesAreaLoading;
 
   useEffect(() => {
     if (isInitialPageLoading) {

@@ -342,9 +342,9 @@ export const OPERATIONS_HUB_PROJECT_ERROR_MESSAGE =
 
 export const OPERATIONS_HUB_STAT_ENTITY_NAME = "operations";
 
-export const OPERATIONS_HUB_CARD_TITLE_SR = "Service Requests";
+export const OPERATIONS_HUB_CARD_TITLE_SR = "Outstanding service requests";
 
-export const OPERATIONS_HUB_CARD_TITLE_CR = "Change Requests";
+export const OPERATIONS_HUB_CARD_TITLE_CR = "Outstanding Change Requests";
 
 export const OPERATIONS_HUB_HEADER_ACTION_CREATE_SR =
   "Create Service Request";

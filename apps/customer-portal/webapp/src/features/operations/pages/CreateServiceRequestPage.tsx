@@ -520,11 +520,6 @@ export default function CreateServiceRequestPage(): JSX.Element {
       onSuccess: async (data) => {
         setIsNavigatingAfterCreate(true);
         const srNumber = (data as { number?: string }).number;
-        showSuccess(
-          srNumber
-            ? `Service request ${srNumber} created successfully`
-            : "Service request created successfully",
-        );
 
         if (projectId) {
           await triggerPostCreationApiCalls(
@@ -541,6 +536,11 @@ export default function CreateServiceRequestPage(): JSX.Element {
 
         navigate(
           `/projects/${projectId}/${basePath}/service-requests/${data.id}`,
+        );
+        showSuccess(
+          srNumber
+            ? `Service request ${srNumber} created successfully`
+            : "Service request created successfully",
         );
       },
       onError: (error) => {
@@ -686,7 +686,7 @@ export default function CreateServiceRequestPage(): JSX.Element {
             variant="contained"
             color="primary"
             startIcon={<CircleCheck size={18} />}
-            disabled={!canSubmit}
+            disabled={!canSubmit || isInitialLoading || deploymentProductsLoading}
           >
             {isCreatePending
               ? "Creating..."

@@ -134,12 +134,16 @@ export default function UsageAndMetricsTabContent(): JSX.Element {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <TabBar
-        tabs={innerTabs}
-        activeTab={innerTab}
-        onTabChange={setInnerTab}
-        sx={{ mb: 1 }}
-      />
+      <Box sx={{ width: "100%", overflowX: "auto", overflowY: "hidden", pb: 0.5 }}>
+        <Box sx={{ minWidth: "max-content" }}>
+          <TabBar
+            tabs={innerTabs}
+            activeTab={innerTab}
+            onTabChange={setInnerTab}
+            sx={{ mb: 0 }}
+          />
+        </Box>
+      </Box>
 
       {innerTab !== UsageMetricsInnerTabId.OVERVIEW && timeRangeSelector}
 
