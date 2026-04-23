@@ -88,7 +88,6 @@ export default function CaseDetailsActionRow({
   caseId = "",
   isLoading = false,
   showOnlyEngineer = false,
-  hideAssignedEngineer = false,
 }: CaseDetailsActionRowProps): JSX.Element {
   void assignedEngineer;
   void engineerInitials;
