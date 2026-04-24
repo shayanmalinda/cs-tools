@@ -32,6 +32,7 @@ import { PriorityChip, StatusChip } from "@components/features/support";
 import { RichText, SectionCard } from "@components/shared";
 import { useLayout } from "@context/layout";
 import { cases } from "@src/services/cases";
+import { CASE_STATE_IDS } from "@src/config/constants";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { Comment } from "@components/features/detail";
@@ -40,16 +41,6 @@ import DOMPurify from "dompurify";
 import { useNotify } from "../context/snackbar";
 
 dayjs.extend(relativeTime);
-
-const CASE_STATE_IDS = {
-  OPEN: 1,
-  WORK_IN_PROGRESS: 10,
-  AWAITING_INFO: 18,
-  WAITING_ON_WSO2: 1003,
-  SOLUTION_PROPOSED: 6,
-  CLOSED: 3,
-  REOPENED: 1006,
-} as const;
 
 export default function CaseDetailPage() {
   const notify = useNotify();
