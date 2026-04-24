@@ -333,7 +333,7 @@ function getCaseMenuOptions(
       onClick: actions?.onMarkWaiting,
     },
     {
-      label: "Created Related Case",
+      label: "Create Related Case",
       icon: <PlusIcon />,
       hidden: !isClosed,
       onClick: actions?.onCreateRelated,
