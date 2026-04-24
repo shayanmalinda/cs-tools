@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { JSX } from "react";
+import { type JSX } from "react";
 import { BrowserRouter } from "react-router";
 import { OxygenUIThemeProvider } from "@wso2/oxygen-ui";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -54,7 +54,7 @@ const queryClient: QueryClient = new QueryClient({
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
-      refetchOnMount: false,
+      refetchOnMount: true,
     },
     mutations: {
       retry: shouldRetry,

@@ -22,6 +22,7 @@ import { LogOut, User } from "@wso2/oxygen-ui-icons-react";
 import useGetUserDetails from "@features/settings/api/useGetUserDetails";
 import { useLogger } from "@hooks/useLogger";
 import UserProfileModal from "@components/header/UserProfileModal";
+import { ApiError } from "@utils/ApiError";
 
 /**
  * User profile component.
@@ -31,10 +32,17 @@ import UserProfileModal from "@components/header/UserProfileModal";
 export default function UserProfile(): JSX.Element {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const { signOut, isLoading: isAuthLoading, isSignedIn } = useAsgardeo();
-  const { data: userDetails, isLoading, isError } = useGetUserDetails();
+  const { data: userDetails, isLoading, isError, error } = useGetUserDetails();
   const logger = useLogger();
 
   if (!isAuthLoading && !isSignedIn) {
+    return <></>;
+  }
+  if (
+    isError &&
+    error instanceof ApiError &&
+    (error.status === 401 || error.status === 403)
+  ) {
     return <></>;
   }
 

@@ -36,6 +36,7 @@ export interface ListStatGridProps<T extends string> {
   };
   valueFormatter?: (value: number) => string | number;
   onStatClick?: (key: T) => void;
+  nonClickableKeys?: T[];
 }
 
 /**
@@ -65,6 +66,7 @@ export default function ListStatGrid<T extends string>({
   itemSize = { xs: 12, sm: 6, md: 3 },
   valueFormatter,
   onStatClick,
+  nonClickableKeys,
 }: ListStatGridProps<T>): JSX.Element {
   const theme = useTheme();
   const xs = itemSize.xs ?? 12;
@@ -91,15 +93,16 @@ export default function ListStatGrid<T extends string>({
       {configs.map((stat) => {
         const SecondaryIcon = stat.secondaryIcon;
         const Icon = stat.icon;
+        const isClickable = !!onStatClick && !nonClickableKeys?.includes(stat.key);
 
         return (
           <Box
             key={stat.key}
-            onClick={onStatClick ? () => onStatClick(stat.key) : undefined}
-            role={onStatClick ? "button" : undefined}
-            tabIndex={onStatClick ? 0 : undefined}
+            onClick={isClickable ? () => onStatClick(stat.key) : undefined}
+            role={isClickable ? "button" : undefined}
+            tabIndex={isClickable ? 0 : undefined}
             onKeyDown={
-              onStatClick
+              isClickable
                 ? (e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -111,16 +114,16 @@ export default function ListStatGrid<T extends string>({
             sx={{
               position: "relative",
               minWidth: 0,
-              cursor: onStatClick ? "pointer" : undefined,
+              cursor: isClickable ? "pointer" : undefined,
               borderRadius: 1,
-              transition: onStatClick ? "box-shadow 0.2s ease, transform 0.15s ease" : undefined,
-              "&:hover": onStatClick
+              transition: isClickable ? "box-shadow 0.2s ease, transform 0.15s ease" : undefined,
+              "&:hover": isClickable
                 ? {
                     boxShadow: `0 0 0 1px ${theme.palette.primary.main}, 0 4px 16px rgba(0,0,0,0.12)`,
                     transform: "translateY(-2px)",
                   }
                 : undefined,
-              "&:focus-visible": onStatClick
+              "&:focus-visible": isClickable
                 ? { outline: "2px solid", outlineOffset: 2 }
                 : undefined,
             }}

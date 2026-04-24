@@ -138,35 +138,54 @@ export default function AnnouncementDetailsPanel({
             sx={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "space-between",
               gap: 1,
               mb: 0.5,
               flexWrap: "wrap",
             }}
           >
-            <Typography variant="caption" color="text.secondary">
-              {data.number}
-            </Typography>
-            {statusLabel && (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.75,
-                }}
-              >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Typography variant="caption" color="text.secondary">
+                {data.number}
+              </Typography>
+              {statusLabel && (
                 <Box
                   sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    bgcolor: resolvedStatusColor,
-                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.75,
                   }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  {statusLabel}
-                </Typography>
-              </Box>
+                >
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: resolvedStatusColor,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {statusLabel}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            {data.status?.label?.toLowerCase() !== "closed" && (
+              <CaseDetailsActionRow
+                projectId={projectId}
+                caseId={caseId}
+                statusLabel={data.status?.label}
+                assignedEngineer={data.assignedEngineer}
+                engineerInitials={
+                  typeof data.assignedEngineer === "object" &&
+                  data.assignedEngineer?.name
+                    ? (data.assignedEngineer.name.split(" ")[0]?.[0] ?? "")
+                    : ""
+                }
+                closedOn={data.closedOn}
+                restrictToCloseOnly={true}
+              />
             )}
           </Box>
         )}
@@ -209,22 +228,6 @@ export default function AnnouncementDetailsPanel({
           )}
         </Stack>
       </Paper>
-      {data && data.status?.label?.toLowerCase() !== "closed" && (
-        <CaseDetailsActionRow
-          projectId={projectId}
-          caseId={caseId}
-          statusLabel={data.status?.label}
-          assignedEngineer={data.assignedEngineer}
-          engineerInitials={
-            typeof data.assignedEngineer === "object" &&
-            data.assignedEngineer?.name
-              ? (data.assignedEngineer.name.split(" ")[0]?.[0] ?? "")
-              : ""
-          }
-          closedOn={data.closedOn}
-          restrictToCloseOnly={true}
-        />
-      )}
       <Paper
         variant="outlined"
         elevation={0}
