@@ -239,14 +239,26 @@ export default function ChangeRequestsList({
                     </Typography>
                   </Box>
                 )}
-                {item.case?.number && (
+                {(item.case?.internalId || item.case?.number) && (
                   <>
                     <Typography variant="body2" color="text.disabled">
                       |
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {CHANGE_REQUESTS_LIST_SR_PREFIX} {item.case.number}
-                    </Typography>
+                    {item.case?.internalId && (
+                      <Typography variant="body2" color="text.secondary">
+                        {item.case.internalId}
+                      </Typography>
+                    )}
+                    {item.case?.internalId && item.case?.number && (
+                      <Typography variant="body2" color="text.disabled">
+                        |
+                      </Typography>
+                    )}
+                    {item.case?.number && (
+                      <Typography variant="body2" color="text.secondary">
+                        {CHANGE_REQUESTS_LIST_SR_PREFIX} {item.case.number}
+                      </Typography>
+                    )}
                   </>
                 )}
                 <>

@@ -448,7 +448,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                     sx={{ minHeight: "unset", p: 0 }}
                   >
                     Service Request:{" "}
-                    {changeRequest.case?.number || "Not Available"}
+                    {changeRequest.case?.internalId
+                      ? `${changeRequest.case.internalId} | ${changeRequest.case?.number || "Not Available"}`
+                      : (changeRequest.case?.number || "Not Available")}
                   </Button>
                 </Box>
                 {canShowApprovalActions && (
