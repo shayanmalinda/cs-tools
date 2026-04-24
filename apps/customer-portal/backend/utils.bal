@@ -661,7 +661,7 @@ public isolated function mapCaseResponse(entity:CaseResponse response) returns t
                 count: response?.closedBy?.count
             } : (),
         changeRequests: changeRequests != () ? from entity:ReferenceTableItem item in changeRequests
-                select {id: item.id, label: item.name} : (),
+                select {id: item.id, label: item.name, number: item?.number} : (),
         engagementPaymentType: engagementPaymentType != () ? {
                 id: engagementPaymentType.id.toString(),
                 label: engagementPaymentType.label
@@ -1095,7 +1095,7 @@ public isolated function mapUpdatedCaseResponse(entity:UpdatedCase updatedCase) 
 }
 
 # Map case activity search response to the desired structure.
-# 
+#
 # + response - Case activity search response from the entity service
 # + return - Mapped case activity search response
 public isolated function mapCaseActivitySummaryResponse(entity:CaseActivitySearchResponse response)
