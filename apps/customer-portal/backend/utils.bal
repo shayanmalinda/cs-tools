@@ -900,7 +900,7 @@ public isolated function mapProjectsResponse(entity:ProjectsResponse response) r
             closureState: project.closureState,
             'type: {id: project.'type.id, label: project.'type.name},
             hasPdpSubscription: project.hasPdpSubscription,
-            actionRequiredCasesCount: project.actionRequiredCasesCount,
+            actionRequiredCount: project.actionRequiredCount,
             hasAgent: project.hasAgent,
             hasKbReferences: project.hasKbReferences,
             activeCasesCount: project.activeCasesCount,
