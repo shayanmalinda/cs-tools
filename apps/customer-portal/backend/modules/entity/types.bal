@@ -128,6 +128,8 @@ public type Project record {|
     int activeChatsCount;
     # SLA status (e.g., "Needs Attention")
     string slaStatus;
+    # Action required case count
+    int actionRequiredCount;
     json...;
 |};
 
@@ -431,8 +433,12 @@ public type CaseSearchFilters record {|
     int[] stateKeys?;
     # Severity key
     int severityKey?;
-    # Engagement type key (required for engagement type cases)
-    int engagementTypeKey?;
+    # Engagement type keys (required for engagement type cases)
+    int[] engagementTypeKeys?;
+    # Start date
+    UtcDateTimeString startDate?;
+    # End date
+    UtcDateTimeString endDate?;
     # Deployment ID
     string deploymentId?;
     # Case created by the logged in user
@@ -2164,6 +2170,12 @@ public type ProjectChangeRequestStatsResponse record {|
     pattern: re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):[0-5]\d:[0-5]\d$`
 }
 public type DateTimeWithoutTimezone string;
+
+# UTC DateTime string type with YYYY-MM-DDTHH:MM:SSZ format constraint.
+@constraint:String {
+    pattern: re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\dZ$`
+}
+public type UtcDateTimeString string;
 
 # Request payload for updating a change request.
 public type ChangeRequestUpdatePayload record {|

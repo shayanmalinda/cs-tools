@@ -3366,10 +3366,16 @@ components:
           type: integer
           description: Severity ID
           format: int64
-        engagementTypeKey:
-          type: integer
-          description: Engagement type key (required for engagement type cases)
-          format: int64
+        engagementTypeKeys:
+          type: array
+          description: Engagement type keys (required for engagement type cases)
+          items:
+            type: integer
+            format: int64
+        startDate:
+          $ref: '#/components/schemas/UtcDateTimeString'
+        endDate:
+          $ref: '#/components/schemas/UtcDateTimeString'
         deploymentId:
           type: string
           description: Deployment ID
@@ -5861,6 +5867,11 @@ components:
           description: Timezone of the user
       additionalProperties: false
       description: Payload for updating user information.
+    UtcDateTimeString:
+      pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])T([01]\\d|2[0-3]):[0-5]\\\
+        d:[0-5]\\dZ$"
+      type: string
+      description: UTC DateTime string type with YYYY-MM-DDTHH:MM:SSZ format constraint.
     ValidationPayload:
       required:
       - contactEmail
