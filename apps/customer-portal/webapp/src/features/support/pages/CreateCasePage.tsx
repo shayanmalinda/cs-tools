@@ -781,7 +781,6 @@ export default function CreateCasePage(): JSX.Element {
       return;
     }
     if (titlePlain.length > 160) {
-      showError("Case title must be 160 characters or fewer.");
       return;
     }
     if (!descriptionPlain) {

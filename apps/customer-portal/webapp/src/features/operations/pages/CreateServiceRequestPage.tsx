@@ -504,7 +504,6 @@ export default function CreateServiceRequestPage(): JSX.Element {
       return;
     }
     if (titleLengthError) {
-      showError(titleLengthError);
       return;
     }
     if (!projectId || !deploymentMatch) {

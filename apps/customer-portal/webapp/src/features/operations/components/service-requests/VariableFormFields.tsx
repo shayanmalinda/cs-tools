@@ -68,6 +68,12 @@ function parseRequiredLabel(questionText: string): { label: string } {
   return { label };
 }
 
+function isTitleField(questionText: string): boolean {
+  return (
+    questionText.replace(/^\s*\*?\s*/, "").trim().toLowerCase() === "title"
+  );
+}
+
 /** Hot fix: all typable (user-editable) fields are mandatory due to API hasMandatory inconsistency. */
 const TYPABLE_FIELDS_ALL_REQUIRED = true;
 
@@ -286,6 +292,9 @@ export default function VariableFormFields({
     const displayValue = isContext
       ? getContextValue(variable.questionText!, contextValues!)
       : value;
+    const isTitle = isTitleField(variable.questionText ?? "");
+    const titleLength = displayValue.trim().length;
+    const isTitleTooLong = isTitle && titleLength > 160;
 
     if (
       type === VARIABLE_TYPE_SELECT ||
@@ -485,7 +494,19 @@ export default function VariableFormFields({
           value={displayValue}
           onChange={(e) => onChange(variable.id, e.target.value)}
           disabled={isContext}
+          error={isTitleTooLong}
+          helperText={isTitleTooLong ? "Title must be 160 characters or fewer." : undefined}
         />
+        {isTitle && (
+          <Typography
+            variant="caption"
+            color={isTitleTooLong ? "error.main" : "text.secondary"}
+            align="right"
+            sx={{ mt: 0.5, display: "block" }}
+          >
+            {titleLength}/160
+          </Typography>
+        )}
       </Grid>
     );
   };

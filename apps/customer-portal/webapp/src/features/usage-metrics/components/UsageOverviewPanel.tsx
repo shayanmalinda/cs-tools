@@ -548,42 +548,42 @@ export default function UsageOverviewPanel({
         spacing={2}
         sx={{ width: "100%", minWidth: 0, overflowX: "hidden" }}
       >
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }} sx={{ minWidth: 0 }}>
           <StatCard
             label={USAGE_METRICS_STAT_ENVIRONMENTS}
             value={
               isStatCardsLoading
                 ? ((
                     <Skeleton variant="rounded" width={60} height={24} />
-                  ) as any)
+                  ) as unknown as number)
                 : overviewStats.environments
             }
             icon={<Layers />}
             iconColor="info"
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }} sx={{ minWidth: 0 }}>
           <StatCard
             label={USAGE_METRICS_STAT_PRODUCTS}
             value={
               isStatCardsLoading
                 ? ((
                     <Skeleton variant="rounded" width={60} height={24} />
-                  ) as any)
+                  ) as unknown as number)
                 : overviewStats.products
             }
             icon={<Package />}
             iconColor="primary"
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }} sx={{ minWidth: 0 }}>
           <StatCard
             label={USAGE_METRICS_STAT_INSTANCES}
             value={
               isStatCardsLoading
                 ? ((
                     <Skeleton variant="rounded" width={60} height={24} />
-                  ) as any)
+                  ) as unknown as number)
                 : overviewStats.instances
             }
             icon={<ServerIcon />}
