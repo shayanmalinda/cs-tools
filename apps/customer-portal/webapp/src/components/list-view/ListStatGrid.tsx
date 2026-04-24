@@ -14,8 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, StatCard, Skeleton, useTheme } from "@wso2/oxygen-ui";
+import { Box, StatCard, Skeleton, Tooltip, useTheme } from "@wso2/oxygen-ui";
 import { type JSX } from "react";
+import { Info } from "@wso2/oxygen-ui-icons-react";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 import { type SupportStatConfig } from "@features/support/constants/supportConstants";
 
@@ -137,18 +138,36 @@ export default function ListStatGrid<T extends string>({
                 <SecondaryIcon />
               </Box>
             )}
+            {stat.tooltipText && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 46,
+                  right: 14,
+                  zIndex: 2,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  color: "text.secondary",
+                  backgroundColor: "background.paper",
+                }}
+              >
+                <Tooltip title={stat.tooltipText}>
+                  <Box component="span" sx={{ display: "inline-flex" }}>
+                    <Info size={14} />
+                  </Box>
+                </Tooltip>
+              </Box>
+            )}
             <StatCard
               label={stat.label}
-              value={
+              value={(
                 isLoading ? (
-                  ((
-                    <Skeleton
-                      data-testid="Skeleton"
-                      variant="rounded"
-                      width={60}
-                      height={24}
-                    />
-                  ) as any)
+                  <Skeleton
+                    data-testid="Skeleton"
+                    variant="rounded"
+                    width={60}
+                    height={24}
+                  />
                 ) : isError ? (
                   <ErrorIndicator entityName={entityName} />
                 ) : stats?.[stat.key] != null ? (
@@ -160,7 +179,7 @@ export default function ListStatGrid<T extends string>({
                 ) : (
                   "--"
                 )
-              }
+              ) as unknown as string | number}
               icon={<Icon />}
               iconColor={stat.iconColor}
             />

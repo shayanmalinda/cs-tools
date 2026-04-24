@@ -414,7 +414,7 @@ export default function DashboardItemsPage({
         title={
           mode === "action-required"
             ? "Action Required"
-            : "Outstanding Interactions"
+            : "Outstanding Items"
         }
         description={
           mode === "action-required"
