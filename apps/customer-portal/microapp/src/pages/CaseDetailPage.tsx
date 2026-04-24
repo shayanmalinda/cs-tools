@@ -41,6 +41,16 @@ import { useNotify } from "../context/snackbar";
 
 dayjs.extend(relativeTime);
 
+const CASE_STATE_IDS = {
+  OPEN: 1,
+  WORK_IN_PROGRESS: 10,
+  AWAITING_INFO: 18,
+  WAITING_ON_WSO2: 1003,
+  SOLUTION_PROPOSED: 6,
+  CLOSED: 3,
+  REOPENED: 1006,
+} as const;
+
 export default function CaseDetailPage() {
   const notify = useNotify();
   const layout = useLayout();
@@ -89,17 +99,10 @@ export default function CaseDetailPage() {
     onError: () => notify.error("Failed to update case. Please try again."),
   });
 
-  const getCaseStateKeyByLabel = (label: string): number | undefined => {
-    const id = filters?.caseStates.find((state) => state.label.toLowerCase() === label.toLowerCase())?.id;
-    if (!id) return undefined;
-    const value = Number(id);
-    return Number.isNaN(value) ? undefined : value;
-  };
-
-  const closedStateKey = getCaseStateKeyByLabel("Closed");
-  const waitingOnWso2StateKey = getCaseStateKeyByLabel("Waiting On WSO2");
-  const solutionProposedStateKey = getCaseStateKeyByLabel("Solution Proposed");
-  const awaitingInfoStateKey = getCaseStateKeyByLabel("Awaiting Info");
+  const closedStateKey = CASE_STATE_IDS.CLOSED;
+  const waitingOnWso2StateKey = CASE_STATE_IDS.WAITING_ON_WSO2;
+  const solutionProposedStateKey = CASE_STATE_IDS.SOLUTION_PROPOSED;
+  const awaitingInfoStateKey = CASE_STATE_IDS.AWAITING_INFO;
 
   const menuOptions = data
     ? getCaseMenuOptions(data.statusId, {
