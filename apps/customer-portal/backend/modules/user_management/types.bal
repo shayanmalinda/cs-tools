@@ -124,9 +124,15 @@ public type Membership record {|
 
 # Membership details returned by the user management service.
 type UserManagementMembership record {|
-    *Membership;
+    # ID
+    string id;
+    # State of the Membership
+    string state;
     # Role of the Membership
     string? role;
+    # Contact details
+    ContactMinimal contact?;
+    json...;
 |};
 
 # ContactMinimal Details.
