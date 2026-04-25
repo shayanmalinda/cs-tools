@@ -65,6 +65,9 @@ export default function EditUserPage({ mode = "invite" }: { mode?: "invite" | "e
   const [email, setEmail] = useState(state?.email ?? "");
   const [firstName, setFirstName] = useState(state?.firstName ?? "");
   const [lastName, setLastName] = useState(state?.lastName ?? "");
+  const rolesUnchanged =
+    roles.length === initialRoles.length && roles.every((selectedRole) => initialRoles.includes(selectedRole));
+  const hasAnyRole = roles.length > 0;
 
   const { projectId } = useProject();
   const project = useSuspenseQuery(projects.all()).data.find((project) => project.id === projectId);
@@ -221,10 +224,12 @@ export default function EditUserPage({ mode = "invite" }: { mode?: "invite" | "e
         <Button
           disabled={
             mode === "edit"
-              ? isSystemUserReadOnly ||
-                JSON.stringify(roles) === JSON.stringify(initialRoles) ||
-                editUserMutation.isPending
-              : createUserMutation.isPending || validateUserMutation.isPending
+              ? isSystemUserReadOnly || rolesUnchanged || !hasAnyRole || editUserMutation.isPending
+              : !hasAnyRole ||
+                !email.trim() ||
+                !firstName.trim() ||
+                createUserMutation.isPending ||
+                validateUserMutation.isPending
           }
           variant="contained"
           startIcon={
