@@ -162,9 +162,9 @@ export default function CaseDetailsDetailsPanel({
             <Typography {...labelSx}>{overviewIdLabel}</Typography>
             <Typography {...valueSx}>{formatValue(data?.number)}</Typography>
           </Box>
-          {isServiceRequest && data?.internalId ? (
+          {data?.internalId ? (
             <Box>
-              <Typography {...labelSx}>WSO2 Case Id</Typography>
+              <Typography {...labelSx}>WSO2 Case ID</Typography>
               <Typography {...valueSx}>
                 {formatValue(data.internalId)}
               </Typography>
