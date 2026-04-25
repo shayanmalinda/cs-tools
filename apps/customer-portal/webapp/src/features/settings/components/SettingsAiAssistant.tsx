@@ -21,6 +21,7 @@ import {
   Paper,
   Switch,
   Typography,
+  alpha,
   colors,
 } from "@wso2/oxygen-ui";
 import { Bot, Sparkles } from "@wso2/oxygen-ui-icons-react";
@@ -138,9 +139,9 @@ export default function SettingsAiAssistant({
       <Paper
         sx={{
           p: 2.5,
-          bgcolor: colors.grey[100],
+          bgcolor: alpha(colors.blue[500], 0.06),
           border: "1px solid",
-          borderColor: colors.grey[300],
+          borderColor: alpha(colors.blue[500], 0.2),
         }}
       >
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
@@ -148,15 +149,16 @@ export default function SettingsAiAssistant({
             sx={{
               width: 40,
               height: 40,
-              bgcolor: colors.grey[200],
-              color: colors.grey[700],
+              bgcolor: alpha(colors.blue[500], 0.12),
+              color: colors.blue[700],
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
+              border: "none",
             }}
           >
-            <Sparkles size={20} color={colors.grey[700]} />
+            <Sparkles size={20} color={colors.blue[600]} />
           </Paper>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6" color="text.primary" sx={{ mb: 0.5 }}>

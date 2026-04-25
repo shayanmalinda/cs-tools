@@ -55,6 +55,7 @@ export default function useGetCaseComments(
       createdBy: activity.createdBy,
       createdByFirstName: activity.createdByFirstName,
       createdByLastName: activity.createdByLastName,
+      createdByFullName: activity.createdByFullName,
       type: activity.type,
       fileName: activity.fileName,
       contentType: activity.contentType,

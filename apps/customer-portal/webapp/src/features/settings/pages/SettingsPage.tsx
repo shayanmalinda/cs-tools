@@ -98,7 +98,7 @@ export default function SettingsPage(): JSX.Element {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <TabBar
         tabs={tabs.map((t) => ({
           id: t.id,

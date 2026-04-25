@@ -59,12 +59,8 @@ import { useResolvedInlineImageHtml } from "@features/support/hooks/useResolvedI
 import { useGetAttachment } from "@api/useGetAttachment";
 
 function commentAuthorDisplayName(comment: CaseComment): string {
-  const fromNames = [comment.createdByFirstName, comment.createdByLastName]
-    .filter((p) => p != null && String(p).trim() !== "")
-    .join(" ")
-    .trim();
-  if (fromNames.length > 0) {
-    return fromNames;
+  if (comment.createdByFullName?.trim()) {
+    return comment.createdByFullName.trim();
   }
   return comment.createdBy?.trim() || "Unknown";
 }
