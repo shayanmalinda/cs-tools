@@ -39,6 +39,7 @@ import {
   CaseType,
   CaseStatus,
 } from "@features/support/constants/supportConstants";
+import { getLast30DaysUtcRange } from "@features/support/utils/support";
 import ListPageHeader from "@components/list-view/ListPageHeader";
 import ListItems from "@components/list-view/ListItems";
 import ChangeRequestsList from "@features/operations/components/change-requests/ChangeRequestsList";
@@ -165,6 +166,11 @@ export default function DashboardItemsPage({
     permissions.hasEngagements;
   const crEnabled = !!projectId && permissions.hasCR && !isProjectLoading;
 
+  const closedLast30dRange = useMemo(
+    () => (mode === "closed-last-30d" ? getLast30DaysUtcRange() : undefined),
+    [mode],
+  );
+
   // --- Data fetching (10 items each — single-page query, never loads more) ---
   const {
     data: casesQueryData,
@@ -173,7 +179,11 @@ export default function DashboardItemsPage({
   } = useGetProjectCasesPage(
     projectId || "",
     {
-      filters: { caseTypes: [CaseType.DEFAULT_CASE], statusIds: apiStatusIds },
+      filters: {
+        caseTypes: [CaseType.DEFAULT_CASE],
+        statusIds: apiStatusIds,
+        ...closedLast30dRange,
+      },
     },
     0,
     10,
@@ -190,6 +200,7 @@ export default function DashboardItemsPage({
       filters: {
         caseTypes: [CaseType.SERVICE_REQUEST],
         statusIds: apiStatusIds,
+        ...closedLast30dRange,
       },
     },
     0,
@@ -207,6 +218,7 @@ export default function DashboardItemsPage({
       filters: {
         caseTypes: [CaseType.SECURITY_REPORT_ANALYSIS],
         statusIds: apiStatusIds,
+        ...closedLast30dRange,
       },
     },
     0,
@@ -220,7 +232,13 @@ export default function DashboardItemsPage({
     isError: isEngError,
   } = useGetProjectCasesPage(
     projectId || "",
-    { filters: { caseTypes: [CaseType.ENGAGEMENT], statusIds: apiStatusIds } },
+    {
+      filters: {
+        caseTypes: [CaseType.ENGAGEMENT],
+        statusIds: apiStatusIds,
+        ...closedLast30dRange,
+      },
+    },
     0,
     10,
     { enabled: engEnabled },
@@ -232,7 +250,12 @@ export default function DashboardItemsPage({
     isError: isCrError,
   } = useGetChangeRequests(
     projectId || "",
-    { filters: { stateKeys: crStateKeys } },
+    {
+      filters: {
+        stateKeys: crStateKeys,
+        ...closedLast30dRange,
+      },
+    },
     0,
     10,
     { enabled: crEnabled },
