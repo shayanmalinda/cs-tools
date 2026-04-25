@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { useState } from "react";
 import { Stack, Checkbox, FormControlLabel, Typography, Box, pxToRem } from "@wso2/oxygen-ui";
 import { Code, Crown, Monitor, Shield } from "@wso2/oxygen-ui-icons-react";
 import { MOCK_ROLES } from "@src/mocks/data/users";
@@ -29,11 +30,13 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ value, onChange, readOnly = false }: RoleSelectorProps) {
   const hasSystemUser = value.includes("System User");
+  const [roleRequiredError, setRoleRequiredError] = useState(false);
 
   const toggleRole = (role: Role) => {
     if (readOnly) return;
 
     if (role === "System User") {
+      setRoleRequiredError(false);
       onChange(hasSystemUser ? ["Portal User"] : ["System User"]);
       return;
     }
@@ -41,11 +44,18 @@ export function RoleSelector({ value, onChange, readOnly = false }: RoleSelector
     if (hasSystemUser) return;
 
     if (value.includes(role)) {
+      if (value.length === 1) {
+        setRoleRequiredError(true);
+        return;
+      }
+
+      setRoleRequiredError(false);
       const nextRoles = value.filter((existingRole) => existingRole !== role);
-      onChange(nextRoles.length > 0 ? nextRoles : ["Portal User"]);
+      onChange(nextRoles);
       return;
     }
 
+    setRoleRequiredError(false);
     onChange([...value, role]);
   };
 
@@ -74,6 +84,11 @@ export function RoleSelector({ value, onChange, readOnly = false }: RoleSelector
             System Users are used for machine-to-machine integrations and cannot hold additional roles.
           </Typography>
         </Box>
+      )}
+      {roleRequiredError && (
+        <Typography variant="caption" color="error.main" fontWeight="medium">
+          At least one role is required.
+        </Typography>
       )}
     </Stack>
   );
