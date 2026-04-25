@@ -27,11 +27,13 @@ import {
 import { Bot, Sparkles } from "@wso2/oxygen-ui-icons-react";
 import { useCallback, useState, useMemo, useEffect, type JSX } from "react";
 import useGetProjectDetails from "@api/useGetProjectDetails";
-import useInfiniteProjects from "@api/useGetProjects";
 import { usePatchProject } from "@features/settings/api/usePatchProject";
-import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
-import { setNoveraChatEnabled } from "@features/settings/utils/settingsStorage";
+import {
+  setNoveraChatEnabled,
+  setPendingSuccessMessage,
+  setPendingSettingsTab,
+} from "@features/settings/utils/settingsStorage";
 import {
   SETTINGS_AI_ADMIN_ONLY_HINT,
   SETTINGS_AI_CAPABILITIES_SECTION_TITLE,
@@ -57,12 +59,7 @@ export default function SettingsAiAssistant({
   projectId,
   canEdit = true,
 }: SettingsAiAssistantProps): JSX.Element {
-  const { showSuccess } = useSuccessBanner();
   const { showError } = useErrorBanner();
-  const { refetch: refetchProjects } = useInfiniteProjects({
-    pageSize: 20,
-    enabled: !!projectId,
-  });
   const { data: projectDetails, isLoading: isProjectDetailsLoading } =
     useGetProjectDetails(projectId);
   const patchProject = usePatchProject(projectId);
@@ -85,20 +82,12 @@ export default function SettingsAiAssistant({
   }, [projectHasAgent]);
 
   const notifyPatchSuccess = useCallback(
-    async (kind: AiAssistantPatchSuccessKind) => {
-      const refreshed = await refetchProjects();
-      const refreshedProject = refreshed.data?.pages
-        ?.flatMap((page) => page.projects ?? [])
-        ?.find((p) => p.id === projectId);
-      setNoveraOverride(null);
-      if (refreshedProject?.hasAgent !== undefined) {
-        setNoveraChatEnabled(refreshedProject.hasAgent);
-      } else if (projectDetails?.hasAgent !== undefined) {
-        setNoveraChatEnabled(projectDetails.hasAgent);
-      }
-      showSuccess(getAiAssistantPatchSuccessMessage(kind));
+    (kind: AiAssistantPatchSuccessKind) => {
+      setPendingSettingsTab("ai");
+      setPendingSuccessMessage(getAiAssistantPatchSuccessMessage(kind));
+      window.location.reload();
     },
-    [projectDetails, projectId, refetchProjects, showSuccess],
+    [],
   );
 
   const handlePatchError = useCallback(
@@ -119,7 +108,7 @@ export default function SettingsAiAssistant({
       setNoveraChatEnabled(checked);
       patchProject.mutate(checked ? { hasAgent: true } : { hasAgent: false }, {
         onSuccess: () => {
-          void notifyPatchSuccess(AiAssistantPatchSuccessKind.NOVERA);
+          notifyPatchSuccess(AiAssistantPatchSuccessKind.NOVERA);
         },
         onError: (err) => {
           handlePatchError(err);
