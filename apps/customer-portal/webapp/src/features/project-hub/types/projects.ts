@@ -35,6 +35,7 @@ export type ProjectListItem = {
   activeCasesCount: number;
   activeChatsCount: number;
   actionRequiredCount: number;
+  outstandingCount?: number;
   slaStatus: string;
 };
 
