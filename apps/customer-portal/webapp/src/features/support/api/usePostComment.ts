@@ -24,6 +24,7 @@ import { useAuthApiClient } from "@/hooks/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys, ApiMutationKeys } from "@constants/apiConstants";
 import type {
+import { parseApiResponseMessage } from "@utils/ApiError";
   PostCommentRequest,
   PostCommentVariables,
 } from "@features/support/types/supportApi";
@@ -80,9 +81,7 @@ export function usePostComment(): UseMutationResult<
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(
-          `Error posting comment: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
-        );
+        throw new Error(parseApiResponseMessage(text, response.status, response.statusText));
       }
     },
     onSuccess: () => {
