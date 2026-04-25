@@ -188,7 +188,6 @@ export default function EditUserPage({ mode = "invite" }: { mode?: "invite" | "e
                 px: 1.5,
                 py: 1,
                 bgcolor: alpha(theme.palette.info.main, 0.15),
-                borderLeft: `2px solid ${theme.palette.info.main}`,
               })}
             >
               <Typography variant="caption" color="info.dark" fontWeight="medium">
