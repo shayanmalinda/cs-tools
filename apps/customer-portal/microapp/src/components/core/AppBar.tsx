@@ -49,7 +49,9 @@ export function AppBar() {
     useLayout();
   const config = APP_BAR_CONFIG[appBarVariant];
   const { projectId } = useProject();
-  const project = useQuery(projects.all()).data?.find((project) => project.id === projectId);
+  const projectsData = useQuery(projects.all()).data;
+  const project = projectsData?.find((project) => project.id === projectId);
+  const hasMultipleProjects = (projectsData?.length ?? 0) > 1;
 
   const [projectSelectorAnchor, setProjectSelectorAnchor] = useState<HTMLButtonElement | null>(null);
   const isProjectSelectorOpen = Boolean(projectSelectorAnchor);
@@ -70,6 +72,7 @@ export function AppBar() {
   const navigateBack = () => navigate(-1);
 
   const openProjectSelector = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (!hasMultipleProjects) return;
     event.preventDefault();
     setProjectSelectorAnchor(event.currentTarget);
   };
@@ -135,7 +138,7 @@ export function AppBar() {
                 {project.name}
               </Typography>
             </Stack>
-            <ChevronDown color={theme.palette.text.secondary} size={pxToRem(18)} />
+            {hasMultipleProjects && <ChevronDown color={theme.palette.text.secondary} size={pxToRem(18)} />}
           </Button>
         )}
 
@@ -162,7 +165,9 @@ export function AppBar() {
       </MuiAppBar>
 
       {/* Popovers */}
-      <ProjectSelector anchorEl={projectSelectorAnchor} open={isProjectSelectorOpen} onClose={closeProjectSelector} />
+      {hasMultipleProjects && (
+        <ProjectSelector anchorEl={projectSelectorAnchor} open={isProjectSelectorOpen} onClose={closeProjectSelector} />
+      )}
     </>
   );
 }
