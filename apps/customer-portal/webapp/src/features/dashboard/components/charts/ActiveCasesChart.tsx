@@ -137,7 +137,7 @@ export const ActiveCasesChart = ({
           <Box sx={{ width: 52, height: 52, borderRadius: "50%", bgcolor: alpha(colors.grey?.[500] ?? "#6B7280", 0.08), display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Inbox size={24} color={colors.grey?.[400] ?? "#9CA3AF"} />
           </Box>
-          <Typography variant="body2" color="text.disabled">No data found</Typography>
+          <Typography variant="body2" color="text.disabled">No {DASHBOARD_CHART_TITLE_OUTSTANDING_OPERATIONS} found</Typography>
         </Box>
       ) : (
         <>
