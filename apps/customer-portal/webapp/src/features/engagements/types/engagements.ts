@@ -57,8 +57,7 @@ export type EngagementsListSectionProps = {
   onClearFilters: () => void;
   hideFiltersButton?: boolean;
   isStatFiltered?: boolean;
-  excludeS0: boolean;
-  restrictSeverityToLow: boolean;
+  engagementTypeOptions?: { value: string; label: string }[];
   isProjectContextLoading: boolean;
   sortField: EngagementsSortField;
   onSortFieldChange: (value: string) => void;
