@@ -133,7 +133,7 @@ export default function AnnouncementDetailsPanel({
           gap: 1,
         }}
       >
-        {data.number && (
+        {(data.number || data.internalId) && (
           <Box
             sx={{
               display: "flex",
@@ -145,6 +145,14 @@ export default function AnnouncementDetailsPanel({
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              {data.internalId && (
+                <>
+                  <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                    {data.internalId}
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">|</Typography>
+                </>
+              )}
               <Typography variant="caption" color="text.secondary">
                 {data.number}
               </Typography>
