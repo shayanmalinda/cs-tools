@@ -68,9 +68,12 @@ export function resolveProjectHubHeaderSubtitle(): string {
   return PROJECT_HUB_SUBTITLE_SELECT;
 }
 
-/** Show the search bar when the user has more than one project. */
-export function shouldShowProjectHubSearchBar(totalRecords: number): boolean {
-  return totalRecords > PROJECT_HUB_MIN_PROJECTS_FOR_SEARCH;
+/** Show the search bar when the user has more than one project or has an active search query. */
+export function shouldShowProjectHubSearchBar(
+  totalRecords: number,
+  searchQuery: string,
+): boolean {
+  return totalRecords > PROJECT_HUB_MIN_PROJECTS_FOR_SEARCH || searchQuery.trim().length > 0;
 }
 
 /**

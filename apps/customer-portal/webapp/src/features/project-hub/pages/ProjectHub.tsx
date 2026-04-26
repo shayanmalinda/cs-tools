@@ -173,7 +173,7 @@ export default function ProjectHub(): JSX.Element {
     ],
   );
 
-  const showSearchBar = shouldShowProjectHubSearchBar(totalRecords);
+  const showSearchBar = shouldShowProjectHubSearchBar(totalRecords, searchQuery);
   const hideHeaderBlock = shouldHideProjectHubHeaderBlock(
     isError,
     isLoading,
