@@ -17,6 +17,7 @@
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -26,8 +27,12 @@ import {
   Typography,
 } from "@wso2/oxygen-ui";
 import { Printer, X } from "@wso2/oxygen-ui-icons-react";
-import { useCallback, type JSX } from "react";
-import { generateUpdateLevelsReportPdf } from "@features/updates/utils/updateLevelsReportPdf";
+import { useCallback, useState, type JSX } from "react";
+import {
+  generateUpdateLevelsReportPdf,
+  parseBugFixes,
+  parseDescriptionSections,
+} from "@features/updates/utils/updateLevelsReportPdf";
 import type { UpdateLevelsReportModalProps, UpdateDescriptionLevel } from "@features/updates/types/updates";
 
 function isInstructionsNonEmpty(text: string | null | undefined): boolean {
@@ -43,16 +48,25 @@ function formatTimestamp(ts: number): string {
 }
 
 function UpdateDescriptionItem({ item }: { item: UpdateDescriptionLevel }): JSX.Element {
+  const parsed = parseDescriptionSections(item.description);
+  const displayDesc = parsed.generalDescription || parsed.implementationDetails || parsed.impact;
+  const bugFixUrls = parseBugFixes(item.bugFixes);
   return (
     <Box sx={{ pl: 2, py: 0.5, borderLeft: "2px solid", borderColor: "divider" }}>
-      {item.description?.trim() && (
+      {displayDesc && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-          {item.description.trim()}
+          {displayDesc}
         </Typography>
       )}
-      {item.bugFixes?.trim() && (
+      {bugFixUrls.length > 0 && (
         <Typography variant="caption" color="text.secondary">
-          Bug fixes: {item.bugFixes.trim()}
+          Bug fixes:{" "}
+          {bugFixUrls.map((url, i) => (
+            <span key={i}>
+              {i > 0 && ", "}
+              <a href={url} target="_blank" rel="noreferrer">{url}</a>
+            </span>
+          ))}
         </Typography>
       )}
     </Box>
@@ -70,9 +84,15 @@ export default function UpdateLevelsReportModal({
   onView,
   rawData,
 }: UpdateLevelsReportModalProps): JSX.Element | null {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const handleDownloadPdf = useCallback(() => {
     if (!reportData) return;
-    generateUpdateLevelsReportPdf(reportData);
+    setIsDownloading(true);
+    setTimeout(() => {
+      generateUpdateLevelsReportPdf(reportData);
+      setIsDownloading(false);
+    }, 0);
   }, [reportData]);
 
   const handleLevelClick = useCallback(
@@ -278,91 +298,129 @@ export default function UpdateLevelsReportModal({
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
             Update Details
           </Typography>
-          {reportData.allEntries.map((entry, i) => (
-            <Box key={i} sx={{ mb: 3 }}>
-              <Box
-                sx={{
-                  bgcolor: "warning.main",
-                  color: "warning.contrastText",
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                  mb: 1,
-                }}
-              >
-                <Typography variant="subtitle2" fontWeight={700}>
-                  {entry.formattedDate} - Update No: {entry.updateNumber}
-                </Typography>
-                <Typography variant="caption">
-                  {entry.productName}-{entry.productVersion} ({entry.channel})
-                </Typography>
-              </Box>
-              {entry.description?.trim() && (
-                <Typography variant="body2" sx={{ mb: 1, pl: 1 }}>
-                  {entry.description.trim()}
-                </Typography>
-              )}
-              {entry.bugFixes?.trim() && (
-                <Typography variant="body2" sx={{ mb: 1, pl: 1 }}>
-                  <strong>Bug Fixes:</strong> {entry.bugFixes.trim()}
-                </Typography>
-              )}
-              {isInstructionsNonEmpty(entry.instructions) && (
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="caption" fontWeight={700} display="block" sx={{ pl: 1, mb: 0.5 }}>
-                    Instructions:
+          {reportData.allEntries.map((entry, i) => {
+            const parsedDesc = parseDescriptionSections(entry.description);
+            const bugFixUrls = parseBugFixes(entry.bugFixes);
+            return (
+              <Box key={i} sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    bgcolor: "warning.main",
+                    color: "warning.contrastText",
+                    px: 2,
+                    py: 1,
+                    borderRadius: 1,
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    {entry.formattedDate} - Update No: {entry.updateNumber}
                   </Typography>
-                  <Box
-                    component="pre"
-                    sx={{
-                      bgcolor: "grey.100",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 1,
-                      p: 1.5,
-                      m: 0,
-                      fontFamily: "monospace",
-                      fontSize: "0.75rem",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {entry.instructions?.trim()}
-                  </Box>
+                  <Typography variant="caption">
+                    {entry.productName}-{entry.productVersion} ({entry.channel})
+                  </Typography>
                 </Box>
-              )}
-              {(entry.securityAdvisories?.length ?? 0) > 0 && (
-                <Box sx={{ pl: 1 }}>
-                  <Typography
-                    variant="caption"
-                    fontWeight={700}
-                    color="error.main"
-                    display="block"
-                    sx={{ mb: 0.5 }}
-                  >
-                    Security Advisories:
-                  </Typography>
-                  <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                    {entry.securityAdvisories.map((adv, j) => (
-                      <Box component="li" key={j} sx={{ mb: 0.25 }}>
-                        <Typography variant="caption">
-                          <strong>{adv.id}</strong> ({adv.severity}): {adv.overview}
+                {parsedDesc.generalDescription && (
+                  <Box sx={{ mb: 1, pl: 1 }}>
+                    <Typography variant="caption" fontWeight={700} display="block">
+                      General Description:
+                    </Typography>
+                    <Typography variant="body2">{parsedDesc.generalDescription}</Typography>
+                  </Box>
+                )}
+                {parsedDesc.implementationDetails && (
+                  <Box sx={{ mb: 1, pl: 1 }}>
+                    <Typography variant="caption" fontWeight={700} display="block">
+                      Implementation Details:
+                    </Typography>
+                    <Typography variant="body2">{parsedDesc.implementationDetails}</Typography>
+                  </Box>
+                )}
+                {parsedDesc.impact && (
+                  <Box sx={{ mb: 1, pl: 1 }}>
+                    <Typography variant="caption" fontWeight={700} display="block">
+                      Impact:
+                    </Typography>
+                    <Typography variant="body2">{parsedDesc.impact}</Typography>
+                  </Box>
+                )}
+                {bugFixUrls.length > 0 && (
+                  <Box sx={{ mb: 1, pl: 1 }}>
+                    <Typography variant="caption" fontWeight={700} display="block">
+                      Bug Fixes:
+                    </Typography>
+                    <Box>
+                      {bugFixUrls.map((url, j) => (
+                        <Typography key={j} variant="body2">
+                          <a href={url} target="_blank" rel="noreferrer">{url}</a>
                         </Typography>
-                      </Box>
-                    ))}
+                      ))}
+                    </Box>
                   </Box>
-                </Box>
-              )}
-            </Box>
-          ))}
+                )}
+                {isInstructionsNonEmpty(entry.instructions) && (
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="caption" fontWeight={700} display="block" sx={{ pl: 1, mb: 0.5 }}>
+                      Instructions:
+                    </Typography>
+                    <Box
+                      component="pre"
+                      sx={{
+                        bgcolor: "grey.100",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 1,
+                        p: 1.5,
+                        m: 0,
+                        fontFamily: "monospace",
+                        fontSize: "0.75rem",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {entry.instructions?.trim()}
+                    </Box>
+                  </Box>
+                )}
+                {(entry.securityAdvisories?.length ?? 0) > 0 && (
+                  <Box sx={{ pl: 1 }}>
+                    <Typography
+                      variant="caption"
+                      fontWeight={700}
+                      color="error.main"
+                      display="block"
+                      sx={{ mb: 0.5 }}
+                    >
+                      Security Advisories:
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                      {entry.securityAdvisories.map((adv, j) => (
+                        <Box component="li" key={j} sx={{ mb: 0.25 }}>
+                          <Typography variant="caption">
+                            <strong>{adv.id}</strong> ({adv.severity}): {adv.overview}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            );
+          })}
         </Box>
       </DialogContent>
       <DialogActions
         className="print-hide"
         sx={{ "@media print": { display: "none !important" } }}
       >
-        <Button variant="outlined" color="warning" startIcon={<Printer size={18} />} onClick={handleDownloadPdf}>
-          Download PDF
+        <Button
+          variant="outlined"
+          color="warning"
+          startIcon={isDownloading ? <CircularProgress size={16} color="inherit" /> : <Printer size={18} />}
+          onClick={handleDownloadPdf}
+          disabled={isDownloading}
+        >
+          {isDownloading ? "Downloading..." : "Download PDF"}
         </Button>
         <Button variant="contained" color="warning" onClick={onClose}>
           Close
