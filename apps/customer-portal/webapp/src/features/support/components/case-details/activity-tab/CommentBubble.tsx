@@ -308,7 +308,7 @@ export default function CommentBubble({
                 •
               </Typography>
               <Typography variant="caption" color="text.secondary" component="span">
-                {comment.createdOn}
+                {formatCommentDate(comment.createdOn)}
               </Typography>
             </Stack>
             {attachmentCategory === "image" && (
