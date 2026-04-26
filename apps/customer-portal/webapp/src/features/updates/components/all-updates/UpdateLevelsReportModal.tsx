@@ -30,6 +30,7 @@ import { Printer, X } from "@wso2/oxygen-ui-icons-react";
 import { useCallback, useState, type JSX } from "react";
 import {
   generateUpdateLevelsReportPdf,
+  isSafeHttpUrl,
   parseBugFixes,
   parseDescriptionSections,
 } from "@features/updates/utils/updateLevelsReportPdf";
@@ -64,7 +65,11 @@ function UpdateDescriptionItem({ item }: { item: UpdateDescriptionLevel }): JSX.
           {bugFixUrls.map((url, i) => (
             <span key={i}>
               {i > 0 && ", "}
-              <a href={url} target="_blank" rel="noreferrer">{url}</a>
+              {isSafeHttpUrl(url) ? (
+                <a href={url} target="_blank" rel="noreferrer">{url}</a>
+              ) : (
+                url
+              )}
             </span>
           ))}
         </Typography>
@@ -90,8 +95,11 @@ export default function UpdateLevelsReportModal({
     if (!reportData) return;
     setIsDownloading(true);
     setTimeout(() => {
-      generateUpdateLevelsReportPdf(reportData);
-      setIsDownloading(false);
+      try {
+        generateUpdateLevelsReportPdf(reportData);
+      } finally {
+        setIsDownloading(false);
+      }
     }, 0);
   }, [reportData]);
 
@@ -352,7 +360,11 @@ export default function UpdateLevelsReportModal({
                     <Box>
                       {bugFixUrls.map((url, j) => (
                         <Typography key={j} variant="body2">
-                          <a href={url} target="_blank" rel="noreferrer">{url}</a>
+                          {isSafeHttpUrl(url) ? (
+                            <a href={url} target="_blank" rel="noreferrer">{url}</a>
+                          ) : (
+                            url
+                          )}
                         </Typography>
                       ))}
                     </Box>

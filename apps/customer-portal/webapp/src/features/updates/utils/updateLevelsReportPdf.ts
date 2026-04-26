@@ -72,7 +72,7 @@ export function parseDescriptionSections(raw: string | null | undefined): Descri
   const empty: DescriptionSections = { generalDescription: "", implementationDetails: "", impact: "" };
   if (!raw?.trim() || raw.trim().toLowerCase() === "n/a") return empty;
 
-  const headerRe = /(?:^|\n)\s*(General\s+Description|Implementation\s+[Dd]etails?|Impact)\s*:/gi;
+  const headerRe = /(?:^|\n)\s*(General\s+Description|Implementation\s+Details?|Impact)\s*:/gi;
   if (!headerRe.test(raw)) {
     return { ...empty, generalDescription: raw.trim() };
   }
@@ -100,9 +100,18 @@ export function parseDescriptionSections(raw: string | null | undefined): Descri
   return result;
 }
 
+export function isSafeHttpUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Parses the bugFixes field, which may be a JSON-encoded array of URL strings
- * or a plain string, filtering out "N/A" values.
+ * or a plain string, filtering out "N/A" values and non-http(s) schemes.
  */
 export function parseBugFixes(raw: string | null | undefined): string[] {
   if (!raw?.trim()) return [];
@@ -111,13 +120,13 @@ export function parseBugFixes(raw: string | null | undefined): string[] {
     if (Array.isArray(parsed)) {
       return parsed
         .map((item) => String(item).trim())
-        .filter((item) => item && item.toLowerCase() !== "n/a");
+        .filter((item) => item && item.toLowerCase() !== "n/a" && isSafeHttpUrl(item));
     }
   } catch {
     // not JSON
   }
   const t = raw.trim();
-  return t && t.toLowerCase() !== "n/a" ? [t] : [];
+  return t && t.toLowerCase() !== "n/a" && isSafeHttpUrl(t) ? [t] : [];
 }
 
 /**
