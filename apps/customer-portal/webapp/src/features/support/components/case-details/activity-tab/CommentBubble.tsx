@@ -171,7 +171,6 @@ export default function CommentBubble({
       sx={{
         gap: 2,
         minWidth: 0,
-        overflow: "hidden",
       }}
     >
       {isNovera ? (
