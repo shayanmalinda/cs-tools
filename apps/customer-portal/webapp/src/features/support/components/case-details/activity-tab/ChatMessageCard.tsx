@@ -219,7 +219,8 @@ export default function ChatMessageCard({
           fontSize: "0.875rem",
           lineHeight: 1.6,
           overflowX: "auto",
-          maxWidth: "100%",
+          width: "100%",
+          minWidth: 0,
           "& h1": {
             fontSize: "1.125rem",
             fontWeight: 600,
