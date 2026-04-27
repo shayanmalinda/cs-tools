@@ -170,6 +170,7 @@ export default function CommentBubble({
       alignItems="flex-start"
       sx={{
         gap: 2,
+        minWidth: 0,
       }}
     >
       {isNovera ? (
