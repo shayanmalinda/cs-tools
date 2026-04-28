@@ -349,7 +349,6 @@ const SecurityReportAnalysis = ({ fixedStatusIds, fixedClosedDateRange }: Securi
                 key={caseItem.id}
                 caseItem={caseItem}
                 onClick={handleCaseClick}
-                showInternalId
               />
             ))}
           </Box>
