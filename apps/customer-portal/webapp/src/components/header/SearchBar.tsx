@@ -197,8 +197,9 @@ export default function SearchBar({
   }, [showDropdown]);
 
   const isAnyLoading = isLoading || isChangeRequestLoading;
-  const isAnyError = isError && isChangeRequestError;
   const hasNoResults = cases.length === 0 && changeRequests.length === 0;
+  const hasAnyError = isError || isChangeRequestError;
+  const shouldShowError = hasAnyError && hasNoResults;
 
   const dropdownContent = showDropdown && dropdownRect && (
     <Paper
@@ -230,7 +231,7 @@ export default function SearchBar({
         <Box sx={{ p: 2 }}>
           <ListSkeleton />
         </Box>
-      ) : isAnyError ? (
+      ) : shouldShowError ? (
         <Box
           sx={{
             display: "flex",
@@ -272,14 +273,14 @@ export default function SearchBar({
           <Stack spacing={2}>
             {cases.map((caseItem) => (
               <SearchCaseCard
-                key={caseItem.id}
+                key={`case-${caseItem.id}`}
                 caseItem={caseItem}
                 onClick={handleCaseClick}
               />
             ))}
             {changeRequests.map((cr) => (
               <SearchChangeRequestCard
-                key={cr.id}
+                key={`change-request-${cr.id}`}
                 changeRequest={cr}
                 onClick={handleChangeRequestClick}
               />
