@@ -64,7 +64,6 @@ export default function SearchChangeRequestCard({
       caseItem={caseShaped}
       onClick={() => onClick(changeRequest)}
       hideSeverity
-      showInternalId
     />
   );
 }
