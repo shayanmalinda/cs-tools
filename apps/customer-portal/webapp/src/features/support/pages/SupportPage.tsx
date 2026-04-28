@@ -201,7 +201,6 @@ export default function SupportPage(): JSX.Element {
             <OutstandingCasesList
               cases={cases}
               isLoading={isCasesLoading}
-              showInternalId
               onCaseClick={
                 projectId
                   ? (c) =>

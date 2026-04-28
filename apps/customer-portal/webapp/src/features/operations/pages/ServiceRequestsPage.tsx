@@ -434,7 +434,6 @@ export default function ServiceRequestsPage(): JSX.Element {
         hasListRefinement={listHasRefinement}
         entityName={SERVICE_REQUESTS_ENTITY_LABEL}
         hideSeverity
-        showInternalId
         onCaseClick={(c) =>
           navigate(
             `/projects/${projectId}/${navSegment}/service-requests/${c.id}`,
