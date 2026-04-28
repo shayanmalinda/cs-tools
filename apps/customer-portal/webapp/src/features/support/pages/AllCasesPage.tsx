@@ -402,7 +402,6 @@ export default function AllCasesPage(): JSX.Element {
         isError={isCasesError}
         hasListRefinement={listHasRefinement}
         entityName="cases"
-        showInternalId
         onCaseClick={(c) =>
           navigate(`/projects/${projectId}/support/cases/${c.id}`)
         }
