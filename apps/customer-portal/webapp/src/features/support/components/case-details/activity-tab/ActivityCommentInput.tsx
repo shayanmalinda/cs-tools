@@ -44,7 +44,7 @@ import { CommentType } from "@features/support/constants/supportConstants";
 export default function ActivityCommentInput({
   caseId,
   caseStatus,
-}: ActivityCommentInputProps): JSX.Element {
+}: ActivityCommentInputProps): JSX.Element | null {
   const [value, setValue] = useState("");
   const [resetTrigger, setResetTrigger] = useState(0);
   const postComment = usePostComment();
