@@ -37,16 +37,28 @@ export function useModifierAwareNavigate(): (
 
   useEffect(() => {
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Control" || e.key === "Meta") modifierKeyRef.current = true;
+      if (e.key === "Control" || e.key === "Meta")
+        modifierKeyRef.current = true;
     };
     const onKeyUp = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Control" || e.key === "Meta") modifierKeyRef.current = false;
+      if (e.key === "Control" || e.key === "Meta")
+        modifierKeyRef.current = false;
+    };
+    const onBlur = () => {
+      modifierKeyRef.current = false;
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) modifierKeyRef.current = false;
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
 
@@ -59,7 +71,7 @@ export function useModifierAwareNavigate(): (
           resolved.pathname +
           (resolved.search ?? "") +
           (resolved.hash ?? "");
-        window.open(url, "_blank");
+        window.open(url, "_blank", "noopener,noreferrer");
       } else {
         navigate(path, options);
       }
