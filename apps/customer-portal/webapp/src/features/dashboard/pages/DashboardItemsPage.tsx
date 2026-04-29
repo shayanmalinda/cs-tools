@@ -309,16 +309,17 @@ export default function DashboardItemsPage({
         relative: "path",
       });
     },
-    [navigateOrOpenNewTab ],
+    [navigateOrOpenNewTab],
   );
 
   const handleSraClick = useCallback(
     (item: CaseListItem) => {
-      navigate(`../../security-center/security-report-analysis/${item.id}`, {
-        relative: "path",
-      });
+      navigateOrOpenNewTab(
+        `../../security-center/security-report-analysis/${item.id}`,
+        { relative: "path" },
+      );
     },
-    [navigate],
+    [navigateOrOpenNewTab],
   );
 
   const handleEngClick = useCallback(
@@ -327,16 +328,16 @@ export default function DashboardItemsPage({
         relative: "path",
       });
     },
-    [navigate],
+    [navigateOrOpenNewTab],
   );
 
   const handleCrClick = useCallback(
     (item: ChangeRequestItem) => {
-      navigate(`../../operations/change-requests/${item.id}`, {
+      navigateOrOpenNewTab(`../../operations/change-requests/${item.id}`, {
         relative: "path",
       });
     },
-    [navigate],
+    [navigateOrOpenNewTab],
   );
 
   // --- Section definitions ---
