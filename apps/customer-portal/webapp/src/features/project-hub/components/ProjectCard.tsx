@@ -22,7 +22,7 @@ import ProjectCardActions from "@features/project-hub/components/project-card/Pr
 import ProjectCardBadges from "@features/project-hub/components/project-card/ProjectCardBadges";
 import ProjectCardInfo from "@features/project-hub/components/project-card/ProjectCardInfo";
 import ProjectCardStats from "@features/project-hub/components/project-card/ProjectCardStats";
-import { setLastSelectedProjectId } from "@features/settings/utils/settingsStorage";
+import { setLastSelectedProject } from "@features/settings/utils/settingsStorage";
 import type { ProjectCardProps } from "@features/project-hub/types/projectHub";
 import { ProjectClosureState } from "@/types/permission";
 
@@ -48,7 +48,7 @@ export default function ProjectCard({
   const isSuspended = closureState === ProjectClosureState.SUSPENDED;
 
   const handleViewDashboard = () => {
-    setLastSelectedProjectId(id);
+    setLastSelectedProject({ id });
     if (onViewDashboard) {
       onViewDashboard();
     } else {
