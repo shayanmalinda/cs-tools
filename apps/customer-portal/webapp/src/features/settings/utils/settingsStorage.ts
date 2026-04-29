@@ -16,11 +16,15 @@
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar_collapsed";
 const LAST_SELECTED_PROJECT_ID_KEY = "last_selected_project_id";
+const LAST_SELECTED_PROJECT_KEY = "last_selected_project";
 const NOVERA_CHAT_ENABLED_KEY = "novera_chat_enabled";
+
+export interface LastSelectedProject {
+  id: string;
+}
 const PENDING_SUCCESS_MESSAGE_KEY = "pending_success_message";
 const PENDING_SETTINGS_TAB_KEY = "pending_settings_tab";
 const PENDING_CASE_DETAILS_TAB_KEY = "pending_case_details_tab";
-
 
 /**
  * Reads the sidebar collapsed state from localStorage.
@@ -52,23 +56,59 @@ export function setSidebarCollapsed(collapsed: boolean): void {
 }
 
 /**
- * Reads the last selected project id from localStorage.
+ * Reads the last selected project (id, name, key) from localStorage.
+ * Falls back to the legacy ID-only entry if the richer record is absent.
  *
- * @returns {string | null} The persisted project id, or null.
+ * @returns {LastSelectedProject | null} The persisted project, or null.
  */
-export function getLastSelectedProjectId(): string | null {
+export function getLastSelectedProject(): LastSelectedProject | null {
   try {
-    return localStorage.getItem(LAST_SELECTED_PROJECT_ID_KEY);
+    const stored = localStorage.getItem(LAST_SELECTED_PROJECT_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as { id?: string };
+      if (typeof parsed.id === "string" && parsed.id.length === 32) {
+        return { id: parsed.id };
+      }
+    }
+    const legacyId = localStorage.getItem(LAST_SELECTED_PROJECT_ID_KEY);
+    if (legacyId && legacyId.length === 32) {
+      return { id: legacyId };
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 /**
+ * Reads the last selected project id from localStorage.
+ *
+ * @returns {string | null} The persisted project id, or null.
+ */
+export function getLastSelectedProjectId(): string | null {
+  return getLastSelectedProject()?.id ?? null;
+}
+
+/**
+ * Persists the last selected project (id, name, key) to localStorage.
+ * Only stores when the id is exactly 32 characters (valid project id format).
+ *
+ * @param {LastSelectedProject} project - The project to persist.
+ */
+export function setLastSelectedProject(project: LastSelectedProject): void {
+  if (!project.id || project.id.length !== 32) return;
+  try {
+    localStorage.setItem(LAST_SELECTED_PROJECT_KEY, JSON.stringify(project));
+  } catch {
+    return;
+  }
+}
+
+/**
  * Persists the last selected project id to localStorage.
- * Only stores the id when it is exactly 32 characters (valid project id format).
  *
  * @param {string} projectId - The selected project id.
+ * @deprecated Prefer {@link setLastSelectedProject}.
  */
 export function setLastSelectedProjectId(projectId: string): void {
   if (projectId.length !== 32) return;
