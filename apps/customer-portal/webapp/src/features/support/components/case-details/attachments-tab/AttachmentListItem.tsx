@@ -39,6 +39,7 @@ import {
 import { useEffect, useRef, useState, type JSX } from "react";
 import type { CaseAttachment } from "@features/support/types/cases";
 import {
+  formatDateTime,
   formatFileSize,
   getAttachmentFileCategory,
 } from "@features/support/utils/support";
@@ -303,7 +304,7 @@ export default function AttachmentListItem({
             •
           </Typography>
           <Typography variant="caption" color="text.secondary" component="span">
-            {attachment.createdOn}
+            {formatDateTime(attachment.createdOn)}
           </Typography>
         </Stack>
       </Paper>
