@@ -324,7 +324,7 @@ export default function GenerateTokenModal({
               variant="contained"
               color="warning"
               onClick={handleGenerate}
-              disabled={createMutation.isPending || !!robotNameError}
+              disabled={createMutation.isPending || !!robotNameError || (tokenType === RegistryTokenType.SERVICE && !selectedUser)}
               startIcon={
                 createMutation.isPending ? (
                   <CircularProgress size={16} color="inherit" />
