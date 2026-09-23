@@ -33,6 +33,9 @@ import (
 // downstream project-contact onboarding service, which is keyed on it.
 type entityProjectResolver interface {
 	GetProject(ctx context.Context, id string) (entity.ProjectDetailsView, error)
+	// SyncProjectContact asks entity-service to ingest one membership from
+	// Salesforce now. Only called when directOnboarding is set.
+	SyncProjectContact(ctx context.Context, membershipSfID string) error
 }
 
 // contactsClient abstracts the project-contact onboarding service operations
@@ -51,12 +54,41 @@ type contactsClient interface {
 type ContactHandler struct {
 	entity   entityProjectResolver
 	contacts contactsClient
+	// directOnboarding is CSM_MIGRATION_DIRECT_ONBOARDING_ENABLED. It
+	// belongs to the ServiceNow-to-CSM cutover and is off in every
+	// deployment until that day: off means these handlers behave exactly as
+	// they always have, because the block guarded by it is never entered.
+	directOnboarding bool
 }
 
 // NewContactHandler creates a ContactHandler backed by the given entity and
-// project-contact onboarding service clients.
-func NewContactHandler(entityClient entityProjectResolver, contactsClient contactsClient) *ContactHandler {
-	return &ContactHandler{entity: entityClient, contacts: contactsClient}
+// project-contact onboarding service clients. directOnboarding turns on the
+// immediate membership sync; see ContactHandler.directOnboarding and
+// syncMembership.
+func NewContactHandler(entityClient entityProjectResolver, contactsClient contactsClient, directOnboarding bool) *ContactHandler {
+	return &ContactHandler{entity: entityClient, contacts: contactsClient, directOnboarding: directOnboarding}
+}
+
+// syncMembership asks entity-service to ingest a membership the caller has
+// just changed in Salesforce, so the CSM database -- and, for a new
+// invitation, the Asgardeo account and the invitation email that follow from
+// it -- are done inside this request instead of whenever the Salesforce
+// change event completes its trip through the publisher, Service Bus and the
+// subscriber.
+//
+// Best-effort on purpose. The Salesforce write has already succeeded by the
+// time this runs, and its change event reaches entity-service by the old
+// path regardless, so a failure here costs a few seconds of freshness, not
+// the onboarding. Failing the admin's request over it would be a lie: their
+// change did happen. Nothing about the response depends on the outcome.
+func (h *ContactHandler) syncMembership(ctx context.Context, membershipSfID, userID string) {
+	if !h.directOnboarding || membershipSfID == "" {
+		return
+	}
+	if err := h.entity.SyncProjectContact(ctx, membershipSfID); err != nil {
+		slog.WarnContext(ctx, "entity SyncProjectContact failed; the Salesforce event will cover it",
+			"userID", userID, "membershipSfId", membershipSfID, "err", summarizeErr(err))
+	}
 }
 
 // GetProjectContacts handles GET /projects/{id}/contacts.
@@ -133,6 +165,7 @@ func (h *ContactHandler) CreateProjectContact(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	h.syncMembership(r.Context(), result.ID, user.UserID)
 	writeJSONValue(w, http.StatusOK, dto.MapMembership(result))
 }
 
@@ -165,6 +198,7 @@ func (h *ContactHandler) RemoveProjectContact(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	h.syncMembership(r.Context(), result.ID, user.UserID)
 	_ = result // this endpoint returns a fixed success message here, not the membership details.
 	writeJSONValue(w, http.StatusOK, map[string]string{"message": "Project contact removed successfully!"})
 }
@@ -208,6 +242,7 @@ func (h *ContactHandler) UpdateProjectContactRole(w http.ResponseWriter, r *http
 		return
 	}
 
+	h.syncMembership(r.Context(), result.ID, user.UserID)
 	writeJSONValue(w, http.StatusOK, dto.MapMembership(result))
 }
 
