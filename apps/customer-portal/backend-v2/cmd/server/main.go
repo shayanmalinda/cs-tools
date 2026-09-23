@@ -166,7 +166,15 @@ func main() {
 	// listener, so the JWKS is fetched and refreshed once per process.
 	tokenValidator := middleware.NewTokenValidator(authCfg)
 
-	userHandler := handler.NewUserHandler(entityClient, scimClient)
+	// CSM_MIGRATION_* flags belong to the ServiceNow-to-CSM cutover: opt-in,
+	// off unless the value is exactly "true", and off means the portal
+	// behaves exactly as it does today.
+	csmMigrationFirstAccess := os.Getenv("CSM_MIGRATION_FIRST_ACCESS_ENABLED") == "true"
+	if csmMigrationFirstAccess {
+		slog.Info("CSM_MIGRATION_FIRST_ACCESS_ENABLED=true; an invited user's first profile load will complete their onboarding")
+	}
+
+	userHandler := handler.NewUserHandler(entityClient, scimClient, csmMigrationFirstAccess)
 	projectHandler := handler.NewProjectHandler(entityClient)
 	projectStatsHandler := handler.NewProjectStatsHandler(entityClient)
 	caseHandler := handler.NewCaseHandler(entityClient)

@@ -174,6 +174,14 @@ A separate service (not entity-service, not SCIM) — see
 | `AUTH_TOKEN_VALIDATOR_ENABLED` | `false` skips JWT signature verification — **local development only**; `.env.example` ships `false` for local convenience. Production **must** set this to `true` with a real `AUTH_JWKS_ENDPOINT`/`AUTH_ISSUER`/`AUTH_AUDIENCE` |
 | `AUTH_ADMIN_ROLE` | The role string (from entity-service's `GET /users/me` `roles`) that grants admin privileges for registry-token and project-contact management |
 
+### ServiceNow-to-CSM cutover
+
+Every flag for that cutover is named `CSM_MIGRATION_*`, is opt-in (on only when the value is exactly `true`), and is off in every environment until cutover day. Off means the portal behaves exactly as it does today: the guarded code is never entered, so no extra request leaves the process.
+
+| Variable | Description |
+|---|---|
+| `CSM_MIGRATION_FIRST_ACCESS_ENABLED` | After a profile load, ask entity-service (`POST /users/me/memberships/register`) to complete the caller's onboarding: clear their Salesforce lockout flag, set the membership to `REGISTERED`, refresh the CSM database. Runs after the response is written, on its own context; a failure is logged and dropped. entity-service only registers that route when its own `CSM_MIGRATION_MEMBERSHIP_REGISTRATION_ENABLED` and membership-ingest flags are on |
+
 ### Server
 
 | Variable | Description |

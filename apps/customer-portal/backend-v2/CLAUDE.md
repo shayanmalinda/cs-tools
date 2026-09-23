@@ -751,6 +751,18 @@ struct actually carries it), and a stray extra check on `PATCH` would just be de
   fallback" logic (`mapUpstreamError`'s 400 case, `writeUpstreamMessage`) — never add a new
   upstream-error construction site that falls back to a raw excerpt instead of calling this function.
 
+## ServiceNow-to-CSM cutover flags
+
+Flags named `CSM_MIGRATION_*` belong to the migration off ServiceNow onto the CSM database. They are **opt-in** — on only when the environment value is exactly `"true"` — and off in every environment until cutover day, which is a config change rather than a release. "Off" is stronger than "does nothing": the guarded block is never entered, so no client is built and no request leaves the process, and the portal's behaviour is bit-for-bit what it is today. Don't add one that defaults on, and don't fold one into an existing `!= "false"` killswitch, whose default is the opposite.
+
+`CSM_MIGRATION_FIRST_ACCESS_ENABLED` (`UserHandler`) — after `GET /users/me` has written its response, calls entity-service `POST /users/me/memberships/register`, which completes onboarding for any membership of the caller still in state `INVITED`: it clears the contact's Salesforce "Locked Out" flag, sets the membership to `REGISTERED` and refreshes the CSM database. Three deliberate properties, all of them load-bearing:
+
+- **It runs after the response.** `GetMe` writes the profile first and only then starts the call, on `context.WithoutCancel(r.Context())` with its own timeout, so it can neither delay the profile nor be killed when the request ends.
+- **Its failure is a log line.** entity-service being down — or not registering the route at all, which is the normal state before cutover — must be invisible. The Salesforce event that follows an invitation reaches entity-service by its own path anyway, so nothing is lost.
+- **It is a no-op for almost every call.** The profile is loaded on every page, but entity-service answers immediately for a caller with nothing `INVITED`, which is every caller after their first sign-in.
+
+The portal deliberately does **not** write to Salesforce itself for this. entity-service already holds the Sales Entity client and the ingest, so the logic lives there and the portal stays free of Salesforce write credentials.
+
 ## Security
 
 - **Never commit secrets** — `.env`, `Config.toml`, or any file with real credentials must never be
