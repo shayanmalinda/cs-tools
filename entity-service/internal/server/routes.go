@@ -192,6 +192,14 @@ func NewRouter(db *pgxpool.Pool, cfg *config.Config) (http.Handler, service.Even
 	accountHandler := handler.NewAccountHandler(service.NewAccountService(accountRepo))
 
 	var salesforceEventHandler *handler.SalesforceEventHandler
+	// projectContactSyncHandler backs POST /project-contacts/{sfId}/sync, the
+	// customer portal's synchronous ingest of one membership it has just
+	// written to Salesforce. It is registered only alongside the
+	// membership-ingest-capable service below: with the ingest off, that
+	// service silently skips the Project_Contact__c branch, so a sync call
+	// would report success having done nothing — better that the route does
+	// not exist at all.
+	var projectContactSyncHandler *handler.ProjectContactSyncHandler
 	if db != nil && cfg.DataSource == config.DataSourcePostgres && cfg.SalesEntityConfigured() {
 		salesEntityClient := salesentity.New(cfg.SalesEntityBaseURL, salesentity.ClientCredentialsConfig{
 			TokenURL:     cfg.SalesEntityTokenURL,
@@ -204,13 +212,20 @@ func NewRouter(db *pgxpool.Pool, cfg *config.Config) (http.Handler, service.Even
 			// writes user/account_contact/project_contact rows and the
 			// DATABASE onboarding step, and publishes project_contact.invited
 			// when eventPublisher is configured (nil is a no-op there).
-			salesforceEventHandler = handler.NewSalesforceEventHandler(service.NewSalesforceEventServiceWithMembershipIngest(
+			membershipIngestSvc := service.NewSalesforceEventServiceWithMembershipIngest(
 				accountRepo, salesEntityClient, service.MembershipIngest{
 					Memberships: repository.NewProjectMembershipRepository(db),
 					Steps:       repository.NewOnboardingStepRepository(db),
 					SalesEntity: salesEntityClient,
 					Publisher:   eventPublisher,
-				}))
+				})
+			salesforceEventHandler = handler.NewSalesforceEventHandler(membershipIngestSvc)
+			// The same service, entered through the same HandleEvent: the
+			// sync endpoint replays an UPDATED / Project_Contact__c envelope
+			// rather than repeating any of the ingest. accessSvc restricts it
+			// to AUTH_INTERNAL_CLIENT_IDS.
+			projectContactSyncHandler = handler.NewProjectContactSyncHandler(
+				service.NewProjectContactSyncService(membershipIngestSvc, accessSvc))
 		} else {
 			salesforceEventHandler = handler.NewSalesforceEventHandler(service.NewSalesforceEventService(accountRepo, salesEntityClient))
 		}
@@ -710,6 +725,9 @@ func NewRouter(db *pgxpool.Pool, cfg *config.Config) (http.Handler, service.Even
 
 	if salesforceEventHandler != nil {
 		mux.HandleFunc("POST /salesforce/events", salesforceEventHandler.HandleEvent)
+	}
+	if projectContactSyncHandler != nil {
+		mux.HandleFunc("POST /project-contacts/{sfId}/sync", projectContactSyncHandler.SyncProjectContact)
 	}
 	if onboardingStepHandler != nil {
 		mux.HandleFunc("PUT /onboarding-steps/{membershipSfId}/{step}", onboardingStepHandler.UpsertOnboardingStep)

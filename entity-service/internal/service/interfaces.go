@@ -92,6 +92,26 @@ type SalesforceEventService interface {
 	HandleEvent(ctx context.Context, req domain.SalesforceEventRequest) error
 }
 
+// ProjectContactSyncService backs POST /project-contacts/{sfId}/sync: the
+// customer portal writes an invitation to Salesforce (still the source of
+// truth) and then calls this endpoint synchronously so the database row, the
+// Asgardeo account and the invitation e-mail all happen inside the admin's
+// own request instead of waiting for the Publisher -> Azure Service Bus ->
+// subscriber -> entity-service chain. The Service Bus event still arrives
+// seconds later and is a no-op, handled by the ingest's own duplicate guard
+// (Salesforce LastModifiedDate).
+type ProjectContactSyncService interface {
+	// Sync ingests one Salesforce Project_Contact__c by Id, exactly as an
+	// UPDATED / Project_Contact__c envelope on POST /salesforce/events
+	// would: it calls SalesforceEventService.HandleEvent rather than
+	// repeating any of the mapping. A ValidationError is returned for an
+	// Id that is not a 15- or 18-character alphanumeric Salesforce Id, and
+	// a ForbiddenError for any caller that is not an allow-listed internal
+	// service (AUTH_INTERNAL_CLIENT_IDS); every other error is the
+	// ingest's own, mapped the same way it is for the event endpoint.
+	Sync(ctx context.Context, sfID string) error
+}
+
 // EventPublishFailureService defines the operations available on the
 // event_publish_failures entity — see domain.EventPublishFailure's doc
 // comment for what it's for.

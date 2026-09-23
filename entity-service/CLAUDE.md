@@ -49,7 +49,7 @@ The server loads `.env` automatically on startup (silently ignored if absent). P
 | `SALES_ENTITY_CLIENT_ID` | no* | — | Choreo connection client id |
 | `SALES_ENTITY_CLIENT_SECRET` | no* | — | Choreo connection client secret |
 | `SALES_ENTITY_SCOPES` | no | — | Optional space-separated OAuth2 scopes for REST `sales/sales-entity-service` |
-| `SALESFORCE_MEMBERSHIP_INGEST_ENABLED` | no | `false` | Must be `"true"` for `POST /salesforce/events` to act on `Project_Contact__c`/`Contact` envelopes (see "Salesforce membership ingest" below). The Account branch is unaffected |
+| `SALESFORCE_MEMBERSHIP_INGEST_ENABLED` | no | `false` | Must be `"true"` for `POST /salesforce/events` to act on `Project_Contact__c`/`Contact` envelopes (see "Salesforce membership ingest" below), and for `POST /project-contacts/{sfId}/sync` to be registered at all. The Account branch is unaffected |
 
 \* `DB_USER`/`DB_PASSWORD`/`DB_NAME` are required when `DATA_SOURCE=postgres`
 and **optional** when `DATA_SOURCE=servicenow`, where entity reads and writes
@@ -300,6 +300,68 @@ write was based on.
 - `POST /onboarding-steps/search` — `{filters: {projectId?, membershipSfIds?,
   statuses?}, pagination}` → `{steps, total, limit, offset}`, newest first,
   `normalizePagination` (limit 20, max 50).
+
+### `POST /project-contacts/{sfId}/sync` — portal-driven onboarding
+
+**Why it exists.** Until now an admin inviting a user in the customer portal
+caused a Salesforce write, and this database only caught up when the
+Salesforce change event travelled Publisher → Azure Service Bus → subscriber
+→ entity-service: four hops of latency, four things that can be down, and an
+admin who sees nothing happen. The new design keeps the Salesforce write
+(Salesforce stays the source of truth) and has the portal then call this
+endpoint **directly and synchronously**, so the `project_contact` row, the
+Asgardeo account and the invitation e-mail all happen inside the admin's own
+request. The Service Bus event still arrives seconds later and must become a
+no-op — which needs no new code: the ingest's own duplicate guard
+(Salesforce `LastModifiedDate` vs the recorded DATABASE step) already skips
+it.
+
+**No request body; 204 on success.** `{sfId}` is the membership's
+`Project_Contact__c` Id, validated as 15 or 18 alphanumeric characters (the
+shape sales-entity-service accepts) — anything else is a 400 raised before
+the ingest is touched. The other statuses are the ingest's own, unchanged:
+404 (project/account not in this database), 409 (two `"user"` rows match the
+contact email), 503 (sales-entity-service down or a `role`/`project_group`
+row not seeded), 401 (sales-entity-service rejected this service's own
+credentials), 400 (unrecognised membership state).
+
+**It re-uses `HandleEvent`, it does not re-implement the ingest.**
+`projectContactSyncService.Sync` (`project_contact_sync_service.go`) builds
+`domain.SalesforceEventRequest{EventType: UPDATED, Entity:
+"Project_Contact__c", ReferenceID: sfId}` and calls the same
+`SalesforceEventService.HandleEvent` the event endpoint calls, on the same
+instance — `routes.go` keeps the membership-ingest-capable service in a
+variable and hands it to both handlers. The Sales Entity fetch, the
+duplicate guard, the transactional upsert, the DATABASE step and the
+`project_contact.invited` publish are therefore literally the same code,
+error mapping included. Copying the mapping into a second path would give
+the portal and the Service Bus subscriber two ingests to keep in step, and
+the duplicate guard only works because both write the same step row.
+
+**Internal callers only.** `AccessService.ResolveScope` must return
+`Unrestricted` (an `AUTH_INTERNAL_CLIENT_IDS` client); anyone else gets a
+`ForbiddenError`, the same gate and helper name (`requireInternalCaller`)
+`onboarding_step_service.go` and `sla_status_service.go` use. This endpoint
+provisions an Asgardeo account and sends an invitation for an arbitrary
+membership id, so a portal end user must never reach it directly — only the
+portal's own backend, as an allow-listed service.
+
+**No feature flag of its own.** The route is registered only when the
+membership ingest is enabled (`SALESFORCE_MEMBERSHIP_INGEST_ENABLED`, the
+same condition that decides whether the event handler gets the
+ingest-capable service) and a pool exists — with the ingest off, `HandleEvent`
+silently skips the `Project_Contact__c` branch, so a sync call would answer
+204 having done nothing; a route that does not exist is the honest answer.
+That flag plus the internal-caller check are sufficient: a third switch
+would only be one more thing to remember at cutover.
+
+**`POST /salesforce/events` is deliberately left unrestricted**, and that is
+not an oversight. Applying the same internal-caller check there would break
+`sales-apex-trigger-subscriber` the moment it deploys, unless that
+subscriber's own client id is added to `AUTH_INTERNAL_CLIENT_IDS` in Choreo
+first. The sync route above is the restricted equivalent for the portal's
+synchronous path; tightening the event route is a follow-up that needs the
+Choreo configuration change to land first.
 
 Seven call sites publish today, all ServiceNow-data-source-only (`DATA_SOURCE=servicenow`;
 there is no Postgres-backed equivalent for any of them). There is also one

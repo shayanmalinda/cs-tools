@@ -81,6 +81,80 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /project-contacts/{sfId}/sync:
+    post:
+      summary: >-
+        Ingest one Salesforce Project_Contact__c (membership) synchronously, by
+        Salesforce Id. The customer portal calls this straight after writing an
+        invitation to Salesforce (still the source of truth), so the database
+        row, the Asgardeo account and the invitation e-mail all happen inside
+        the admin's own request instead of waiting for the Publisher -> Azure
+        Service Bus -> subscriber -> entity-service chain; the Service Bus
+        event still arrives seconds later and is a no-op, handled by the
+        ingest's own Salesforce lastModifiedDate duplicate guard. Runs exactly
+        the same code an UPDATED / Project_Contact__c envelope on
+        POST /salesforce/events would (Sales Entity fetch, duplicate guard,
+        row upsert, DATABASE onboarding step, project_contact.invited publish).
+        There is no request body. Internal callers only
+        (AUTH_INTERNAL_CLIENT_IDS); anyone else gets 403. Registered only when
+        DATA_SOURCE=postgres, a pool exists, the REST sales-entity-service
+        config is present and SALESFORCE_MEMBERSHIP_INGEST_ENABLED=true —
+        otherwise the route does not exist at all, rather than reporting
+        success for an ingest that silently did nothing.
+      operationId: syncProjectContact
+      parameters:
+        - name: sfId
+          in: path
+          required: true
+          description: Salesforce Project_Contact__c Id (15 or 18 alphanumeric characters).
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Membership ingested (including a duplicate replay that was skipped as a no-op).
+        "400":
+          description: Bad request — the Id is not a 15 or 18 character alphanumeric Salesforce Id, or the membership's Salesforce state is not one this service recognises.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: Unauthorized — no caller identity to resolve, or sales-entity-service rejected this service's own credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "403":
+          description: Forbidden — the caller is not an allow-listed internal service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Not found — the project or account the membership refers to is not in this database.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "409":
+          description: Conflict — more than one user row matches the contact's email.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "503":
+          description: Salesforce is temporarily unavailable (including a 404 from sales-entity-service so the call can be retried), or a role / project_group row the membership mapping needs is not seeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /onboarding-steps/search:
     post:
       summary: >-
