@@ -19,7 +19,6 @@ package entity
 import (
 	"context"
 	"net/http"
-	"net/url"
 )
 
 // GetMe calls GET /users/me.
@@ -46,21 +45,6 @@ func (c *Client) GetMe(ctx context.Context) (GetUserMeResponse, error) {
 // a failure as nothing to act on.
 func (c *Client) RegisterInvitedMemberships(ctx context.Context) error {
 	_, err := c.do(ctx, http.MethodPost, "/users/me/memberships/register", nil)
-	return err
-}
-
-// SyncProjectContact calls POST /project-contacts/{sfId}/sync, which makes
-// entity-service ingest that one membership from Salesforce immediately --
-// the same work the Salesforce change event triggers when it arrives over
-// Service Bus seconds later, just without the wait. It returns 204 with no
-// body.
-//
-// NOTE: entity-service registers this route only when its membership ingest
-// is enabled, and restricts it to internal callers. Any other deployment
-// 404s or 403s, which is why the only caller treats a failure as nothing to
-// act on: the Service Bus event does the same work regardless.
-func (c *Client) SyncProjectContact(ctx context.Context, membershipSfID string) error {
-	_, err := c.do(ctx, http.MethodPost, "/project-contacts/"+url.PathEscape(membershipSfID)+"/sync", nil)
 	return err
 }
 

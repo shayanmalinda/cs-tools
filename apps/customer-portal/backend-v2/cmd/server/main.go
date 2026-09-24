@@ -170,10 +170,6 @@ func main() {
 	// off unless the value is exactly "true", and off means the portal
 	// behaves exactly as it does today.
 	csmMigrationFirstAccess := os.Getenv("CSM_MIGRATION_FIRST_ACCESS_ENABLED") == "true"
-	csmMigrationDirectOnboarding := os.Getenv("CSM_MIGRATION_DIRECT_ONBOARDING_ENABLED") == "true"
-	if csmMigrationDirectOnboarding {
-		slog.Info("CSM_MIGRATION_DIRECT_ONBOARDING_ENABLED=true; contact changes sync to the CSM database in the same request")
-	}
 	if csmMigrationFirstAccess {
 		slog.Info("CSM_MIGRATION_FIRST_ACCESS_ENABLED=true; an invited user's first profile load will complete their onboarding")
 	}
@@ -198,7 +194,7 @@ func main() {
 	globalHandler := handler.NewGlobalHandler(entityClient)
 	instanceHandler := handler.NewInstanceHandler(entityClient)
 	registryHandler := handler.NewRegistryHandler(entityClient, registryClient, adminRole)
-	contactHandler := handler.NewContactHandler(entityClient, userManagementClient, csmMigrationDirectOnboarding)
+	contactHandler := handler.NewContactHandler(entityClient, userManagementClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {

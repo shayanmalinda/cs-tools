@@ -180,7 +180,6 @@ Every flag for that cutover is named `CSM_MIGRATION_*`, is opt-in (on only when 
 
 | Variable | Description |
 |---|---|
-| `CSM_MIGRATION_DIRECT_ONBOARDING_ENABLED` | After a contact is added, removed or has their role changed, ask entity-service (`POST /project-contacts/{sfId}/sync`) to ingest that membership immediately, instead of waiting for the Salesforce change event to travel the publisher → Service Bus → subscriber path. Best-effort: the Salesforce write has already succeeded and its event covers the same ground, so a failure is logged and the admin still sees success |
 | `CSM_MIGRATION_FIRST_ACCESS_ENABLED` | After a profile load, ask entity-service (`POST /users/me/memberships/register`) to complete the caller's onboarding: clear their Salesforce lockout flag, set the membership to `REGISTERED`, refresh the CSM database. Runs after the response is written, on its own context; a failure is logged and dropped. entity-service only registers that route when its own `CSM_MIGRATION_MEMBERSHIP_REGISTRATION_ENABLED` and membership-ingest flags are on |
 
 ### Server
