@@ -652,6 +652,38 @@ func TestDispatcher_Handle_ProjectContactInvited_LedgerNotConsultedWhenEmailIsOf
 	}
 }
 
+// TestDispatcher_Handle_ProjectContactInvited_NoLedgerConfiguredDoesNotSend
+// covers a misconfiguration the other two nil checks already cover for the
+// SCIM and email clients: the email step enabled with no onboarding-step
+// recorder at all. Recording a step tolerates that, but the duplicate check
+// cannot -- and reaching it with a nil recorder used to panic inside the
+// consumer goroutine. It must be an ordinary failed record instead, with no
+// unguarded invitation going out.
+func TestDispatcher_Handle_ProjectContactInvited_NoLedgerConfiguredDoesNotSend(t *testing.T) {
+	identity, email := &mockIdentityProvisioner{}, &mockEmailSender{}
+	// Deliberately not newOnboardingDispatcher: Steps has to be a nil
+	// interface, not a typed nil *mockStepRecorder.
+	d := newTestDispatcher(&mockEmailSender{}, &mockGoogleChatSender{}, &mockCallSender{}).
+		WithOnboarding(OnboardingConfig{
+			Identity:        identity,
+			Email:           email,
+			IdentityEnabled: true,
+			EmailEnabled:    true,
+			PortalURL:       "https://support.wso2.com",
+		})
+
+	err := d.Handle(context.Background(), invitedRecord(false))
+	if err == nil {
+		t.Fatal("Handle() = nil, want a configuration error so the record is retried")
+	}
+	if !strings.Contains(err.Error(), "onboarding-step ledger") {
+		t.Errorf("Handle() error = %v, want it to name the missing ledger", err)
+	}
+	if len(email.calls) != 0 {
+		t.Errorf("sent %d emails, want none with no ledger to check them against", len(email.calls))
+	}
+}
+
 // TestDispatcher_Handle_ProjectContactInvited_LedgerWriteSurvivesCancellation
 // pins the detached recording context. A shutdown cancels the handler's
 // context, and the EMAIL=SUCCEEDED write must still happen: losing it while
