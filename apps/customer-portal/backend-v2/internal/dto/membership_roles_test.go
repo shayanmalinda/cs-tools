@@ -185,3 +185,34 @@ func TestMapEntityMembership_NoSfIDLeavesContactIDNil(t *testing.T) {
 		t.Errorf("contact = %+v, want email set and nil id", got.Contact)
 	}
 }
+
+func TestFlagsFromProjectRoles(t *testing.T) {
+	tests := []struct {
+		name  string
+		roles []string
+		want  membershipRoleFlags
+	}{
+		{"none", nil, membershipRoleFlags{}},
+		{"all four", []string{"PORTAL_USER", "SECURITY_CONTACT", "LEAD_USER", "ADMIN"},
+			membershipRoleFlags{IsPortalUser: true, IsSecurityContact: true, IsLead: true, IsCsAdmin: true}},
+		{"lower case and spaces", []string{" admin ", "portal_user"},
+			membershipRoleFlags{IsPortalUser: true, IsCsAdmin: true}},
+		{"business contact has no checkbox", []string{"BUSINESS_CONTACT"}, membershipRoleFlags{}},
+		{"Salesforce labels are not database roles", []string{"Portal user", "Admin"}, membershipRoleFlags{IsCsAdmin: true}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := flagsFromProjectRoles(tt.roles); got != tt.want {
+				t.Errorf("flagsFromProjectRoles(%q) = %+v, want %+v", tt.roles, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMapEntityProjectContact_OneWordName(t *testing.T) {
+	name := "Cher"
+	got := MapEntityProjectContact(entity.ProjectContact{Name: &name, Email: "cher@acme.com"})
+	if got.FirstName != nil || got.LastName != "Cher" {
+		t.Errorf("first/last = %v/%q, want nil/Cher", got.FirstName, got.LastName)
+	}
+}

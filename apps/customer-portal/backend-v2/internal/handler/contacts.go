@@ -50,6 +50,7 @@ type membershipsClient interface {
 	UpdateProjectMembershipRoles(ctx context.Context, projectID, email string, req entity.UpdateProjectMembershipRolesRequest) (entity.ProjectMembership, error)
 	DeactivateProjectMembership(ctx context.Context, projectID, email string) error
 	ResendProjectMembershipInvitation(ctx context.Context, projectID, email string) error
+	ListProjectContacts(ctx context.Context, projectID string) ([]entity.ProjectContact, error)
 }
 
 // contactsClient abstracts the project-contact onboarding service operations
@@ -69,9 +70,10 @@ type ContactHandler struct {
 	entity      entityProjectResolver
 	contacts    contactsClient
 	memberships membershipsClient
-	// portalWritesEnabled is CSM_MIGRATION_PORTAL_WRITES_ENABLED. On, every
-	// write below goes to entity-service; off, it goes to the pre-cutover
-	// onboarding service exactly as before. Keeping both paths is what makes
+	// portalWritesEnabled is CSM_MIGRATION_PORTAL_WRITES_ENABLED. On, the
+	// contact list and every write below go to entity-service and the CSM
+	// database; off, they go to the pre-cutover onboarding service exactly
+	// as before. Keeping both paths is what makes
 	// the cutover reversible without a redeploy of anything but this flag.
 	portalWritesEnabled bool
 }
@@ -99,6 +101,17 @@ func (h *ContactHandler) GetProjectContacts(w http.ResponseWriter, r *http.Reque
 	projectID := r.PathValue("id")
 	if projectID == "" || !uuidRe.MatchString(projectID) {
 		writeError(w, http.StatusBadRequest, ErrMsgInvalidUUID)
+		return
+	}
+
+	if h.portalWritesEnabled {
+		contacts, err := h.memberships.ListProjectContacts(r.Context(), projectID)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "entity ListProjectContacts failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+			mapUpstreamError(w, err, "Failed to retrieve project contacts.")
+			return
+		}
+		writeJSONValue(w, http.StatusOK, dto.MapEntityProjectContacts(contacts))
 		return
 	}
 
@@ -396,47 +409,40 @@ func (h *ContactHandler) ResendProjectContactInvitation(w http.ResponseWriter, r
 // that the caller is an allow-listed internal client, so whether this
 // particular user may change this particular project's contacts is the
 // portal's call. The pre-cutover path got it from the onboarding service,
-// which checked the AdminEmail it was sent. Here the caller must be an
-// active CS admin on the project, read from the same contact list the
-// settings page shows. That list comes from Salesforce by the project's
-// Salesforce Id, so the answer does not depend on how entity-service scopes
-// the portal's own reads.
+// which checked the AdminEmail it was sent. Here the caller must hold the
+// ADMIN project role on an active membership of the project, read from the
+// same database contact list the settings page shows. The list is fetched
+// by project UUID, so the answer does not depend on how entity-service
+// scopes the portal's other reads.
 func (h *ContactHandler) requireProjectAdmin(w http.ResponseWriter, r *http.Request, user *middleware.UserInfo, projectID string) bool {
-	project, err := h.entity.GetProject(r.Context(), projectID)
+	contacts, err := h.memberships.ListProjectContacts(r.Context(), projectID)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "entity GetProject failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
-		mapUpstreamError(w, err, "Failed to retrieve project details.")
-		return false
-	}
-
-	contacts, err := h.contacts.GetProjectContacts(r.Context(), project.SfID)
-	if err != nil {
-		slog.ErrorContext(r.Context(), "usermanagement GetProjectContacts failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+		slog.ErrorContext(r.Context(), "entity ListProjectContacts failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
 		mapUpstreamError(w, err, "Failed to retrieve project contacts.")
 		return false
 	}
 
 	if !isActiveProjectAdmin(contacts, user.Email) {
-		slog.WarnContext(r.Context(), "project contact write refused: caller is not a CS admin of the project", "userID", user.UserID, "projectID", projectID)
+		slog.WarnContext(r.Context(), "project contact write refused: caller is not an admin of the project", "userID", user.UserID, "projectID", projectID)
 		writeError(w, http.StatusForbidden, ErrMsgForbidden)
 		return false
 	}
 	return true
 }
 
-// isActiveProjectAdmin reports whether email holds the CS admin role on a
-// membership that has not been deactivated. Email comparison ignores case,
+// isActiveProjectAdmin reports whether email holds the ADMIN project role on
+// a membership that has not been deactivated. Email comparison ignores case,
 // since Salesforce does not preserve the casing the address was typed in.
-func isActiveProjectAdmin(contacts []usermanagement.Contact, email string) bool {
+func isActiveProjectAdmin(contacts []entity.ProjectContact, email string) bool {
 	email = strings.TrimSpace(email)
 	if email == "" {
 		return false
 	}
 	for _, c := range contacts {
-		if !strings.EqualFold(strings.TrimSpace(c.Email), email) || !c.IsCsAdmin {
+		if !strings.EqualFold(strings.TrimSpace(c.Email), email) || !dto.IsProjectAdmin(c) {
 			continue
 		}
-		if c.MembershipStatus != nil && strings.EqualFold(strings.TrimSpace(*c.MembershipStatus), membershipStateDeactivated) {
+		if strings.EqualFold(strings.TrimSpace(c.RegistrationState), membershipStateDeactivated) {
 			continue
 		}
 		return true

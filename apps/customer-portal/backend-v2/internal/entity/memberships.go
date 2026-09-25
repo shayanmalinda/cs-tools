@@ -115,3 +115,61 @@ func (c *Client) ResendProjectMembershipInvitation(ctx context.Context, projectI
 	_, err := c.do(ctx, http.MethodPost, membershipPath(projectID, email)+"/resend-invitation", nil)
 	return err
 }
+
+// projectContactsPageLimit is entity-service's own maximum page size for
+// POST /projects/{id}/contacts/search; a larger limit is rejected with 400.
+const projectContactsPageLimit = 50
+
+// maxProjectContactPages stops ListProjectContacts from paging forever if
+// entity-service ever reports a total it never reaches. 40 pages of 50 is far
+// beyond any real project's contact list.
+const maxProjectContactPages = 40
+
+// ProjectContact is one row of POST /projects/{id}/contacts/search, read from
+// the CSM database rather than Salesforce.
+type ProjectContact struct {
+	// ID is the contact's user id. Nil when the row has no user linked.
+	ID *string `json:"id,omitempty"`
+	// Name is the user's full name, nil when no user is linked.
+	Name  *string `json:"name"`
+	Email string  `json:"email"`
+	// RegistrationState is INVITED / REGISTERED / RE-INVITED / DEACTIVATED.
+	RegistrationState string `json:"registrationState"`
+	// Roles are the project roles the membership's groups grant:
+	// PORTAL_USER, SECURITY_CONTACT, LEAD_USER, ADMIN, BUSINESS_CONTACT.
+	Roles []string `json:"roles"`
+}
+
+type searchProjectContactsRequest struct {
+	Pagination struct {
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+	} `json:"pagination"`
+}
+
+type searchProjectContactsResponse struct {
+	Contacts []ProjectContact `json:"contacts"`
+	Total    int              `json:"total"`
+}
+
+// ListProjectContacts returns every contact of the project from
+// POST /projects/{id}/contacts/search, paging through entity-service's
+// 50-row limit. projectID is the project UUID.
+func (c *Client) ListProjectContacts(ctx context.Context, projectID string) ([]ProjectContact, error) {
+	path := fmt.Sprintf("/projects/%s/contacts/search", url.PathEscape(projectID))
+	var all []ProjectContact
+	for page := 0; page < maxProjectContactPages; page++ {
+		var req searchProjectContactsRequest
+		req.Pagination.Limit = projectContactsPageLimit
+		req.Pagination.Offset = page * projectContactsPageLimit
+		var out searchProjectContactsResponse
+		if err := c.postJSON(ctx, path, req, &out); err != nil {
+			return nil, err
+		}
+		all = append(all, out.Contacts...)
+		if len(out.Contacts) < projectContactsPageLimit || len(all) >= out.Total {
+			return all, nil
+		}
+	}
+	return nil, fmt.Errorf("entity: project %s contact list exceeds %d pages", projectID, maxProjectContactPages)
+}

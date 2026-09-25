@@ -155,3 +155,88 @@ func MapEntityMembership(m entity.ProjectMembership) Membership {
 	}
 	return out
 }
+
+// Project roles as the CSM database stores them (project_role.role), which is
+// what entity-service's contact search returns. Each maps onto one of the
+// portal's four booleans.
+const (
+	projectRolePortalUser      = "PORTAL_USER"
+	projectRoleSecurityContact = "SECURITY_CONTACT"
+	projectRoleLead            = "LEAD_USER"
+	projectRoleAdmin           = "ADMIN"
+)
+
+// flagsFromProjectRoles is flagsFromRoles for the database's vocabulary.
+// Roles with no checkbox (BUSINESS_CONTACT) are ignored.
+func flagsFromProjectRoles(roles []string) membershipRoleFlags {
+	var f membershipRoleFlags
+	for _, r := range roles {
+		switch strings.ToUpper(strings.TrimSpace(r)) {
+		case projectRolePortalUser:
+			f.IsPortalUser = true
+		case projectRoleSecurityContact:
+			f.IsSecurityContact = true
+		case projectRoleLead:
+			f.IsLead = true
+		case projectRoleAdmin:
+			f.IsCsAdmin = true
+		}
+	}
+	return f
+}
+
+// IsProjectAdmin reports whether a database contact row carries the ADMIN
+// project role.
+func IsProjectAdmin(c entity.ProjectContact) bool {
+	return flagsFromProjectRoles(c.Roles).IsCsAdmin
+}
+
+// MapEntityProjectContact renders a database contact row in the portal's own
+// Contact shape, so the settings page is unchanged by where the list is read
+// from.
+//
+// Three things the Salesforce-backed list had are not in the database row:
+//   - First and last name are one field there, so the name is split at its
+//     first space. A one-word name lands in LastName, which the page shows.
+//   - There is no integration-user flag, so IsCsIntegrationUser is false.
+//   - There is no account block, so the partner badge is not shown.
+//
+// ID is the user id when a user is linked, otherwise the email, since the
+// page keys its rows on it.
+func MapEntityProjectContact(c entity.ProjectContact) Contact {
+	f := flagsFromProjectRoles(c.Roles)
+	out := Contact{
+		ID:                c.Email,
+		Email:             c.Email,
+		IsCsAdmin:         f.IsCsAdmin,
+		IsLead:            f.IsLead,
+		IsPortalUser:      f.IsPortalUser,
+		IsSecurityContact: f.IsSecurityContact,
+	}
+	if c.ID != nil && *c.ID != "" {
+		out.ID = *c.ID
+	}
+	if c.Name != nil {
+		first, last, found := strings.Cut(strings.TrimSpace(*c.Name), " ")
+		if found {
+			out.FirstName = &first
+			out.LastName = strings.TrimSpace(last)
+		} else {
+			out.LastName = first
+		}
+	}
+	if c.RegistrationState != "" {
+		state := c.RegistrationState
+		out.MembershipStatus = &state
+	}
+	return out
+}
+
+// MapEntityProjectContacts maps a whole database contact list.
+func MapEntityProjectContacts(contacts []entity.ProjectContact) []Contact {
+	out := make([]Contact, 0, len(contacts))
+	for _, c := range contacts {
+		out = append(out, MapEntityProjectContact(c))
+	}
+	return out
+}

@@ -39,8 +39,8 @@ const (
 	testCaller      = "admin@acme.com"
 )
 
-// fakeProjectResolver resolves the project's Salesforce Id, which both the
-// pre-cutover path and the admin check need.
+// fakeProjectResolver resolves the project's Salesforce Id, which only the
+// pre-cutover path needs.
 type fakeProjectResolver struct{ calls int }
 
 func (f *fakeProjectResolver) GetProject(context.Context, string) (entity.ProjectDetailsView, error) {
@@ -49,17 +49,17 @@ func (f *fakeProjectResolver) GetProject(context.Context, string) (entity.Projec
 }
 
 // fakeLegacyContacts is the pre-cutover onboarding service. It records every
-// write so a test can assert the flag kept traffic away from it. contacts is
-// the project's contact list, which the admin check reads on both paths.
+// call, reads included, so a test can assert the flag kept traffic away from
+// it.
 type fakeLegacyContacts struct {
-	calls       []string
-	projectID   string
-	contacts    []usermanagement.Contact
-	contactsErr error
+	calls     []string
+	projectID string
 }
 
-func (f *fakeLegacyContacts) GetProjectContacts(context.Context, string) ([]usermanagement.Contact, error) {
-	return f.contacts, f.contactsErr
+func (f *fakeLegacyContacts) GetProjectContacts(_ context.Context, projectID string) ([]usermanagement.Contact, error) {
+	f.calls = append(f.calls, "list")
+	f.projectID = projectID
+	return []usermanagement.Contact{{ID: "003xx", Email: testCaller, LastName: "Admin", IsCsAdmin: true}}, nil
 }
 
 func (f *fakeLegacyContacts) CreateProjectContact(_ context.Context, projectID string, _ usermanagement.OnBoardContactPayload) (usermanagement.Membership, error) {
@@ -85,15 +85,26 @@ func (f *fakeLegacyContacts) ValidateProjectContact(context.Context, usermanagem
 }
 
 // fakeMemberships is entity-service's side. err, when set, is returned from
-// every call so the upstream-error mapping can be exercised.
+// every write so the upstream-error mapping can be exercised. contacts is the
+// project's database contact list, which both the list endpoint and the
+// admin check read; listing is not recorded in calls, so calls holds writes
+// only.
 type fakeMemberships struct {
-	calls     []string
-	projectID string
-	email     string
-	create    entity.CreateProjectMembershipRequest
-	update    entity.UpdateProjectMembershipRolesRequest
-	result    entity.ProjectMembership
-	err       error
+	calls       []string
+	projectID   string
+	email       string
+	create      entity.CreateProjectMembershipRequest
+	update      entity.UpdateProjectMembershipRolesRequest
+	result      entity.ProjectMembership
+	err         error
+	contacts    []entity.ProjectContact
+	contactsErr error
+	listed      int
+}
+
+func (f *fakeMemberships) ListProjectContacts(context.Context, string) ([]entity.ProjectContact, error) {
+	f.listed++
+	return f.contacts, f.contactsErr
 }
 
 func (f *fakeMemberships) CreateProjectMembership(_ context.Context, projectID string, req entity.CreateProjectMembershipRequest) (entity.ProjectMembership, error) {
@@ -134,9 +145,11 @@ type contactFakes struct {
 // that is not about authorization gets past the check.
 func newContactMux(portalWrites, withClient bool) (*http.ServeMux, contactFakes) {
 	f := contactFakes{
-		resolver:    &fakeProjectResolver{},
-		legacy:      &fakeLegacyContacts{contacts: []usermanagement.Contact{{Email: testCaller, IsCsAdmin: true}}},
-		memberships: &fakeMemberships{},
+		resolver: &fakeProjectResolver{},
+		legacy:   &fakeLegacyContacts{},
+		memberships: &fakeMemberships{contacts: []entity.ProjectContact{
+			{Email: testCaller, RegistrationState: "REGISTERED", Roles: []string{"ADMIN", "PORTAL_USER"}},
+		}},
 	}
 	var mc membershipsClient
 	if withClient {
@@ -145,6 +158,7 @@ func newContactMux(portalWrites, withClient bool) (*http.ServeMux, contactFakes)
 	h := NewContactHandler(f.resolver, f.legacy, mc, portalWrites)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /projects/{id}/contacts", h.GetProjectContacts)
 	mux.HandleFunc("POST /projects/{id}/contacts", h.CreateProjectContact)
 	mux.HandleFunc("DELETE /projects/{id}/contacts/{email}", h.RemoveProjectContact)
 	mux.HandleFunc("PATCH /projects/{id}/contacts/{email}", h.UpdateProjectContactRole)
@@ -194,8 +208,8 @@ func TestCreateProjectContact_PortalWritesOnUsesEntityService(t *testing.T) {
 	if !reflect.DeepEqual(f.memberships.create, want) {
 		t.Errorf("create body = %+v, want %+v", f.memberships.create, want)
 	}
-	if len(f.legacy.calls) != 0 {
-		t.Errorf("legacy writes = %v, want none", f.legacy.calls)
+	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
+		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
 	}
 
 	var got dto.Membership
@@ -271,8 +285,8 @@ func TestUpdateProjectContactRole_PortalWritesOnUsesEntityService(t *testing.T) 
 	if !reflect.DeepEqual(f.memberships.update.Roles, []string{"Lead"}) {
 		t.Errorf("roles = %q, want [Lead]", f.memberships.update.Roles)
 	}
-	if len(f.legacy.calls) != 0 {
-		t.Errorf("legacy writes = %v, want none", f.legacy.calls)
+	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
+		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
 	}
 }
 
@@ -303,8 +317,8 @@ func TestRemoveProjectContact_PortalWritesOnDeactivates(t *testing.T) {
 	if f.memberships.projectID != testProjectUUID || f.memberships.email != testInvitee {
 		t.Errorf("target = %q/%q, want %q/%q", f.memberships.projectID, f.memberships.email, testProjectUUID, testInvitee)
 	}
-	if len(f.legacy.calls) != 0 {
-		t.Errorf("legacy writes = %v, want none", f.legacy.calls)
+	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
+		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
 	}
 }
 
@@ -417,21 +431,20 @@ var portalWriteRequests = []struct {
 // leaves to the portal: a signed-in user who is not an active CS admin of the
 // project must get 403 and nothing may reach entity-service.
 func TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
-	deactivated := "Deactivated"
 	callers := []struct {
 		name     string
-		contacts []usermanagement.Contact
+		contacts []entity.ProjectContact
 	}{
-		{"not on the project", []usermanagement.Contact{{Email: "someone@acme.com", IsCsAdmin: true}}},
-		{"on the project without admin", []usermanagement.Contact{{Email: testCaller, IsPortalUser: true, IsLead: true}}},
-		{"deactivated admin", []usermanagement.Contact{{Email: testCaller, IsCsAdmin: true, MembershipStatus: &deactivated}}},
+		{"not on the project", []entity.ProjectContact{{Email: "someone@acme.com", RegistrationState: "REGISTERED", Roles: []string{"ADMIN"}}}},
+		{"on the project without admin", []entity.ProjectContact{{Email: testCaller, RegistrationState: "REGISTERED", Roles: []string{"PORTAL_USER", "LEAD_USER"}}}},
+		{"deactivated admin", []entity.ProjectContact{{Email: testCaller, RegistrationState: "Deactivated", Roles: []string{"ADMIN"}}}},
 		{"empty contact list", nil},
 	}
 	for _, caller := range callers {
 		for _, rq := range portalWriteRequests {
 			t.Run(caller.name+"/"+rq.name, func(t *testing.T) {
 				mux, f := newContactMux(true, true)
-				f.legacy.contacts = caller.contacts
+				f.memberships.contacts = caller.contacts
 
 				rec := serveContact(mux, rq.method, rq.path, rq.body)
 
@@ -439,7 +452,7 @@ func TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
 					t.Fatalf("status = %d, want 403; body %s", rec.Code, rec.Body)
 				}
 				if len(f.memberships.calls) != 0 || len(f.legacy.calls) != 0 {
-					t.Errorf("entity calls = %v, legacy writes = %v; want none", f.memberships.calls, f.legacy.calls)
+					t.Errorf("entity writes = %v, legacy calls = %v; want none", f.memberships.calls, f.legacy.calls)
 				}
 			})
 		}
@@ -450,11 +463,10 @@ func TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
 // casing the address was typed in, and a case mismatch must not lock an
 // admin out of their own project.
 func TestPortalWrites_AdminEmailMatchIgnoresCase(t *testing.T) {
-	registered := "REGISTERED"
 	for _, rq := range portalWriteRequests {
 		t.Run(rq.name, func(t *testing.T) {
 			mux, f := newContactMux(true, true)
-			f.legacy.contacts = []usermanagement.Contact{{Email: " Admin@ACME.com ", IsCsAdmin: true, MembershipStatus: &registered}}
+			f.memberships.contacts = []entity.ProjectContact{{Email: " Admin@ACME.com ", RegistrationState: "REGISTERED", Roles: []string{"admin"}}}
 
 			rec := serveContact(mux, rq.method, rq.path, rq.body)
 
@@ -474,7 +486,7 @@ func TestPortalWrites_ContactLookupFailureBlocksWrite(t *testing.T) {
 	for _, rq := range portalWriteRequests {
 		t.Run(rq.name, func(t *testing.T) {
 			mux, f := newContactMux(true, true)
-			f.legacy.contactsErr = apierror.NewUpstreamError(http.StatusBadGateway, nil)
+			f.memberships.contactsErr = apierror.NewUpstreamError(http.StatusBadGateway, nil)
 
 			rec := serveContact(mux, rq.method, rq.path, rq.body)
 
@@ -485,5 +497,77 @@ func TestPortalWrites_ContactLookupFailureBlocksWrite(t *testing.T) {
 				t.Errorf("entity calls = %v, want none", f.memberships.calls)
 			}
 		})
+	}
+}
+
+// TestGetProjectContacts_PortalWritesOnReadsDatabase: with the flag on the
+// list comes from entity-service's database search, never from the
+// pre-cutover service, and is rendered in the portal's own Contact shape.
+func TestGetProjectContacts_PortalWritesOnReadsDatabase(t *testing.T) {
+	mux, f := newContactMux(true, true)
+	userID, name := "u-9", "Jane Q Doe"
+	f.memberships.contacts = []entity.ProjectContact{
+		{ID: &userID, Name: &name, Email: "jane@acme.com", RegistrationState: "INVITED", Roles: []string{"PORTAL_USER", "SECURITY_CONTACT", "BUSINESS_CONTACT"}},
+		{Email: "noname@acme.com", RegistrationState: "REGISTERED", Roles: []string{"ADMIN", "LEAD_USER"}},
+	}
+
+	rec := serveContact(mux, http.MethodGet, contactsPath(), "")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body %s", rec.Code, rec.Body)
+	}
+	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
+		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
+	}
+	var got []dto.Contact
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d contacts, want 2", len(got))
+	}
+	jane := got[0]
+	if jane.ID != "u-9" || jane.FirstName == nil || *jane.FirstName != "Jane" || jane.LastName != "Q Doe" {
+		t.Errorf("jane id/name = %q/%v/%q, want u-9/Jane/Q Doe", jane.ID, jane.FirstName, jane.LastName)
+	}
+	if !jane.IsPortalUser || !jane.IsSecurityContact || jane.IsLead || jane.IsCsAdmin {
+		t.Errorf("jane flags = %+v", jane)
+	}
+	if jane.MembershipStatus == nil || *jane.MembershipStatus != "INVITED" {
+		t.Errorf("jane status = %v, want INVITED", jane.MembershipStatus)
+	}
+	noname := got[1]
+	if noname.ID != "noname@acme.com" || noname.FirstName != nil || noname.LastName != "" {
+		t.Errorf("unlinked row id/name = %q/%v/%q, want the email as id and no name", noname.ID, noname.FirstName, noname.LastName)
+	}
+	if !noname.IsCsAdmin || !noname.IsLead || noname.IsPortalUser {
+		t.Errorf("unlinked row flags = %+v", noname)
+	}
+}
+
+func TestGetProjectContacts_PortalWritesOffUsesLegacyService(t *testing.T) {
+	mux, f := newContactMux(false, true)
+
+	rec := serveContact(mux, http.MethodGet, contactsPath(), "")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body %s", rec.Code, rec.Body)
+	}
+	if f.memberships.listed != 0 {
+		t.Errorf("database list read %d times with the flag off, want 0", f.memberships.listed)
+	}
+	if !reflect.DeepEqual(f.legacy.calls, []string{"list"}) || f.legacy.projectID != testProjectSfID {
+		t.Errorf("legacy calls = %v on %q, want [list] on %q", f.legacy.calls, f.legacy.projectID, testProjectSfID)
+	}
+}
+
+func TestGetProjectContacts_PortalWritesOnPassesUpstreamError(t *testing.T) {
+	mux, f := newContactMux(true, true)
+	f.memberships.contactsErr = apierror.NewUpstreamError(http.StatusServiceUnavailable, nil)
+
+	rec := serveContact(mux, http.MethodGet, contactsPath(), "")
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want 503", rec.Code)
 	}
 }
