@@ -174,6 +174,15 @@ func main() {
 		slog.Info("CSM_MIGRATION_FIRST_ACCESS_ENABLED=true; an invited user's first profile load will complete their onboarding")
 	}
 
+	// Portal-driven membership writes. On, invite / role change / deactivate /
+	// resend all go to entity-service, which updates Postgres and Salesforce
+	// in one transaction. Off, they go to the pre-cutover onboarding service
+	// exactly as before, so this flag is the whole rollback.
+	csmMigrationPortalWrites := os.Getenv("CSM_MIGRATION_PORTAL_WRITES_ENABLED") == "true"
+	if csmMigrationPortalWrites {
+		slog.Info("CSM_MIGRATION_PORTAL_WRITES_ENABLED=true; project contact writes go to the entity service")
+	}
+
 	userHandler := handler.NewUserHandler(entityClient, scimClient, csmMigrationFirstAccess)
 	projectHandler := handler.NewProjectHandler(entityClient)
 	projectStatsHandler := handler.NewProjectStatsHandler(entityClient)
@@ -194,7 +203,7 @@ func main() {
 	globalHandler := handler.NewGlobalHandler(entityClient)
 	instanceHandler := handler.NewInstanceHandler(entityClient)
 	registryHandler := handler.NewRegistryHandler(entityClient, registryClient, adminRole)
-	contactHandler := handler.NewContactHandler(entityClient, userManagementClient)
+	contactHandler := handler.NewContactHandler(entityClient, userManagementClient, entityClient, csmMigrationPortalWrites)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -231,6 +240,7 @@ func main() {
 	mux.HandleFunc("POST /projects/{id}/contacts", contactHandler.CreateProjectContact)
 	mux.HandleFunc("DELETE /projects/{id}/contacts/{email}", contactHandler.RemoveProjectContact)
 	mux.HandleFunc("PATCH /projects/{id}/contacts/{email}", contactHandler.UpdateProjectContactRole)
+	mux.HandleFunc("POST /projects/{id}/contacts/{email}/resend-invitation", contactHandler.ResendProjectContactInvitation)
 	mux.HandleFunc("POST /projects/{id}/contacts/validate", contactHandler.ValidateProjectContact)
 	mux.HandleFunc("DELETE /registry-tokens/{id}", registryHandler.DeleteRegistryToken)
 	mux.HandleFunc("POST /registry-tokens/{id}/regenerate", registryHandler.RegenerateRegistryToken)

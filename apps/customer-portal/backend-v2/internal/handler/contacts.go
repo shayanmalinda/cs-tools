@@ -35,6 +35,18 @@ type entityProjectResolver interface {
 	GetProject(ctx context.Context, id string) (entity.ProjectDetailsView, error)
 }
 
+// membershipsClient is the entity-service side of the same operations. It
+// replaces contactsClient after cutover: entity-service updates Postgres and
+// Salesforce in one transaction, so the portal no longer needs a second
+// service that writes Salesforce on its own. Keyed on the project UUID, not
+// the project's Salesforce Id.
+type membershipsClient interface {
+	CreateProjectMembership(ctx context.Context, projectID string, req entity.CreateProjectMembershipRequest) (entity.ProjectMembership, error)
+	UpdateProjectMembershipRoles(ctx context.Context, projectID, email string, req entity.UpdateProjectMembershipRolesRequest) (entity.ProjectMembership, error)
+	DeactivateProjectMembership(ctx context.Context, projectID, email string) error
+	ResendProjectMembershipInvitation(ctx context.Context, projectID, email string) error
+}
+
 // contactsClient abstracts the project-contact onboarding service operations
 // used by ContactHandler.
 type contactsClient interface {
@@ -49,14 +61,26 @@ type contactsClient interface {
 // management, backed by a separate microservice (not entity-service, not
 // SCIM) keyed on the project's Salesforce ID.
 type ContactHandler struct {
-	entity   entityProjectResolver
-	contacts contactsClient
+	entity      entityProjectResolver
+	contacts    contactsClient
+	memberships membershipsClient
+	// portalWritesEnabled is CSM_MIGRATION_PORTAL_WRITES_ENABLED. On, every
+	// write below goes to entity-service; off, it goes to the pre-cutover
+	// onboarding service exactly as before. Keeping both paths is what makes
+	// the cutover reversible without a redeploy of anything but this flag.
+	portalWritesEnabled bool
 }
 
 // NewContactHandler creates a ContactHandler backed by the given entity and
-// project-contact onboarding service clients.
-func NewContactHandler(entityClient entityProjectResolver, contactsClient contactsClient) *ContactHandler {
-	return &ContactHandler{entity: entityClient, contacts: contactsClient}
+// project-contact onboarding service clients. memberships may be nil when
+// portalWrites is false, which is the pre-cutover shape.
+func NewContactHandler(entityClient entityProjectResolver, contactsClient contactsClient, memberships membershipsClient, portalWrites bool) *ContactHandler {
+	return &ContactHandler{
+		entity:              entityClient,
+		contacts:            contactsClient,
+		memberships:         memberships,
+		portalWritesEnabled: portalWrites && memberships != nil,
+	}
 }
 
 // GetProjectContacts handles GET /projects/{id}/contacts.
@@ -119,6 +143,19 @@ func (h *ContactHandler) CreateProjectContact(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	if h.portalWritesEnabled {
+		// entity-service is keyed on the project UUID, so unlike the path
+		// below this needs no Salesforce Id and therefore no GetProject.
+		membership, err := h.memberships.CreateProjectMembership(r.Context(), projectID, dto.BuildCreateProjectMembershipRequest(req))
+		if err != nil {
+			slog.ErrorContext(r.Context(), "entity CreateProjectMembership failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+			writeUpstreamMessage(w, err, "Failed to add project contact.")
+			return
+		}
+		writeJSONValue(w, http.StatusOK, dto.MapEntityMembership(membership))
+		return
+	}
+
 	project, err := h.entity.GetProject(r.Context(), projectID)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "entity GetProject failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
@@ -148,6 +185,16 @@ func (h *ContactHandler) RemoveProjectContact(w http.ResponseWriter, r *http.Req
 	email := r.PathValue("email")
 	if projectID == "" || !uuidRe.MatchString(projectID) || email == "" {
 		writeError(w, http.StatusBadRequest, ErrMsgBadRequest)
+		return
+	}
+
+	if h.portalWritesEnabled {
+		if err := h.memberships.DeactivateProjectMembership(r.Context(), projectID, email); err != nil {
+			slog.ErrorContext(r.Context(), "entity DeactivateProjectMembership failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+			writeUpstreamMessage(w, err, "Failed to remove project contact.")
+			return
+		}
+		writeJSONValue(w, http.StatusOK, map[string]string{"message": "Project contact removed successfully!"})
 		return
 	}
 
@@ -191,6 +238,18 @@ func (h *ContactHandler) UpdateProjectContactRole(w http.ResponseWriter, r *http
 	var req dto.MembershipRoleUpdateRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		writeError(w, http.StatusBadRequest, ErrMsgBadRequest)
+		return
+	}
+
+	if h.portalWritesEnabled {
+		membership, err := h.memberships.UpdateProjectMembershipRoles(r.Context(), projectID, email,
+			entity.UpdateProjectMembershipRolesRequest{Roles: dto.RolesFromRoleUpdateRequest(req)})
+		if err != nil {
+			slog.ErrorContext(r.Context(), "entity UpdateProjectMembershipRoles failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+			writeUpstreamMessage(w, err, "Failed to update project contact.")
+			return
+		}
+		writeJSONValue(w, http.StatusOK, dto.MapEntityMembership(membership))
 		return
 	}
 
@@ -271,4 +330,44 @@ func (h *ContactHandler) ValidateProjectContact(w http.ResponseWriter, r *http.R
 		IsContactValid: true,
 		Message:        "Project contact is valid and can be added to the project!",
 	})
+}
+
+// ResendProjectContactInvitation handles
+// POST /projects/{id}/contacts/{email}/resend-invitation.
+//
+// There is no pre-cutover equivalent, so unlike the three writes above this
+// has no fallback branch: with CSM_MIGRATION_PORTAL_WRITES_ENABLED off it
+// answers 404, the same answer entity-service itself would give, rather than
+// pretending to have resent something.
+//
+// entity-service republishes the invitation with a resend marker, which makes
+// csm-notification-service bypass its duplicate-invitation guard and send the
+// reminder wording. That guard exists to stop an accidental second
+// invitation, and a requested resend is by definition not that.
+func (h *ContactHandler) ResendProjectContactInvitation(w http.ResponseWriter, r *http.Request) {
+	user := middleware.UserInfoFromContext(r.Context())
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, ErrMsgUnauthorized)
+		return
+	}
+
+	if !h.portalWritesEnabled {
+		writeError(w, http.StatusNotFound, "Resending invitations is not available.")
+		return
+	}
+
+	projectID := r.PathValue("id")
+	email := r.PathValue("email")
+	if projectID == "" || !uuidRe.MatchString(projectID) || email == "" {
+		writeError(w, http.StatusBadRequest, ErrMsgBadRequest)
+		return
+	}
+
+	if err := h.memberships.ResendProjectMembershipInvitation(r.Context(), projectID, email); err != nil {
+		slog.ErrorContext(r.Context(), "entity ResendProjectMembershipInvitation failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+		writeUpstreamMessage(w, err, "Failed to resend the invitation.")
+		return
+	}
+
+	writeJSONValue(w, http.StatusOK, map[string]string{"message": "Invitation resent successfully!"})
 }
