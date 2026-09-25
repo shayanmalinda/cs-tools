@@ -143,7 +143,7 @@ type contactFakes struct {
 // is the pre-cutover wiring.
 // The caller is an active CS admin of the project by default, so each test
 // that is not about authorization gets past the check.
-func newContactMux(portalWrites, withClient bool) (*http.ServeMux, contactFakes) {
+func newContactMux(portalContacts, withClient bool) (*http.ServeMux, contactFakes) {
 	f := contactFakes{
 		resolver: &fakeProjectResolver{},
 		legacy:   &fakeLegacyContacts{},
@@ -155,7 +155,7 @@ func newContactMux(portalWrites, withClient bool) (*http.ServeMux, contactFakes)
 	if withClient {
 		mc = f.memberships
 	}
-	h := NewContactHandler(f.resolver, f.legacy, mc, portalWrites)
+	h := NewContactHandler(f.resolver, f.legacy, mc, portalContacts)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /projects/{id}/contacts", h.GetProjectContacts)
@@ -183,7 +183,7 @@ func contactsPath() string { return "/projects/" + testProjectUUID + "/contacts"
 // the handler must see the decoded "shayan+e2e1@wso2.com".
 func escapedInviteePath() string { return contactsPath() + "/shayan%2Be2e1@wso2.com" }
 
-func TestCreateProjectContact_PortalWritesOnUsesEntityService(t *testing.T) {
+func TestCreateProjectContact_PortalContactsOnUsesEntityService(t *testing.T) {
 	mux, f := newContactMux(true, true)
 	f.memberships.result = entity.ProjectMembership{
 		ProjectContactID: "pc-1", ContactSfID: "003xx", Email: testInvitee,
@@ -221,7 +221,7 @@ func TestCreateProjectContact_PortalWritesOnUsesEntityService(t *testing.T) {
 	}
 }
 
-func TestCreateProjectContact_PortalWritesOffUsesLegacyService(t *testing.T) {
+func TestCreateProjectContact_PortalContactsOffUsesLegacyService(t *testing.T) {
 	mux, f := newContactMux(false, true)
 
 	rec := serveContact(mux, http.MethodPost, contactsPath(), inviteBody)
@@ -253,7 +253,7 @@ func TestNewContactHandler_FlagWithoutClientStaysOnLegacy(t *testing.T) {
 	}
 }
 
-func TestCreateProjectContact_PortalWritesOnPassesUpstreamError(t *testing.T) {
+func TestCreateProjectContact_PortalContactsOnPassesUpstreamError(t *testing.T) {
 	mux, f := newContactMux(true, true)
 	f.memberships.err = apierror.NewUpstreamError(http.StatusConflict, []byte(`{"message":"Contact is already a member of this project."}`))
 
@@ -267,7 +267,7 @@ func TestCreateProjectContact_PortalWritesOnPassesUpstreamError(t *testing.T) {
 	}
 }
 
-func TestUpdateProjectContactRole_PortalWritesOnUsesEntityService(t *testing.T) {
+func TestUpdateProjectContactRole_PortalContactsOnUsesEntityService(t *testing.T) {
 	mux, f := newContactMux(true, true)
 	f.memberships.result = entity.ProjectMembership{ProjectContactID: "pc-1", State: "INVITED", Roles: []string{"Lead"}}
 
@@ -290,7 +290,7 @@ func TestUpdateProjectContactRole_PortalWritesOnUsesEntityService(t *testing.T) 
 	}
 }
 
-func TestUpdateProjectContactRole_PortalWritesOffUsesLegacyService(t *testing.T) {
+func TestUpdateProjectContactRole_PortalContactsOffUsesLegacyService(t *testing.T) {
 	mux, f := newContactMux(false, true)
 
 	rec := serveContact(mux, http.MethodPatch, escapedInviteePath(), `{"isLead":true}`)
@@ -303,7 +303,7 @@ func TestUpdateProjectContactRole_PortalWritesOffUsesLegacyService(t *testing.T)
 	}
 }
 
-func TestRemoveProjectContact_PortalWritesOnDeactivates(t *testing.T) {
+func TestRemoveProjectContact_PortalContactsOnDeactivates(t *testing.T) {
 	mux, f := newContactMux(true, true)
 
 	rec := serveContact(mux, http.MethodDelete, escapedInviteePath(), "")
@@ -322,7 +322,7 @@ func TestRemoveProjectContact_PortalWritesOnDeactivates(t *testing.T) {
 	}
 }
 
-func TestRemoveProjectContact_PortalWritesOffUsesLegacyService(t *testing.T) {
+func TestRemoveProjectContact_PortalContactsOffUsesLegacyService(t *testing.T) {
 	mux, f := newContactMux(false, true)
 
 	rec := serveContact(mux, http.MethodDelete, escapedInviteePath(), "")
@@ -340,14 +340,14 @@ func TestRemoveProjectContact_PortalWritesOffUsesLegacyService(t *testing.T) {
 // 404 and reach neither service.
 func TestResendProjectContactInvitation_FlagOff404s(t *testing.T) {
 	for _, tc := range []struct {
-		name                     string
-		portalWrites, withClient bool
+		name                       string
+		portalContacts, withClient bool
 	}{
 		{"flag off", false, true},
 		{"flag on without client", true, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			mux, f := newContactMux(tc.portalWrites, tc.withClient)
+			mux, f := newContactMux(tc.portalContacts, tc.withClient)
 
 			rec := serveContact(mux, http.MethodPost, escapedInviteePath()+"/resend-invitation", "")
 
@@ -361,7 +361,7 @@ func TestResendProjectContactInvitation_FlagOff404s(t *testing.T) {
 	}
 }
 
-func TestResendProjectContactInvitation_PortalWritesOn(t *testing.T) {
+func TestResendProjectContactInvitation_PortalContactsOn(t *testing.T) {
 	mux, f := newContactMux(true, true)
 
 	rec := serveContact(mux, http.MethodPost, escapedInviteePath()+"/resend-invitation", "")
@@ -427,10 +427,10 @@ var portalWriteRequests = []struct {
 	{"resend", http.MethodPost, escapedInviteePath() + "/resend-invitation", ""},
 }
 
-// TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin is the check entity-service
+// TestPortalContacts_RefuseCallerWhoIsNotProjectAdmin is the check entity-service
 // leaves to the portal: a signed-in user who is not an active CS admin of the
 // project must get 403 and nothing may reach entity-service.
-func TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
+func TestPortalContacts_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
 	callers := []struct {
 		name     string
 		contacts []entity.ProjectContact
@@ -459,10 +459,10 @@ func TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
 	}
 }
 
-// TestPortalWrites_AdminEmailMatchIgnoresCase: Salesforce does not keep the
+// TestPortalContacts_AdminEmailMatchIgnoresCase: Salesforce does not keep the
 // casing the address was typed in, and a case mismatch must not lock an
 // admin out of their own project.
-func TestPortalWrites_AdminEmailMatchIgnoresCase(t *testing.T) {
+func TestPortalContacts_AdminEmailMatchIgnoresCase(t *testing.T) {
 	for _, rq := range portalWriteRequests {
 		t.Run(rq.name, func(t *testing.T) {
 			mux, f := newContactMux(true, true)
@@ -480,9 +480,9 @@ func TestPortalWrites_AdminEmailMatchIgnoresCase(t *testing.T) {
 	}
 }
 
-// TestPortalWrites_ContactLookupFailureBlocksWrite: when the admin check
+// TestPortalContacts_ContactLookupFailureBlocksWrite: when the admin check
 // cannot be answered, the write must not go ahead.
-func TestPortalWrites_ContactLookupFailureBlocksWrite(t *testing.T) {
+func TestPortalContacts_ContactLookupFailureBlocksWrite(t *testing.T) {
 	for _, rq := range portalWriteRequests {
 		t.Run(rq.name, func(t *testing.T) {
 			mux, f := newContactMux(true, true)
@@ -500,10 +500,10 @@ func TestPortalWrites_ContactLookupFailureBlocksWrite(t *testing.T) {
 	}
 }
 
-// TestGetProjectContacts_PortalWritesOnReadsDatabase: with the flag on the
+// TestGetProjectContacts_PortalContactsOnReadsDatabase: with the flag on the
 // list comes from entity-service's database search, never from the
 // pre-cutover service, and is rendered in the portal's own Contact shape.
-func TestGetProjectContacts_PortalWritesOnReadsDatabase(t *testing.T) {
+func TestGetProjectContacts_PortalContactsOnReadsDatabase(t *testing.T) {
 	mux, f := newContactMux(true, true)
 	userID, name := "u-9", "Jane Q Doe"
 	f.memberships.contacts = []entity.ProjectContact{
@@ -545,7 +545,7 @@ func TestGetProjectContacts_PortalWritesOnReadsDatabase(t *testing.T) {
 	}
 }
 
-func TestGetProjectContacts_PortalWritesOffUsesLegacyService(t *testing.T) {
+func TestGetProjectContacts_PortalContactsOffUsesLegacyService(t *testing.T) {
 	mux, f := newContactMux(false, true)
 
 	rec := serveContact(mux, http.MethodGet, contactsPath(), "")
@@ -561,7 +561,7 @@ func TestGetProjectContacts_PortalWritesOffUsesLegacyService(t *testing.T) {
 	}
 }
 
-func TestGetProjectContacts_PortalWritesOnPassesUpstreamError(t *testing.T) {
+func TestGetProjectContacts_PortalContactsOnPassesUpstreamError(t *testing.T) {
 	mux, f := newContactMux(true, true)
 	f.memberships.contactsErr = apierror.NewUpstreamError(http.StatusServiceUnavailable, nil)
 

@@ -70,23 +70,23 @@ type ContactHandler struct {
 	entity      entityProjectResolver
 	contacts    contactsClient
 	memberships membershipsClient
-	// portalWritesEnabled is CSM_MIGRATION_PORTAL_WRITES_ENABLED. On, the
-	// contact list and every write below go to entity-service and the CSM
-	// database; off, they go to the pre-cutover onboarding service exactly
-	// as before. Keeping both paths is what makes
+	// portalContactsEnabled is CSM_MIGRATION_PORTAL_CONTACTS_ENABLED. On, the
+	// contact list, the admin check and every write below go to
+	// entity-service and the CSM database; off, they go to the pre-cutover
+	// onboarding service exactly as before. Keeping both paths is what makes
 	// the cutover reversible without a redeploy of anything but this flag.
-	portalWritesEnabled bool
+	portalContactsEnabled bool
 }
 
 // NewContactHandler creates a ContactHandler backed by the given entity and
 // project-contact onboarding service clients. memberships may be nil when
-// portalWrites is false, which is the pre-cutover shape.
-func NewContactHandler(entityClient entityProjectResolver, contactsClient contactsClient, memberships membershipsClient, portalWrites bool) *ContactHandler {
+// portalContacts is false, which is the pre-cutover shape.
+func NewContactHandler(entityClient entityProjectResolver, contactsClient contactsClient, memberships membershipsClient, portalContacts bool) *ContactHandler {
 	return &ContactHandler{
-		entity:              entityClient,
-		contacts:            contactsClient,
-		memberships:         memberships,
-		portalWritesEnabled: portalWrites && memberships != nil,
+		entity:                entityClient,
+		contacts:              contactsClient,
+		memberships:           memberships,
+		portalContactsEnabled: portalContacts && memberships != nil,
 	}
 }
 
@@ -104,7 +104,7 @@ func (h *ContactHandler) GetProjectContacts(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if h.portalWritesEnabled {
+	if h.portalContactsEnabled {
 		contacts, err := h.memberships.ListProjectContacts(r.Context(), projectID)
 		if err != nil {
 			slog.ErrorContext(r.Context(), "entity ListProjectContacts failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
@@ -161,7 +161,7 @@ func (h *ContactHandler) CreateProjectContact(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if h.portalWritesEnabled {
+	if h.portalContactsEnabled {
 		if !h.requireProjectAdmin(w, r, user, projectID) {
 			return
 		}
@@ -207,7 +207,7 @@ func (h *ContactHandler) RemoveProjectContact(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if h.portalWritesEnabled {
+	if h.portalContactsEnabled {
 		if !h.requireProjectAdmin(w, r, user, projectID) {
 			return
 		}
@@ -263,7 +263,7 @@ func (h *ContactHandler) UpdateProjectContactRole(w http.ResponseWriter, r *http
 		return
 	}
 
-	if h.portalWritesEnabled {
+	if h.portalContactsEnabled {
 		if !h.requireProjectAdmin(w, r, user, projectID) {
 			return
 		}
@@ -361,7 +361,7 @@ func (h *ContactHandler) ValidateProjectContact(w http.ResponseWriter, r *http.R
 // POST /projects/{id}/contacts/{email}/resend-invitation.
 //
 // There is no pre-cutover equivalent, so unlike the three writes above this
-// has no fallback branch: with CSM_MIGRATION_PORTAL_WRITES_ENABLED off it
+// has no fallback branch: with CSM_MIGRATION_PORTAL_CONTACTS_ENABLED off it
 // answers 404, the same answer entity-service itself would give, rather than
 // pretending to have resent something.
 //
@@ -376,7 +376,7 @@ func (h *ContactHandler) ResendProjectContactInvitation(w http.ResponseWriter, r
 		return
 	}
 
-	if !h.portalWritesEnabled {
+	if !h.portalContactsEnabled {
 		writeError(w, http.StatusNotFound, "Resending invitations is not available.")
 		return
 	}

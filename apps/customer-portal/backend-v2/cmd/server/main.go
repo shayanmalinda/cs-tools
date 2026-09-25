@@ -174,13 +174,14 @@ func main() {
 		slog.Info("CSM_MIGRATION_FIRST_ACCESS_ENABLED=true; an invited user's first profile load will complete their onboarding")
 	}
 
-	// Portal-driven membership writes. On, invite / role change / deactivate /
-	// resend all go to entity-service, which updates Postgres and Salesforce
-	// in one transaction. Off, they go to the pre-cutover onboarding service
+	// Project contacts. On, the contact list and the admin check read the CSM
+	// database, and invite / role change / deactivate / resend go to
+	// entity-service, which updates Postgres and Salesforce in one
+	// transaction. Off, all of it goes to the pre-cutover onboarding service
 	// exactly as before, so this flag is the whole rollback.
-	csmMigrationPortalWrites := os.Getenv("CSM_MIGRATION_PORTAL_WRITES_ENABLED") == "true"
-	if csmMigrationPortalWrites {
-		slog.Info("CSM_MIGRATION_PORTAL_WRITES_ENABLED=true; project contact writes go to the entity service")
+	csmMigrationPortalContacts := os.Getenv("CSM_MIGRATION_PORTAL_CONTACTS_ENABLED") == "true"
+	if csmMigrationPortalContacts {
+		slog.Info("CSM_MIGRATION_PORTAL_CONTACTS_ENABLED=true; project contacts are read from the CSM database and written through the entity service")
 	}
 
 	userHandler := handler.NewUserHandler(entityClient, scimClient, csmMigrationFirstAccess)
@@ -203,7 +204,7 @@ func main() {
 	globalHandler := handler.NewGlobalHandler(entityClient)
 	instanceHandler := handler.NewInstanceHandler(entityClient)
 	registryHandler := handler.NewRegistryHandler(entityClient, registryClient, adminRole)
-	contactHandler := handler.NewContactHandler(entityClient, userManagementClient, entityClient, csmMigrationPortalWrites)
+	contactHandler := handler.NewContactHandler(entityClient, userManagementClient, entityClient, csmMigrationPortalContacts)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
