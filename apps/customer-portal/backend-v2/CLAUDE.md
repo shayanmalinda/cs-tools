@@ -763,6 +763,13 @@ Flags named `CSM_MIGRATION_*` belong to the migration off ServiceNow onto the CS
 
 The portal deliberately does **not** write to Salesforce itself for this. entity-service already holds the Sales Entity client and the ingest, so the logic lives there and the portal stays free of Salesforce write credentials.
 
+`CSM_MIGRATION_PORTAL_WRITES_ENABLED` (`ContactHandler`) — moves the project-contact writes from the pre-cutover onboarding service to entity-service, which updates Postgres and Salesforce in one transaction:
+
+- **Invite, role change and remove** each have both paths. Off, they take the pre-cutover path unchanged, so the rollback is this flag. The flag is ANDed with the entity client being non-nil, so a misconfiguration cannot select a path with no client behind it.
+- **Resend invitation** (`POST /projects/{id}/contacts/{email}/resend-invitation`) exists only on the new path, so with the flag off it answers `404` rather than pretending to have resent anything.
+- **Roles change vocabulary at the boundary.** The portal's wire contract is four booleans; entity-service takes the raw Salesforce `Role__c` labels. `internal/dto/membership_roles.go` is the only place the two meet, and its labels must equal entity-service's own constants exactly, because Salesforce matches the picklist by literal string.
+- **Reading the contact list stays on the old path.** It reads Salesforce, which the new writes still update.
+
 ## Security
 
 - **Never commit secrets** — `.env`, `Config.toml`, or any file with real credentials must never be
