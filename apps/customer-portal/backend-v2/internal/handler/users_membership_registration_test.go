@@ -32,10 +32,14 @@ import (
 
 // fakeFirstAccessUserClient is an entityUserClient that records whether the
 // cutover-only FirstAccess call was made, and signals when it happens so a
-// test can wait for the goroutine GetMe starts.
+// test can wait for the goroutine GetMe starts. When rec is set it also
+// records how much of the response had been written at the moment the call
+// started, which is what proves the ordering.
 type fakeFirstAccessUserClient struct {
-	err    error
-	called chan struct{}
+	err           error
+	called        chan struct{}
+	rec           *httptest.ResponseRecorder
+	bodyLenAtCall int
 }
 
 func (f *fakeFirstAccessUserClient) GetMe(context.Context) (entity.GetUserMeResponse, error) {
@@ -47,6 +51,9 @@ func (f *fakeFirstAccessUserClient) PatchMe(context.Context, entity.PatchUserMeR
 }
 
 func (f *fakeFirstAccessUserClient) RegisterInvitedMemberships(context.Context) error {
+	if f.rec != nil {
+		f.bodyLenAtCall = f.rec.Body.Len()
+	}
 	close(f.called)
 	return f.err
 }
@@ -93,10 +100,10 @@ func TestGetMe_FirstAccessDisabledMakesNoCall(t *testing.T) {
 // call happens, and it happens after the profile has been written, so it
 // cannot delay or alter what the browser receives.
 func TestGetMe_FirstAccessEnabledCallsAfterResponding(t *testing.T) {
-	client := &fakeFirstAccessUserClient{called: make(chan struct{})}
+	rec := httptest.NewRecorder()
+	client := &fakeFirstAccessUserClient{called: make(chan struct{}), rec: rec}
 	h := NewUserHandler(client, noopSCIMUserClient{}, true)
 
-	rec := httptest.NewRecorder()
 	h.GetMe(rec, getMeRequest())
 
 	if rec.Code != http.StatusOK {
@@ -114,6 +121,10 @@ func TestGetMe_FirstAccessEnabledCallsAfterResponding(t *testing.T) {
 	case <-client.called:
 	case <-time.After(2 * time.Second):
 		t.Fatal("RegisterInvitedMemberships was not called with the flag on")
+	}
+	// Read after the receive above, which orders it after the fake's write.
+	if client.bodyLenAtCall == 0 {
+		t.Error("RegisterInvitedMemberships started before the profile was written")
 	}
 }
 
