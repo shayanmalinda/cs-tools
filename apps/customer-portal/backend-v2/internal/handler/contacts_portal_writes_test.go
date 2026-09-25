@@ -36,10 +36,11 @@ const (
 	testProjectUUID = "11111111-2222-3333-4444-555555555555"
 	testProjectSfID = "a0Pxx0000000001"
 	testInvitee     = "shayan+e2e1@wso2.com"
+	testCaller      = "admin@acme.com"
 )
 
-// fakeProjectResolver records whether the pre-cutover path looked up the
-// project's Salesforce Id. The entity-service path must never need it.
+// fakeProjectResolver resolves the project's Salesforce Id, which both the
+// pre-cutover path and the admin check need.
 type fakeProjectResolver struct{ calls int }
 
 func (f *fakeProjectResolver) GetProject(context.Context, string) (entity.ProjectDetailsView, error) {
@@ -48,14 +49,17 @@ func (f *fakeProjectResolver) GetProject(context.Context, string) (entity.Projec
 }
 
 // fakeLegacyContacts is the pre-cutover onboarding service. It records every
-// write so a test can assert the flag kept traffic away from it.
+// write so a test can assert the flag kept traffic away from it. contacts is
+// the project's contact list, which the admin check reads on both paths.
 type fakeLegacyContacts struct {
-	calls     []string
-	projectID string
+	calls       []string
+	projectID   string
+	contacts    []usermanagement.Contact
+	contactsErr error
 }
 
 func (f *fakeLegacyContacts) GetProjectContacts(context.Context, string) ([]usermanagement.Contact, error) {
-	return nil, nil
+	return f.contacts, f.contactsErr
 }
 
 func (f *fakeLegacyContacts) CreateProjectContact(_ context.Context, projectID string, _ usermanagement.OnBoardContactPayload) (usermanagement.Membership, error) {
@@ -126,8 +130,14 @@ type contactFakes struct {
 // the tests exercise real path-value decoding (the "+" in the invitee).
 // memberships is passed as a nil interface when withClient is false, which
 // is the pre-cutover wiring.
+// The caller is an active CS admin of the project by default, so each test
+// that is not about authorization gets past the check.
 func newContactMux(portalWrites, withClient bool) (*http.ServeMux, contactFakes) {
-	f := contactFakes{resolver: &fakeProjectResolver{}, legacy: &fakeLegacyContacts{}, memberships: &fakeMemberships{}}
+	f := contactFakes{
+		resolver:    &fakeProjectResolver{},
+		legacy:      &fakeLegacyContacts{contacts: []usermanagement.Contact{{Email: testCaller, IsCsAdmin: true}}},
+		memberships: &fakeMemberships{},
+	}
 	var mc membershipsClient
 	if withClient {
 		mc = f.memberships
@@ -145,7 +155,7 @@ func newContactMux(portalWrites, withClient bool) (*http.ServeMux, contactFakes)
 func serveContact(mux *http.ServeMux, method, path, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(middleware.WithUserInfo(req.Context(), &middleware.UserInfo{UserID: "u-1", Email: "admin@acme.com"}))
+	req = req.WithContext(middleware.WithUserInfo(req.Context(), &middleware.UserInfo{UserID: "u-1", Email: testCaller}))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	return rec
@@ -175,7 +185,7 @@ func TestCreateProjectContact_PortalWritesOnUsesEntityService(t *testing.T) {
 		t.Fatalf("entity calls = %v, want [create]", f.memberships.calls)
 	}
 	if f.memberships.projectID != testProjectUUID {
-		t.Errorf("projectID = %q, want the project UUID %q", f.memberships.projectID, testProjectUUID)
+		t.Errorf("projectID = %q, want the project UUID %q, not its Salesforce Id", f.memberships.projectID, testProjectUUID)
 	}
 	want := entity.CreateProjectMembershipRequest{
 		Email: testInvitee, FirstName: "E2E", LastName: "One",
@@ -184,8 +194,8 @@ func TestCreateProjectContact_PortalWritesOnUsesEntityService(t *testing.T) {
 	if !reflect.DeepEqual(f.memberships.create, want) {
 		t.Errorf("create body = %+v, want %+v", f.memberships.create, want)
 	}
-	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
-		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
+	if len(f.legacy.calls) != 0 {
+		t.Errorf("legacy writes = %v, want none", f.legacy.calls)
 	}
 
 	var got dto.Membership
@@ -261,8 +271,8 @@ func TestUpdateProjectContactRole_PortalWritesOnUsesEntityService(t *testing.T) 
 	if !reflect.DeepEqual(f.memberships.update.Roles, []string{"Lead"}) {
 		t.Errorf("roles = %q, want [Lead]", f.memberships.update.Roles)
 	}
-	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
-		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
+	if len(f.legacy.calls) != 0 {
+		t.Errorf("legacy writes = %v, want none", f.legacy.calls)
 	}
 }
 
@@ -293,8 +303,8 @@ func TestRemoveProjectContact_PortalWritesOnDeactivates(t *testing.T) {
 	if f.memberships.projectID != testProjectUUID || f.memberships.email != testInvitee {
 		t.Errorf("target = %q/%q, want %q/%q", f.memberships.projectID, f.memberships.email, testProjectUUID, testInvitee)
 	}
-	if len(f.legacy.calls) != 0 || f.resolver.calls != 0 {
-		t.Errorf("legacy calls = %v, GetProject calls = %d; want none", f.legacy.calls, f.resolver.calls)
+	if len(f.legacy.calls) != 0 {
+		t.Errorf("legacy writes = %v, want none", f.legacy.calls)
 	}
 }
 
@@ -389,5 +399,91 @@ func TestResendProjectContactInvitation_Unauthenticated(t *testing.T) {
 	}
 	if len(f.memberships.calls) != 0 {
 		t.Errorf("entity calls = %v, want none", f.memberships.calls)
+	}
+}
+
+// portalWriteRequests is one request per write on the entity-service path,
+// for the authorization tests that apply to all four alike.
+var portalWriteRequests = []struct {
+	name, method, path, body string
+}{
+	{"invite", http.MethodPost, contactsPath(), inviteBody},
+	{"role change", http.MethodPatch, escapedInviteePath(), `{"isLead":true}`},
+	{"remove", http.MethodDelete, escapedInviteePath(), ""},
+	{"resend", http.MethodPost, escapedInviteePath() + "/resend-invitation", ""},
+}
+
+// TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin is the check entity-service
+// leaves to the portal: a signed-in user who is not an active CS admin of the
+// project must get 403 and nothing may reach entity-service.
+func TestPortalWrites_RefuseCallerWhoIsNotProjectAdmin(t *testing.T) {
+	deactivated := "Deactivated"
+	callers := []struct {
+		name     string
+		contacts []usermanagement.Contact
+	}{
+		{"not on the project", []usermanagement.Contact{{Email: "someone@acme.com", IsCsAdmin: true}}},
+		{"on the project without admin", []usermanagement.Contact{{Email: testCaller, IsPortalUser: true, IsLead: true}}},
+		{"deactivated admin", []usermanagement.Contact{{Email: testCaller, IsCsAdmin: true, MembershipStatus: &deactivated}}},
+		{"empty contact list", nil},
+	}
+	for _, caller := range callers {
+		for _, rq := range portalWriteRequests {
+			t.Run(caller.name+"/"+rq.name, func(t *testing.T) {
+				mux, f := newContactMux(true, true)
+				f.legacy.contacts = caller.contacts
+
+				rec := serveContact(mux, rq.method, rq.path, rq.body)
+
+				if rec.Code != http.StatusForbidden {
+					t.Fatalf("status = %d, want 403; body %s", rec.Code, rec.Body)
+				}
+				if len(f.memberships.calls) != 0 || len(f.legacy.calls) != 0 {
+					t.Errorf("entity calls = %v, legacy writes = %v; want none", f.memberships.calls, f.legacy.calls)
+				}
+			})
+		}
+	}
+}
+
+// TestPortalWrites_AdminEmailMatchIgnoresCase: Salesforce does not keep the
+// casing the address was typed in, and a case mismatch must not lock an
+// admin out of their own project.
+func TestPortalWrites_AdminEmailMatchIgnoresCase(t *testing.T) {
+	registered := "REGISTERED"
+	for _, rq := range portalWriteRequests {
+		t.Run(rq.name, func(t *testing.T) {
+			mux, f := newContactMux(true, true)
+			f.legacy.contacts = []usermanagement.Contact{{Email: " Admin@ACME.com ", IsCsAdmin: true, MembershipStatus: &registered}}
+
+			rec := serveContact(mux, rq.method, rq.path, rq.body)
+
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200; body %s", rec.Code, rec.Body)
+			}
+			if len(f.memberships.calls) != 1 {
+				t.Errorf("entity calls = %v, want exactly one", f.memberships.calls)
+			}
+		})
+	}
+}
+
+// TestPortalWrites_ContactLookupFailureBlocksWrite: when the admin check
+// cannot be answered, the write must not go ahead.
+func TestPortalWrites_ContactLookupFailureBlocksWrite(t *testing.T) {
+	for _, rq := range portalWriteRequests {
+		t.Run(rq.name, func(t *testing.T) {
+			mux, f := newContactMux(true, true)
+			f.legacy.contactsErr = apierror.NewUpstreamError(http.StatusBadGateway, nil)
+
+			rec := serveContact(mux, rq.method, rq.path, rq.body)
+
+			if rec.Code != http.StatusServiceUnavailable {
+				t.Fatalf("status = %d, want 503; body %s", rec.Code, rec.Body)
+			}
+			if len(f.memberships.calls) != 0 {
+				t.Errorf("entity calls = %v, want none", f.memberships.calls)
+			}
+		})
 	}
 }

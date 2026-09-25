@@ -21,12 +21,17 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/dto"
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/entity"
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/middleware"
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/usermanagement"
 )
+
+// membershipStateDeactivated is the membership state that no longer grants
+// anything, compared case-insensitively against the contact list's status.
+const membershipStateDeactivated = "DEACTIVATED"
 
 // entityProjectResolver is the subset of the entity client ContactHandler
 // needs — just enough to resolve a project's Salesforce ID for the
@@ -144,8 +149,9 @@ func (h *ContactHandler) CreateProjectContact(w http.ResponseWriter, r *http.Req
 	}
 
 	if h.portalWritesEnabled {
-		// entity-service is keyed on the project UUID, so unlike the path
-		// below this needs no Salesforce Id and therefore no GetProject.
+		if !h.requireProjectAdmin(w, r, user, projectID) {
+			return
+		}
 		membership, err := h.memberships.CreateProjectMembership(r.Context(), projectID, dto.BuildCreateProjectMembershipRequest(req))
 		if err != nil {
 			slog.ErrorContext(r.Context(), "entity CreateProjectMembership failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
@@ -189,6 +195,9 @@ func (h *ContactHandler) RemoveProjectContact(w http.ResponseWriter, r *http.Req
 	}
 
 	if h.portalWritesEnabled {
+		if !h.requireProjectAdmin(w, r, user, projectID) {
+			return
+		}
 		if err := h.memberships.DeactivateProjectMembership(r.Context(), projectID, email); err != nil {
 			slog.ErrorContext(r.Context(), "entity DeactivateProjectMembership failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
 			writeUpstreamMessage(w, err, "Failed to remove project contact.")
@@ -242,6 +251,9 @@ func (h *ContactHandler) UpdateProjectContactRole(w http.ResponseWriter, r *http
 	}
 
 	if h.portalWritesEnabled {
+		if !h.requireProjectAdmin(w, r, user, projectID) {
+			return
+		}
 		membership, err := h.memberships.UpdateProjectMembershipRoles(r.Context(), projectID, email,
 			entity.UpdateProjectMembershipRolesRequest{Roles: dto.RolesFromRoleUpdateRequest(req)})
 		if err != nil {
@@ -363,6 +375,10 @@ func (h *ContactHandler) ResendProjectContactInvitation(w http.ResponseWriter, r
 		return
 	}
 
+	if !h.requireProjectAdmin(w, r, user, projectID) {
+		return
+	}
+
 	if err := h.memberships.ResendProjectMembershipInvitation(r.Context(), projectID, email); err != nil {
 		slog.ErrorContext(r.Context(), "entity ResendProjectMembershipInvitation failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
 		writeUpstreamMessage(w, err, "Failed to resend the invitation.")
@@ -370,4 +386,60 @@ func (h *ContactHandler) ResendProjectContactInvitation(w http.ResponseWriter, r
 	}
 
 	writeJSONValue(w, http.StatusOK, map[string]string{"message": "Invitation resent successfully!"})
+}
+
+// requireProjectAdmin is the authorization every entity-service write needs
+// before it is sent. It writes the error response itself and reports whether
+// the caller may go ahead.
+//
+// entity-service deliberately does not make this decision: it only checks
+// that the caller is an allow-listed internal client, so whether this
+// particular user may change this particular project's contacts is the
+// portal's call. The pre-cutover path got it from the onboarding service,
+// which checked the AdminEmail it was sent. Here the caller must be an
+// active CS admin on the project, read from the same contact list the
+// settings page shows. That list comes from Salesforce by the project's
+// Salesforce Id, so the answer does not depend on how entity-service scopes
+// the portal's own reads.
+func (h *ContactHandler) requireProjectAdmin(w http.ResponseWriter, r *http.Request, user *middleware.UserInfo, projectID string) bool {
+	project, err := h.entity.GetProject(r.Context(), projectID)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "entity GetProject failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+		mapUpstreamError(w, err, "Failed to retrieve project details.")
+		return false
+	}
+
+	contacts, err := h.contacts.GetProjectContacts(r.Context(), project.SfID)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "usermanagement GetProjectContacts failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
+		mapUpstreamError(w, err, "Failed to retrieve project contacts.")
+		return false
+	}
+
+	if !isActiveProjectAdmin(contacts, user.Email) {
+		slog.WarnContext(r.Context(), "project contact write refused: caller is not a CS admin of the project", "userID", user.UserID, "projectID", projectID)
+		writeError(w, http.StatusForbidden, ErrMsgForbidden)
+		return false
+	}
+	return true
+}
+
+// isActiveProjectAdmin reports whether email holds the CS admin role on a
+// membership that has not been deactivated. Email comparison ignores case,
+// since Salesforce does not preserve the casing the address was typed in.
+func isActiveProjectAdmin(contacts []usermanagement.Contact, email string) bool {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return false
+	}
+	for _, c := range contacts {
+		if !strings.EqualFold(strings.TrimSpace(c.Email), email) || !c.IsCsAdmin {
+			continue
+		}
+		if c.MembershipStatus != nil && strings.EqualFold(strings.TrimSpace(*c.MembershipStatus), membershipStateDeactivated) {
+			continue
+		}
+		return true
+	}
+	return false
 }
