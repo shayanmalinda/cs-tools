@@ -19,15 +19,44 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/dto"
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/entity"
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/middleware"
 	"github.com/wso2-open-operations/cs-tools/apps/customer-portal/backend-v2/internal/usermanagement"
 )
+
+// entityWriteTimeout bounds an entity-service membership write that runs on a
+// context detached from the request (see entityWriteContext). It sits above
+// the entity client's own 25-second timeout, so in practice that timeout
+// fires first; this one only guarantees the detached call cannot run forever.
+const entityWriteTimeout = 30 * time.Second
+
+// entityWriteContext returns the context an entity-service membership write
+// runs on: the request's values (user token, correlation id) without its
+// cancellation, and with its own deadline. A write updates Salesforce and
+// then commits Postgres, so abandoning it halfway because the admin closed
+// the tab or the connection dropped would leave Salesforce written and the
+// database not. Letting it finish is the safer outcome in every case.
+func entityWriteContext(r *http.Request) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(r.Context()), entityWriteTimeout)
+}
+
+// invitationProcessingResponse is the 202 body CreateProjectContact returns
+// when the portal stopped waiting before entity-service answered.
+type invitationProcessingResponse struct {
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
+// invitationStatusProcessing is invitationProcessingResponse.Status: the
+// webapp keeps the row pending and refreshes the list until it appears.
+const invitationStatusProcessing = "PROCESSING"
 
 // membershipStateDeactivated is the membership state that no longer grants
 // anything, compared case-insensitively against the contact list's status.
@@ -165,7 +194,22 @@ func (h *ContactHandler) CreateProjectContact(w http.ResponseWriter, r *http.Req
 		if !h.requireProjectAdmin(w, r, user, projectID) {
 			return
 		}
-		membership, err := h.memberships.CreateProjectMembership(r.Context(), projectID, dto.BuildCreateProjectMembershipRequest(req))
+		wctx, cancel := entityWriteContext(r)
+		defer cancel()
+		membership, err := h.memberships.CreateProjectMembership(wctx, projectID, dto.BuildCreateProjectMembershipRequest(req))
+		if errors.Is(err, context.DeadlineExceeded) {
+			// The portal stopped waiting, not entity-service: it keeps going
+			// and commits, so reporting a failure here would tell the admin
+			// an invitation failed when it is about to exist. A retry would
+			// then be refused as a duplicate. 202 tells the webapp to keep
+			// the row pending and refresh the list until it shows up.
+			slog.WarnContext(r.Context(), "entity CreateProjectMembership still running when the portal stopped waiting", "userID", user.UserID, "projectID", projectID)
+			writeJSONValue(w, http.StatusAccepted, invitationProcessingResponse{
+				Message: "The invitation is still being processed.",
+				Status:  invitationStatusProcessing,
+			})
+			return
+		}
 		if err != nil {
 			slog.ErrorContext(r.Context(), "entity CreateProjectMembership failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
 			writeUpstreamMessage(w, err, "Failed to add project contact.")
@@ -211,7 +255,9 @@ func (h *ContactHandler) RemoveProjectContact(w http.ResponseWriter, r *http.Req
 		if !h.requireProjectAdmin(w, r, user, projectID) {
 			return
 		}
-		if err := h.memberships.DeactivateProjectMembership(r.Context(), projectID, email); err != nil {
+		wctx, cancel := entityWriteContext(r)
+		defer cancel()
+		if err := h.memberships.DeactivateProjectMembership(wctx, projectID, email); err != nil {
 			slog.ErrorContext(r.Context(), "entity DeactivateProjectMembership failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
 			writeUpstreamMessage(w, err, "Failed to remove project contact.")
 			return
@@ -267,7 +313,9 @@ func (h *ContactHandler) UpdateProjectContactRole(w http.ResponseWriter, r *http
 		if !h.requireProjectAdmin(w, r, user, projectID) {
 			return
 		}
-		membership, err := h.memberships.UpdateProjectMembershipRoles(r.Context(), projectID, email,
+		wctx, cancel := entityWriteContext(r)
+		defer cancel()
+		membership, err := h.memberships.UpdateProjectMembershipRoles(wctx, projectID, email,
 			entity.UpdateProjectMembershipRolesRequest{Roles: dto.RolesFromRoleUpdateRequest(req)})
 		if err != nil {
 			slog.ErrorContext(r.Context(), "entity UpdateProjectMembershipRoles failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
@@ -392,7 +440,9 @@ func (h *ContactHandler) ResendProjectContactInvitation(w http.ResponseWriter, r
 		return
 	}
 
-	if err := h.memberships.ResendProjectMembershipInvitation(r.Context(), projectID, email); err != nil {
+	wctx, cancel := entityWriteContext(r)
+	defer cancel()
+	if err := h.memberships.ResendProjectMembershipInvitation(wctx, projectID, email); err != nil {
 		slog.ErrorContext(r.Context(), "entity ResendProjectMembershipInvitation failed", "userID", user.UserID, "projectID", projectID, "err", summarizeErr(err))
 		writeUpstreamMessage(w, err, "Failed to resend the invitation.")
 		return

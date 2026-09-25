@@ -19,6 +19,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -100,6 +101,21 @@ type fakeMemberships struct {
 	contacts    []entity.ProjectContact
 	contactsErr error
 	listed      int
+	// seen records, for each write, what the context looked like when the
+	// call arrived: whether it was already cancelled, whether it carried a
+	// deadline, and whether the request's values survived.
+	seen []writeContext
+}
+
+type writeContext struct {
+	err         error
+	hasDeadline bool
+	hasUser     bool
+}
+
+func (f *fakeMemberships) record(ctx context.Context) {
+	_, hasDeadline := ctx.Deadline()
+	f.seen = append(f.seen, writeContext{err: ctx.Err(), hasDeadline: hasDeadline, hasUser: middleware.UserInfoFromContext(ctx) != nil})
 }
 
 func (f *fakeMemberships) ListProjectContacts(context.Context, string) ([]entity.ProjectContact, error) {
@@ -107,25 +123,29 @@ func (f *fakeMemberships) ListProjectContacts(context.Context, string) ([]entity
 	return f.contacts, f.contactsErr
 }
 
-func (f *fakeMemberships) CreateProjectMembership(_ context.Context, projectID string, req entity.CreateProjectMembershipRequest) (entity.ProjectMembership, error) {
+func (f *fakeMemberships) CreateProjectMembership(ctx context.Context, projectID string, req entity.CreateProjectMembershipRequest) (entity.ProjectMembership, error) {
+	f.record(ctx)
 	f.calls = append(f.calls, "create")
 	f.projectID, f.create = projectID, req
 	return f.result, f.err
 }
 
-func (f *fakeMemberships) UpdateProjectMembershipRoles(_ context.Context, projectID, email string, req entity.UpdateProjectMembershipRolesRequest) (entity.ProjectMembership, error) {
+func (f *fakeMemberships) UpdateProjectMembershipRoles(ctx context.Context, projectID, email string, req entity.UpdateProjectMembershipRolesRequest) (entity.ProjectMembership, error) {
+	f.record(ctx)
 	f.calls = append(f.calls, "update")
 	f.projectID, f.email, f.update = projectID, email, req
 	return f.result, f.err
 }
 
-func (f *fakeMemberships) DeactivateProjectMembership(_ context.Context, projectID, email string) error {
+func (f *fakeMemberships) DeactivateProjectMembership(ctx context.Context, projectID, email string) error {
+	f.record(ctx)
 	f.calls = append(f.calls, "deactivate")
 	f.projectID, f.email = projectID, email
 	return f.err
 }
 
-func (f *fakeMemberships) ResendProjectMembershipInvitation(_ context.Context, projectID, email string) error {
+func (f *fakeMemberships) ResendProjectMembershipInvitation(ctx context.Context, projectID, email string) error {
+	f.record(ctx)
 	f.calls = append(f.calls, "resend")
 	f.projectID, f.email = projectID, email
 	return f.err
@@ -167,7 +187,13 @@ func newContactMux(portalContacts, withClient bool) (*http.ServeMux, contactFake
 }
 
 func serveContact(mux *http.ServeMux, method, path, body string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	return serveContactWithContext(context.Background(), mux, method, path, body)
+}
+
+// serveContactWithContext is serveContact on a caller-supplied base context,
+// so a test can hand the handler a request that is already cancelled.
+func serveContactWithContext(ctx context.Context, mux *http.ServeMux, method, path, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequestWithContext(ctx, method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(middleware.WithUserInfo(req.Context(), &middleware.UserInfo{UserID: "u-1", Email: testCaller}))
 	rec := httptest.NewRecorder()
@@ -569,5 +595,72 @@ func TestGetProjectContacts_PortalContactsOnPassesUpstreamError(t *testing.T) {
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d, want 503", rec.Code)
+	}
+}
+
+// TestPortalContacts_WritesSurviveRequestCancellation: a write updates
+// Salesforce and then commits Postgres, so a closed tab or dropped connection
+// must not abandon it halfway. Each write reaches entity-service on a context
+// that is not cancelled, carries its own deadline, and still has the
+// request's values (the user, and with it the forwarded token and
+// correlation id).
+func TestPortalContacts_WritesSurviveRequestCancellation(t *testing.T) {
+	for _, rq := range portalWriteRequests {
+		t.Run(rq.name, func(t *testing.T) {
+			mux, f := newContactMux(true, true)
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			serveContactWithContext(ctx, mux, rq.method, rq.path, rq.body)
+
+			if len(f.memberships.seen) != 1 {
+				t.Fatalf("entity writes = %d, want 1", len(f.memberships.seen))
+			}
+			got := f.memberships.seen[0]
+			if got.err != nil {
+				t.Errorf("write context already done: %v", got.err)
+			}
+			if !got.hasDeadline {
+				t.Error("write context has no deadline")
+			}
+			if !got.hasUser {
+				t.Error("write context lost the request's values")
+			}
+		})
+	}
+}
+
+// TestCreateProjectContact_PortalTimeoutAnswers202: when the portal stops
+// waiting, entity-service keeps going and commits, so the invite is reported
+// as still processing rather than failed.
+func TestCreateProjectContact_PortalTimeoutAnswers202(t *testing.T) {
+	mux, f := newContactMux(true, true)
+	f.memberships.err = fmt.Errorf("entity: POST /projects/x/contacts: %w", context.DeadlineExceeded)
+
+	rec := serveContact(mux, http.MethodPost, contactsPath(), inviteBody)
+
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want 202; body %s", rec.Code, rec.Body)
+	}
+	var got invitationProcessingResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if got.Status != invitationStatusProcessing || got.Message == "" {
+		t.Errorf("body = %+v, want status %s with a message", got, invitationStatusProcessing)
+	}
+}
+
+// TestUpdateProjectContactRole_PortalTimeoutStaysAnError: only the invite has
+// a pending row the webapp can resolve by refreshing; other writes keep
+// reporting a timeout as a failure.
+func TestUpdateProjectContactRole_PortalTimeoutStaysAnError(t *testing.T) {
+	mux, f := newContactMux(true, true)
+	f.memberships.err = fmt.Errorf("entity: PATCH: %w", context.DeadlineExceeded)
+
+	rec := serveContact(mux, http.MethodPatch, escapedInviteePath(), `{"isLead":true}`)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", rec.Code)
 	}
 }
