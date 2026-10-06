@@ -92,12 +92,15 @@ func (s *allocationEventStore) FindEngagementByEngagementID(ctx context.Context,
 		"find engagement by engagement_id")
 }
 
-// sf_id is the Salesforce line-item id (ServiceNow u_line_item_id); 15 and 18-character forms match.
+// ServiceNow matches u_line_item.u_id (line_item_id's product row), else the sf_id copy;
+// 15 and 18-character forms match, and a line-item match wins over an sf_id one.
 const findEngagementByLineItemQuery = `
 	SELECT ce.id::text
 	FROM customer_engagement ce
-	WHERE left(ce.sf_id, 15) = left($1, 15)
-	ORDER BY ce.created_on, ce.id
+	LEFT JOIN sf_opportunity_product sop
+	       ON sop.id = ce.line_item_id AND left(sop.line_item_sf_id, 15) = left($1, 15)
+	WHERE sop.id IS NOT NULL OR left(ce.sf_id, 15) = left($1, 15)
+	ORDER BY (sop.id IS NOT NULL) DESC, ce.created_on, ce.id
 	LIMIT 1`
 
 func (s *allocationEventStore) FindEngagementByLineItemSfID(ctx context.Context, lineItemSfID string) (*string, error) {

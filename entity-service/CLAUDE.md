@@ -776,7 +776,7 @@ the linked-opportunity, invoice and line-item families).
 
 ## Allocation events (`POST /customer-engagements/allocation-events`)
 
-Ports ServiceNow `processAllocationEvent` for allocation-app events, in one transaction, exactly as ServiceNow does: allocation types 76/83 find or create the engagement (`engagement_type = FIREFIGHTING`) by engagement id; every other type finds by `sf_id` = `productId`, or skips. Internal clients only. A skip answers 200 with a `reason`; only 5xx is retryable. Migration 0187's unique indexes back the `ON CONFLICT` upserts that make repeats safe. Stages and tasks are not ported. Stop csm-sync's `u_customer_engagement*` jobs before turning the flag on: their `delete_sync` removes rows written here.
+Ports ServiceNow `processAllocationEvent` for allocation-app events, in one transaction, exactly as ServiceNow does: allocation types 76/83 find or create the engagement (`engagement_type = FIREFIGHTING`) by engagement id; every other type finds by `productId` (via `line_item_id`'s product row, else `sf_id`), or skips. Internal clients only. A skip answers 200 with a `reason`; only 5xx is retryable. Migration 0187's unique indexes back the `ON CONFLICT` upserts that make repeats safe. Stages and tasks are not ported. Stop csm-sync's `u_customer_engagement*` jobs before turning the flag on: their `delete_sync` removes rows written here.
 
 ## Salesforce partner relationships
 

@@ -33,6 +33,9 @@ const (
 	itAccountDeleted = "a110c000-0000-4000-8000-000000000002"
 	itUser           = "a110c000-0000-4000-8000-000000000011"
 	itLineEngagement = "a110c000-0000-4000-8000-000000000021"
+	itSfIDEngagement = "a110c000-0000-4000-8000-000000000022"
+	itSfIDOnlyEng    = "a110c000-0000-4000-8000-000000000023"
+	itSfIDOnlySf     = "00kITESTALLOC03AAA"
 	itLineItemRow    = "a110c000-0000-4000-8000-000000000031"
 	itNewLineItemRow = "a110c000-0000-4000-8000-000000000032"
 	itOpportunity    = "a110c000-0000-4000-8000-000000000041"
@@ -55,7 +58,7 @@ func newAllocationIntegrationPool(t *testing.T) *pgxpool.Pool {
 	t.Cleanup(pool.Close)
 	clean := func() {
 		for _, stmt := range []string{
-			`DELETE FROM customer_engagement WHERE engagement_id LIKE 'EIT%' OR id = '` + itLineEngagement + `'`,
+			`DELETE FROM customer_engagement WHERE engagement_id LIKE 'EIT%' OR id IN ('` + itLineEngagement + `', '` + itSfIDEngagement + `', '` + itSfIDOnlyEng + `')`,
 			`DELETE FROM sf_opportunity_product WHERE id IN ('` + itLineItemRow + `', '` + itNewLineItemRow + `')`,
 			`DELETE FROM sf_opportunity WHERE id = '` + itOpportunity + `'`,
 			`DELETE FROM account WHERE id IN ('` + itAccountLive + `', '` + itAccountDeleted + `')`,
@@ -79,8 +82,11 @@ func newAllocationIntegrationPool(t *testing.T) *pgxpool.Pool {
 		`INSERT INTO sf_opportunity_product (id, created_on, updated_on, created_by, updated_by, line_item_sf_id, opportunity_id) VALUES
 			('` + itLineItemRow + `', now(), now(), 't', 't', '` + itLineItemSfID + `', NULL),
 			('` + itNewLineItemRow + `', now(), now(), 't', 't', '` + itNewLineItemSf + `', '` + itOpportunity + `')`,
+		// Older sf_id-only row first: the line_item_id match must still win.
 		`INSERT INTO customer_engagement (id, created_on, updated_on, name, sf_id, line_item_id) VALUES
-			('` + itLineEngagement + `', now(), now(), 'Line engagement', '` + itLineItemSfID + `', '` + itLineItemRow + `')`,
+			('` + itSfIDEngagement + `', now() - interval '1 day', now(), 'Sf id engagement', '` + itLineItemSfID + `', NULL),
+			('` + itLineEngagement + `', now(), now(), 'Line engagement', NULL, '` + itLineItemRow + `'),
+			('` + itSfIDOnlyEng + `', now(), now(), 'Sf id only engagement', '` + itSfIDOnlySf + `', NULL)`,
 	} {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
 			t.Fatalf("seed: %v", err)
@@ -158,7 +164,7 @@ func TestAllocationEventIntegration(t *testing.T) {
 		t.Error("allocation row not updated")
 	}
 
-	// Line-item path by customer_engagement.sf_id.
+	// Line-item path through line_item_id -> sf_opportunity_product (sf_id empty).
 	li := allocLineItemEvent()
 	li.ID, li.Email, li.Engagement.EngagementID = "AIT0002", "alloc.itest", "EIT0002"
 	li.Engagement.ProductID = allocStr(itLineItemSfID)
@@ -168,6 +174,15 @@ func TestAllocationEventIntegration(t *testing.T) {
 	}
 	if n := itCount(t, pool, `SELECT count(*) FROM customer_engagement WHERE id = $1 AND engagement_id IS NULL`, itLineEngagement); n != 1 {
 		t.Error("a line-item match must not fill engagement_id")
+	}
+
+	// sf_id-only engagement, matched by the 15-character id.
+	sf := allocLineItemEvent()
+	sf.ID, sf.Email = "AIT0004", "alloc.itest"
+	sf.Engagement.ProductID = allocStr(itSfIDOnlySf[:15])
+	res, err = svc.ProcessAllocationEvent(ctx, sf)
+	if err != nil || res.EngagementID == nil || *res.EngagementID != itSfIDOnlyEng {
+		t.Fatalf("sf_id match = %+v, %v", res, err)
 	}
 
 	// No engagement for the line item: skipped, nothing created, even with a new engagement id.
