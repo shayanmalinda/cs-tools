@@ -79,8 +79,8 @@ func newAllocationIntegrationPool(t *testing.T) *pgxpool.Pool {
 		`INSERT INTO sf_opportunity_product (id, created_on, updated_on, created_by, updated_by, line_item_sf_id, opportunity_id) VALUES
 			('` + itLineItemRow + `', now(), now(), 't', 't', '` + itLineItemSfID + `', NULL),
 			('` + itNewLineItemRow + `', now(), now(), 't', 't', '` + itNewLineItemSf + `', '` + itOpportunity + `')`,
-		`INSERT INTO customer_engagement (id, created_on, updated_on, name, line_item_id) VALUES
-			('` + itLineEngagement + `', now(), now(), 'Line engagement', '` + itLineItemRow + `')`,
+		`INSERT INTO customer_engagement (id, created_on, updated_on, name, sf_id, line_item_id) VALUES
+			('` + itLineEngagement + `', now(), now(), 'Line engagement', '` + itLineItemSfID + `', '` + itLineItemRow + `')`,
 	} {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
 			t.Fatalf("seed: %v", err)
@@ -101,7 +101,7 @@ func itCount(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {
 func TestAllocationEventIntegration(t *testing.T) {
 	pool := newAllocationIntegrationPool(t)
 	svc := NewCustomerEngagementAllocationService(
-		repository.NewCustomerEngagementAllocationRepository(repository.NewScoped(pool)), testFirefightingTypeID)
+		repository.NewCustomerEngagementAllocationRepository(repository.NewScoped(pool)))
 	ctx := repository.WithSystemIdentity(context.Background())
 
 	ff := allocFirefightingEvent()
@@ -140,7 +140,8 @@ func TestAllocationEventIntegration(t *testing.T) {
 	}
 	if n := itCount(t, pool, `SELECT count(*) FROM customer_engagement WHERE engagement_id = 'EIT0001'
 		AND account_id = $1 AND delivery_mode = 'OFFSITE' AND state = 'NEW' AND engagement_type = 'FIREFIGHTING'
-		AND name = 'Acme - Support Related Customer Firefighting' AND created_by = 'allocation-sync'`,
+		AND name = 'Acme - Support Related Customer Firefighting' AND created_by = 'allocation-sync'
+		AND sf_id IS NULL AND line_item_id IS NULL AND opportunity_id IS NULL`,
 		itAccountLive); n != 1 {
 		t.Error("engagement columns are not as expected (live account by 15-char sf_id, OFFSITE, NEW)")
 	}
@@ -157,7 +158,7 @@ func TestAllocationEventIntegration(t *testing.T) {
 		t.Error("allocation row not updated")
 	}
 
-	// Line-item path through line_item_id -> sf_opportunity_product.
+	// Line-item path by customer_engagement.sf_id.
 	li := allocLineItemEvent()
 	li.ID, li.Email, li.Engagement.EngagementID = "AIT0002", "alloc.itest", "EIT0002"
 	li.Engagement.ProductID = allocStr(itLineItemSfID)

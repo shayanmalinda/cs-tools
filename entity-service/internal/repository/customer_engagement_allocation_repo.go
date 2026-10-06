@@ -92,17 +92,11 @@ func (s *allocationEventStore) FindEngagementByEngagementID(ctx context.Context,
 		"find engagement by engagement_id")
 }
 
-// sf_id holds the Salesforce id (renamed from line_item_id); line_item_id is now the
-// UUID FK onto the sf_opportunity_product row it resolves to (renamed from
-// line_item_id_ref and retyped from a raw sys_id string -- see
-// 0134_customer_engagement_line_item_fk.sql).
+// sf_id is the Salesforce line-item id (ServiceNow u_line_item_id); 15 and 18-character forms match.
 const findEngagementByLineItemQuery = `
 	SELECT ce.id::text
 	FROM customer_engagement ce
 	WHERE left(ce.sf_id, 15) = left($1, 15)
-	   OR EXISTS (SELECT 1 FROM sf_opportunity_product sop
-	              WHERE sop.id = ce.line_item_id
-	                AND left(sop.line_item_sf_id, 15) = left($1, 15))
 	ORDER BY ce.created_on, ce.id
 	LIMIT 1`
 

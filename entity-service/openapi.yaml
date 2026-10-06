@@ -170,7 +170,7 @@ paths:
         Apply one Allocation-app allocation event to customer engagements (port of
         ServiceNow processAllocationEvent): for allocationType 76 or 83 (firefighting),
         find the engagement by engagementId or create it; for any other type, find it by
-        line item (productId) or skip. Then upsert the allocation resource. One transaction; repeating an event is safe. Internal
+        line item (sf_id = productId) or skip. Then upsert the allocation resource. One transaction; repeating an event is safe. Internal
         clients only (M2M_CLIENT_IDS). Registered only when
         CSM_MIGRATION_CUSTOMER_ENGAGEMENT_INGEST_ENABLED=true and PostgreSQL is authoritative.
       operationId: processAllocationEvent
@@ -12004,8 +12004,7 @@ components:
           type: string
           description: >-
             Present when skipped: no engagement details, no engagement id, no engagement for
-            line item, account not found, ambiguous account name, user not found, or
-            firefighting engagement type id not configured.
+            line item, account not found, ambiguous account name, or user not found.
         engagementId: {type: string, format: uuid, nullable: true}
         allocationResourceId: {type: string, format: uuid, nullable: true}
         engagementCreated: {type: boolean}
