@@ -44,6 +44,7 @@ type ProjectContactRow struct {
 	ResolvedUserID *string
 	ResolvedName   *string
 	ResolvedEmail  *string
+	IsSystemUser   bool
 	// Roles is the union of project_role.role across every project_group
 	// this contact belongs to (via project_contact_group). Never nil --
 	// COALESCE'd to an empty array in the query.
@@ -97,6 +98,7 @@ func NewProjectContactRepository(db *pgxpool.Pool) ProjectContactRepository {
 const projectContactColumns = `
 	pc.email, pc.state,
 	u.id, COALESCE(u.name, NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.last_name)), '')), u.email,
+	COALESCE(u.is_system_user, FALSE),
 	COALESCE((
 		SELECT array_agg(DISTINCT pr.role::text)
 		FROM project_contact_group pcg
@@ -119,7 +121,7 @@ const projectContactFromJoins = `
 func scanProjectContact(row interface{ Scan(...any) error }) (ProjectContactRow, error) {
 	var c ProjectContactRow
 	var state *string
-	err := row.Scan(&c.Email, &state, &c.ResolvedUserID, &c.ResolvedName, &c.ResolvedEmail, &c.Roles, &c.AccountRoles)
+	err := row.Scan(&c.Email, &state, &c.ResolvedUserID, &c.ResolvedName, &c.ResolvedEmail, &c.IsSystemUser, &c.Roles, &c.AccountRoles)
 	if err != nil {
 		return ProjectContactRow{}, err
 	}
