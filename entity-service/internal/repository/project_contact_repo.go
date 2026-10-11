@@ -114,7 +114,10 @@ const projectContactColumns = `
 const projectContactFromJoins = `
 	FROM project_contact pc
 	JOIN account_contact ac ON ac.id = pc.account_contact_id
-	LEFT JOIN "user" u ON LOWER(u.user_name) = LOWER(ac.user_name)`
+	LEFT JOIN LATERAL (
+		SELECT * FROM "user" WHERE LOWER(user_name) = LOWER(ac.user_name)
+		ORDER BY (is_active IS TRUE) DESC, created_on, id LIMIT 1
+	) u ON TRUE`
 
 func scanProjectContact(row interface{ Scan(...any) error }) (ProjectContactRow, error) {
 	var c ProjectContactRow
