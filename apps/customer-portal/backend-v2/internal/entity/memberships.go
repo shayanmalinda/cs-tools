@@ -202,7 +202,8 @@ type ProjectContact struct {
 	Name  *string `json:"name"`
 	Email string  `json:"email"`
 	// RegistrationState is INVITED / REGISTERED / RE-INVITED / DEACTIVATED.
-	RegistrationState string `json:"registrationState"`
+	RegistrationState   string `json:"registrationState"`
+	IsCsIntegrationUser bool   `json:"isCsIntegrationUser"`
 	// Roles are the project roles the membership's groups grant:
 	// PORTAL_USER, SECURITY_CONTACT, LEAD_USER, ADMIN, BUSINESS_CONTACT.
 	Roles []string `json:"roles"`
